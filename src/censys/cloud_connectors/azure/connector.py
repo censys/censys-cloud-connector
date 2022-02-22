@@ -3,7 +3,7 @@ from typing import List
 
 from msrest.serialization import Model as AzureModel
 
-from azure.core.exceptions import ServiceRequestError
+from azure.core.exceptions import HttpResponseError, ServiceRequestError
 from azure.identity import ClientSecretCredential
 from azure.mgmt.containerinstance import ContainerInstanceManagementClient
 from azure.mgmt.dns import DnsManagementClient
@@ -113,7 +113,15 @@ class AzureCloudConnector(CloudConnector):
         """Get Azure DNS records."""
         dns_client = DnsManagementClient(self.credentials, self.subscription_id)
 
-        for zone in dns_client.zones.list():
+        try:
+            zones = dns_client.zones.list()
+        except HttpResponseError as error:
+            self.logger.error(
+                f"Failed to get Azure DNS records: {error.message}", exc_info=True
+            )
+            return
+
+        for zone in zones:
             zone_dict = zone.as_dict()
             if zone_dict.get("zone_type") != "Public":
                 continue
@@ -124,7 +132,7 @@ class AzureCloudConnector(CloudConnector):
                 asset_dict = asset.as_dict()
                 if (domain := asset_dict.get("fqdn")) and (
                     a_records := asset_dict.get("a_records")
-                ) is not None:
+                ):
                     self.add_seed(
                         DomainSeed(value=domain, label=self._format_label(zone))
                     )
