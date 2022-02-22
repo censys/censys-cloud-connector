@@ -1,0 +1,10 @@
+- # name of platform
+  platform: azure
+  tenant_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  client_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  client_secret: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  subscription_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  # you can optionally specify more than one subscription_id
+  # subscription_id:
+  #   - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  #   - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
