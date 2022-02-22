@@ -114,7 +114,7 @@ class AzureCloudConnector(CloudConnector):
         dns_client = DnsManagementClient(self.credentials, self.subscription_id)
 
         try:
-            zones = dns_client.zones.list()
+            zones = list(dns_client.zones.list())
         except HttpResponseError as error:
             self.logger.error(
                 f"Failed to get Azure DNS records: {error.message}", exc_info=True
