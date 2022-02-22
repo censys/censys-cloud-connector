@@ -1,0 +1,77 @@
+default:
+  tags:
+    - censec
+
+stages:
+  - test
+  - lint
+  # - deploy
+
+.poetry:
+  image: python:3.9
+
+  cache:
+    key:
+      files:
+        - poetry.lock
+    paths:
+      - .venv
+      - .cache/pip
+
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+  before_script:
+    - apt-get update
+    - apt-get install --assume-yes --no-install-recommends npm
+    - pip install --upgrade pip poetry
+    - poetry config virtualenvs.in-project true
+    - poetry install -E azure -E gcp
+    - . .venv/bin/activate
+
+unit-test-job: # This job runs in the test stage.
+  extends: .poetry
+  stage: test
+  script:
+    - pytest
+
+lint-job: # This job also runs in the lint stage.
+  extends: .poetry
+  stage: lint
+  script:
+    - flake8 src/
+
+static-type-check-job: # This job runs in the lint stage.
+  extends: .poetry
+  stage: lint # It can run at the same time as lint-job: (in parallel).
+  allow_failure: true
+  script:
+    - mypy -p censys.cloud_connectors
+
+# deploy-job:      # This job runs in the deploy stage.
+#   stage: deploy  # It only runs when *both* jobs in the test stage complete successfully.
+#   script:
+#     - echo "Deploying application..."
+#     - echo "Application successfully deployed."
+
+sast:
+  stage: test
+  variables:
+    SEARCH_MAX_DEPTH: "10"
+
+secret_detection:
+  variables:
+    SECRET_DETECTION_HISTORIC_SCAN: "true"
+
+gemnasium-python-dependency_scanning:
+  # Work around https://gitlab.com/gitlab-org/gitlab/-/issues/7006
+  before_script:
+    - pip install poetry
+    - poetry export --format=requirements.txt --output=requirements.txt
+    - rm poetry.lock pyproject.toml
+
+include:
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
+  - template: Security/SAST-IaC.latest.gitlab-ci.yml
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml

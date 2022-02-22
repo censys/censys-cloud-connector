@@ -1,0 +1,189 @@
+{
+  "TEST_IP_ADDRESS": {
+    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxcxxxxxxx/resourceGroups/Test-IP_group/providers/Microsoft.Network/publicIPAddresses/Test-IP-ip",
+    "name": "Test-IP-ip",
+    "type": "Microsoft.Network/publicIPAddresses",
+    "location": "eastus",
+    "sku": { "name": "Basic", "tier": "Regional" },
+    "etag": "W/\"d13ca117-c26a-4442-8a72-1be9d50e205e\"",
+    "public_ip_allocation_method": "Dynamic",
+    "public_ip_address_version": "IPv4",
+    "ip_configuration": {
+      "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxcxxxxxxx/resourceGroups/Test-IP_group/providers/Microsoft.Network/networkInterfaces/test-ip83/ipConfigurations/ipconfig1"
+    },
+    "ip_tags": [],
+    "ip_address": "52.255.198.101",
+    "idle_timeout_in_minutes": 4,
+    "resource_guid": "acd658dd-fe49-401b-a838-3f818bfba879",
+    "provisioning_state": "Succeeded"
+  },
+  "TEST_CONTAINER_ASSET": {
+    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxcxxxxxxx/resourceGroups/Test-IP_group/providers/Microsoft.ContainerInstance/containerGroups/test-container",
+    "name": "test-container",
+    "type": "Microsoft.ContainerInstance/containerGroups",
+    "location": "eastus",
+    "tags": {},
+    "provisioning_state": "Succeeded",
+    "containers": [
+      {
+        "name": "test-container",
+        "image": "mcr.microsoft.com/azuredocs/aci-helloworld:latest",
+        "ports": [{ "protocol": "TCP", "port": 80 }],
+        "environment_variables": [],
+        "resources": { "requests": { "memory_in_gb": 1.5, "cpu": 1.0 } }
+      }
+    ],
+    "restart_policy": "OnFailure",
+    "ip_address": {
+      "ports": [{ "protocol": "TCP", "port": 80 }],
+      "type": "Public",
+      "ip": "20.124.48.99",
+      "dns_name_label": "cloud-connector-test",
+      "fqdn": "cloud-connector-test.eastus.azurecontainer.io"
+    },
+    "os_type": "Linux",
+    "sku": "Standard",
+    "init_containers": []
+  },
+  "TEST_SQL_SERVER": {
+    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxcxxxxxxx/resourceGroups/Test-IP_group/providers/Microsoft.Sql/servers/test-sql-name",
+    "name": "test-sql-name",
+    "type": "Microsoft.Sql/servers",
+    "location": "eastus",
+    "tags": {},
+    "kind": "v12.0",
+    "administrator_login": "test",
+    "version": "12.0",
+    "state": "Ready",
+    "fully_qualified_domain_name": "test-sql-name.database.windows.net",
+    "private_endpoint_connections": [],
+    "public_network_access": "Enabled",
+    "restrict_outbound_network_access": "Disabled"
+  },
+  "TEST_DNS_ZONE": {
+    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxcxxxxxxx/resourceGroups/test-ip_group/providers/Microsoft.Network/dnszones/azure.fsociety.dev",
+    "name": "azure.fsociety.dev",
+    "type": "Microsoft.Network/dnszones",
+    "location": "global",
+    "tags": {},
+    "etag": "3ac5128d-3d10-4456-9287-94104a545b34",
+    "max_number_of_record_sets": 10000,
+    "number_of_record_sets": 3,
+    "name_servers": [
+      "ns1-35.azure-dns.com.",
+      "ns2-35.azure-dns.net.",
+      "ns3-35.azure-dns.org.",
+      "ns4-35.azure-dns.info."
+    ],
+    "zone_type": "Public"
+  },
+  "TEST_DNS_RECORD_A": {
+    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxcxxxxxxx/resourceGroups/test-ip_group/providers/Microsoft.Network/dnszones/azure.fsociety.dev/A/test",
+    "name": "test",
+    "type": "Microsoft.Network/dnszones/A",
+    "etag": "c2cd43ce-cef6-492c-a97e-d30a262cc8d9",
+    "ttl": 3600,
+    "fqdn": "test.azure.fsociety.dev.",
+    "provisioning_state": "Succeeded",
+    "target_resource": {},
+    "a_records": [{ "ipv4_address": "192.35.168.0" }]
+  },
+  "TEST_DNS_RECORD_OTHER": {
+    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxcxxxxxxx/resourceGroups/test-ip_group/providers/Microsoft.Network/dnszones/azure.fsociety.dev/SOA/@",
+    "name": "@",
+    "type": "Microsoft.Network/dnszones/SOA",
+    "etag": "4559d36f-ae73-4611-ba33-d21428ee9d68",
+    "ttl": 3600,
+    "fqdn": "azure.fsociety.dev.",
+    "provisioning_state": "Succeeded",
+    "target_resource": {},
+    "soa_record": {
+      "host": "ns1-35.azure-dns.com.",
+      "email": "azuredns-hostmaster.microsoft.com",
+      "serial_number": 1,
+      "refresh_time": 3600,
+      "retry_time": 300,
+      "expire_time": 2419200,
+      "minimum_ttl": 300
+    }
+  },
+  "TEST_STORAGE_ACCOUNT": {
+    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxcxxxxxxx/resourceGroups/NetworkWatcherRG/providers/Microsoft.Storage/storageAccounts/ccteststorageacctount",
+    "name": "ccteststorageacctount",
+    "type": "Microsoft.Storage/storageAccounts",
+    "tags": {},
+    "location": "eastus",
+    "sku": { "name": "Standard_RAGRS", "tier": "Standard" },
+    "kind": "StorageV2",
+    "provisioning_state": "Succeeded",
+    "primary_endpoints": {
+      "blob": "https://ccteststorageacctount.blob.core.windows.net/",
+      "queue": "https://ccteststorageacctount.queue.core.windows.net/",
+      "table": "https://ccteststorageacctount.table.core.windows.net/",
+      "file": "https://ccteststorageacctount.file.core.windows.net/",
+      "web": "https://ccteststorageacctount.z13.web.core.windows.net/",
+      "dfs": "https://ccteststorageacctount.dfs.core.windows.net/"
+    },
+    "primary_location": "eastus",
+    "status_of_primary": "available",
+    "secondary_location": "westus",
+    "status_of_secondary": "available",
+    "creation_time": "2022-02-21T18:50:11.022227Z",
+    "custom_domain": { "name": "blobs.fsociety.dev" },
+    "key_creation_time": {
+      "key1": "2022-02-21T18:50:11.147226Z",
+      "key2": "2022-02-21T18:50:11.147226Z"
+    },
+    "secondary_endpoints": {
+      "blob": "https://ccteststorageacctount-secondary.blob.core.windows.net/",
+      "queue": "https://ccteststorageacctount-secondary.queue.core.windows.net/",
+      "table": "https://ccteststorageacctount-secondary.table.core.windows.net/",
+      "web": "https://ccteststorageacctount-secondary.z13.web.core.windows.net/",
+      "dfs": "https://ccteststorageacctount-secondary.dfs.core.windows.net/"
+    },
+    "encryption": {
+      "services": {
+        "blob": {
+          "enabled": true,
+          "last_enabled_time": "2022-02-21T18:50:11.162879Z",
+          "key_type": "Account"
+        },
+        "file": {
+          "enabled": true,
+          "last_enabled_time": "2022-02-21T18:50:11.162879Z",
+          "key_type": "Account"
+        }
+      },
+      "key_source": "Microsoft.Storage",
+      "require_infrastructure_encryption": false
+    },
+    "access_tier": "Cool",
+    "enable_https_traffic_only": true,
+    "network_rule_set": {
+      "bypass": "AzureServices",
+      "virtual_network_rules": [],
+      "ip_rules": [],
+      "default_action": "Allow"
+    },
+    "private_endpoint_connections": [],
+    "allow_blob_public_access": true,
+    "minimum_tls_version": "TLS1_2",
+    "allow_shared_key_access": true,
+    "allow_cross_tenant_replication": true,
+    "default_to_o_auth_authentication": false
+  },
+  "TEST_STORAGE_CONTAINER": {
+    "name": "test-container",
+    "last_modified": "",
+    "etag": "0x8D9F56B23208A07",
+    "lease": { "status": "unlocked", "state": "available", "duration": null },
+    "public_access": "container",
+    "has_immutability_policy": false,
+    "deleted": null,
+    "version": null,
+    "has_legal_hold": false,
+    "metadata": null,
+    "encryption_scope": {},
+    "immutable_storage_with_versioning_enabled": false
+  }
+}
