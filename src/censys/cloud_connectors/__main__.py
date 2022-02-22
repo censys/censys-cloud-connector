@@ -1,6 +1,8 @@
 """Censys Cloud Connector Main Function."""
 import importlib
 
+from pydantic import ValidationError
+
 from censys.cloud_connectors.common.connector import CloudConnector
 from censys.cloud_connectors.common.settings import (
     Settings,
@@ -10,8 +12,15 @@ from censys.cloud_connectors.common.settings import (
 
 def main():
     """Main function."""
-    settings = Settings()
-    settings.platforms = get_platform_settings_from_file(settings.platforms_config_file)
+    try:
+        settings = Settings()
+        settings.platforms = get_platform_settings_from_file(
+            settings.platforms_config_file
+        )
+    except ValidationError as e:
+        print(e)
+        return
+
     for platform_name in settings.platforms.keys():
         connector_class = getattr(
             importlib.import_module(f"censys.cloud_connectors.{platform_name}"),

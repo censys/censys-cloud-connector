@@ -1,11 +1,13 @@
 from unittest import TestCase
+
+import pytest
+from parameterized import parameterized
+
 from censys.cloud_connectors.common.cloud_asset import (
     CloudAsset,
-    ObjectStorageAsset,
     GcpCloudStorageAsset,
+    ObjectStorageAsset,
 )
-from parameterized import parameterized
-import pytest
 
 TEST_TYPE = "test_type"
 TEST_VALUE = "test_value"

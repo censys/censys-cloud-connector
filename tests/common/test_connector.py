@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest import TestCase
 
 import pytest
@@ -20,11 +21,15 @@ class TestCloudConnector(TestCase):
     mocker: MockerFixture
 
     @pytest.fixture(autouse=True)
-    def __inject_fixtures(self, mocker: MockerFixture):
+    def __inject_fixtures(self, mocker: MockerFixture, shared_datadir: Path):
         self.mocker = mocker
+        self.shared_datadir = shared_datadir
 
     def setUp(self) -> None:
-        self.settings = Settings(censys_api_key=TEST_CENSYS_API_KEY)
+        self.settings = Settings(
+            censys_api_key=TEST_CENSYS_API_KEY,
+            platforms_config_file=self.shared_datadir / "test_empty_platforms.yml",
+        )
         self.mocker.patch.object(CloudConnector, "__abstractmethods__", set())
         self.connector = CloudConnector(TEST_PLATFORM, self.settings)  # type: ignore
 

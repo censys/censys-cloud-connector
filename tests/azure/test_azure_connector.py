@@ -1,11 +1,11 @@
 from pathlib import Path
 from unittest import TestCase
+
 import pytest
 from pytest_mock import MockerFixture
 
 from censys.cloud_connectors.azure import AzureCloudConnector
-
-from censys.cloud_connectors.common.settings import Settings, AzureSpecificSettings
+from censys.cloud_connectors.common.settings import AzureSpecificSettings, Settings
 
 TEST_CENSYS_API_KEY = "test-censys-api-key-xxxxxxxxxxxxxxxx"
 TEST_AZURE_KEY = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
@@ -24,7 +24,9 @@ class TestAzureCloudConnector(TestCase):
         self.shared_datadir = shared_datadir
 
     def setUp(self) -> None:
-        self.settings = Settings(censys_api_key=TEST_CENSYS_API_KEY)
+        self.settings = Settings(
+            censys_api_key=TEST_CENSYS_API_KEY, platforms_config_file=None
+        )
         self.settings.platforms["azure"] = [
             AzureSpecificSettings(**TEST_AZURE_PLATFORM_CONFIG)
         ]

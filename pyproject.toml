@@ -11,7 +11,7 @@ python = "^3.9"
 # Common
 censys = "^2.1.2"
 requests = "^2.27.1"
-pydantic = "^1.9.0"
+pydantic = {extras = ["dotenv"], version = "^1.9.0"}
 PyYAML = "^6.0"
 # Azure
 azure-common = { version = "^1.1.28", optional = true }
@@ -37,6 +37,7 @@ blacken-docs = "^1.12.1"
 darglint = "^1.8.1"
 flake8 = "^4.0.1"
 flake8-black = "^0.2.4"
+flake8-bugbear = "^22.1.11"
 flake8-comprehensions = "^3.8.0"
 flake8-docstrings = "^1.6.0"
 flake8-isort = "^4.1.1"

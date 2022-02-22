@@ -1,6 +1,6 @@
 """Settings for the Censys Cloud Connector."""
 from collections import defaultdict
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import yaml
 from pydantic import BaseSettings, Field, FilePath, HttpUrl
@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     platforms: Dict[str, List[PlatformSpecificSettings]] = defaultdict(list)
 
     # Optional
-    platforms_config_file: FilePath = Field(
+    platforms_config_file: Optional[FilePath] = Field(
         default="platforms.yml", env="PLATFORMS_CONFIG_FILE"
     )
     scan_frequency: int = Field(default=-1)

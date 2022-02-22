@@ -22,9 +22,9 @@ TEST_AZURE_PLATFORM_CONFIG = {
 
 class TestPlatformSpecificSettings(TestCase):
     @pytest.fixture(autouse=True)
-    def __inject_fixtures(self, mocker: MockerFixture, datadir: Path):
+    def __inject_fixtures(self, mocker: MockerFixture, shared_datadir: Path):
         self.mocker = mocker
-        self.datadir = datadir
+        self.shared_datadir = shared_datadir
 
     def test_create_azure_settings(self):
         platform_settings = create_azure_settings(TEST_AZURE_PLATFORM_CONFIG)
@@ -53,7 +53,7 @@ class TestPlatformSpecificSettings(TestCase):
 
     def test_get_platform_settings_from_file(self):
         platform_settings = get_platform_settings_from_file(
-            self.datadir / "test_azure_platforms.yml"
+            self.shared_datadir / "test_azure_platforms.yml"
         )
         test_keys = [
             TEST_AZURE_KEY,
@@ -75,4 +75,4 @@ class TestPlatformSpecificSettings(TestCase):
     )
     def test_get_platform_settings_from_file_fail(self, file_name, error_msg):
         with pytest.raises(ValueError, match=error_msg):
-            get_platform_settings_from_file(self.datadir / file_name)
+            get_platform_settings_from_file(self.shared_datadir / file_name)
