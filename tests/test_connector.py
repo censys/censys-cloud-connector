@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from unittest import TestCase
 
@@ -11,9 +12,6 @@ from censys.cloud_connectors.common.connector import CloudConnector
 from censys.cloud_connectors.common.seed import Seed
 from censys.cloud_connectors.common.settings import Settings
 
-TEST_CENSYS_API_KEY = "test-censys-api-key-xxxxxxxxxxxxxxxx"
-TEST_PLATFORM = "test-platform"
-
 
 class TestCloudConnector(TestCase):
     settings: Settings
@@ -26,12 +24,14 @@ class TestCloudConnector(TestCase):
         self.shared_datadir = shared_datadir
 
     def setUp(self) -> None:
+        with open(self.shared_datadir / "test_consts.json") as f:
+            self.data = json.load(f)
         self.settings = Settings(
-            censys_api_key=TEST_CENSYS_API_KEY,
-            platforms_config_file=self.shared_datadir / "test_empty_platforms.yml",
+            censys_api_key=self.data["censys_api_key"],
+            platforms_config_file=str(self.shared_datadir / "test_empty_platforms.yml"),
         )
         self.mocker.patch.object(CloudConnector, "__abstractmethods__", set())
-        self.connector = CloudConnector(TEST_PLATFORM, self.settings)  # type: ignore
+        self.connector = CloudConnector(self.data["test_platform_name"], self.settings)  # type: ignore
 
     def tearDown(self) -> None:
         # Reset the deaultdicts as they are immutable
@@ -41,13 +41,16 @@ class TestCloudConnector(TestCase):
             del self.connector.cloud_assets[cloud_asset_key]
 
     def test_cloud_connector_init(self):
-        assert self.connector.platform == TEST_PLATFORM
-        assert self.connector.label_prefix == TEST_PLATFORM.upper() + ": "
+        assert self.connector.platform == self.data["test_platform_name"]
+        assert (
+            self.connector.label_prefix
+            == self.data["test_platform_name"].upper() + ": "
+        )
         assert self.connector.settings == self.settings
         assert self.connector.logger is not None
         assert self.connector.seeds_api is not None
-        assert self.connector.seeds_api._api_key == TEST_CENSYS_API_KEY
-        assert self.connector.add_cloud_asset_path == (
+        assert self.connector.seeds_api._api_key == self.data["censys_api_key"]
+        assert self.connector._add_cloud_asset_path == (
             f"{self.settings.censys_beta_url}/cloudConnector/addCloudAssets"
         )
         assert list(self.connector.seeds.keys()) == []
@@ -124,7 +127,7 @@ class TestCloudConnector(TestCase):
         post_mock = self.mocker.patch.object(self.connector.seeds_api, "_post")
         self.connector._add_cloud_assets(test_data)
         post_mock.assert_called_once_with(
-            self.connector.add_cloud_asset_path, data=test_data
+            self.connector._add_cloud_asset_path, data=test_data
         )
 
     @pytest.mark.skip("Not implemented")

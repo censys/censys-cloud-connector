@@ -54,11 +54,16 @@ class SeedTest(TestCase):
         with pytest.raises(ValidationError, match=exception_message):
             IpSeed(value=value, label=TEST_LABEL)
 
-    def test_domain_seed(self):
-        test_value = "censys.io"
+    @parameterized.expand(
+        [
+            ("censys.io", "censys.io"),
+            ("https://search.censys.io.", "search.censys.io"),
+        ]
+    )
+    def test_domain_seed(self, test_value, expected_value):
         seed = DomainSeed(value=test_value, label=TEST_LABEL)
         assert seed.type == "DOMAIN_NAME"
-        assert seed.value == test_value
+        assert seed.value == expected_value
         assert seed.label == TEST_LABEL
 
     @parameterized.expand(

@@ -5,7 +5,9 @@ from googleapiclient.discovery import build as build_resource
 from oauth2client.service_account import ServiceAccountCredentials
 
 from censys.cloud_connectors.common.connector import CloudConnector
-from censys.cloud_connectors.common.settings import GcpSpecificSettings, Settings
+from censys.cloud_connectors.common.settings import Settings
+
+from .settings import GcpSpecificSettings
 
 SCOPES = ["https://www.googleapis.com/auth/cloud-platform"]
 
@@ -65,3 +67,6 @@ class GcpCloudConnector(CloudConnector):
         return f"{self.label_prefix}{self.organization_id}/{asset_display_name}"
 
     # TODO: Port over existings methods
+
+
+__connector__ = GcpCloudConnector

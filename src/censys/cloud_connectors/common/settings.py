@@ -1,9 +1,31 @@
 """Settings for the Censys Cloud Connector."""
-from collections import defaultdict
-from typing import Dict, List, Optional
+import collections
+import importlib
+from typing import DefaultDict, Dict, List, OrderedDict, Union
 
 import yaml
-from pydantic import BaseSettings, Field, FilePath, HttpUrl
+from pydantic import BaseSettings, Field, HttpUrl
+
+
+def ordered_dict_representer(
+    dumper: yaml.Dumper, data: OrderedDict
+) -> yaml.nodes.MappingNode:  # pragma: no cover
+    """Represent a ordereddict as a mapping.
+
+    Args:
+        dumper (yaml.Dumper): The dumper.
+        data (OrderedDict): The data to represent.
+
+    Returns:
+        yaml.nodes.MappingNode: The mapping node.
+    """
+    return yaml.representer.SafeRepresenter.represent_dict(dumper, data.items())
+
+
+"""This allows ordereddict to be represented as a mapping."""
+yaml.representer.SafeRepresenter.add_representer(
+    collections.OrderedDict, ordered_dict_representer  # type: ignore
+)
 
 
 class PlatformSpecificSettings(BaseSettings):
@@ -11,16 +33,47 @@ class PlatformSpecificSettings(BaseSettings):
 
     platform: str
 
+    def as_dict(
+        self, priority_keys=["platform"]
+    ) -> OrderedDict[str, Union[str, List[str]]]:
+        """Return the settings as a dictionary.
+
+        Args:
+            priority_keys (List[str]): The keys to use as the priority.
+
+        Returns:
+            OrderedDict[str, Union[str, List[str]]]: The settings as a dictionary.
+        """
+        res = OrderedDict()
+        settings_as_dict = self.dict()
+        if platform_name := settings_as_dict.get("platform"):
+            settings_as_dict["platform"] = platform_name.lower()
+        for key in priority_keys:
+            res[key] = settings_as_dict.pop(key)
+        res.update(settings_as_dict)
+        return res
+
+    @classmethod
+    def from_dict(cls, data: Dict):
+        """Create a PlatformSpecificSettings object from a dictionary.
+
+        Args:
+            data (Dict): The dictionary to use.
+        """
+        if platform_name := data.get("platform"):
+            data["platform"] = platform_name.title()
+        return cls(**data)
+
 
 class Settings(BaseSettings):
     """Settings for the Cloud Connector."""
 
     # Required
     censys_api_key: str = Field(env="CENSYS_API_KEY", min_length=36, max_length=36)
-    platforms: Dict[str, List[PlatformSpecificSettings]] = defaultdict(list)
+    platforms: DefaultDict[str, list] = collections.defaultdict(list)
 
     # Optional
-    platforms_config_file: Optional[FilePath] = Field(
+    platforms_config_file: str = Field(
         default="platforms.yml", env="PLATFORMS_CONFIG_FILE"
     )
     scan_frequency: int = Field(default=-1)
@@ -36,86 +89,66 @@ class Settings(BaseSettings):
         default="https://app.censys.io/api/beta", env="CENSYS_BETA_URL"
     )
 
+    class Config:
+        """Config for pydantic."""
 
-class AzureSpecificSettings(PlatformSpecificSettings):
-    """Azure specific settings."""
+        env_file = ".env"
 
-    platform: str = "Azure"
+    def read_platforms_config_file(self):
+        """Read platform config file.
 
-    subscription_id: str = Field(min_length=36, max_length=36)
-    tenant_id: str = Field(min_length=36, max_length=36)
-    client_id: str = Field(min_length=36, max_length=36)
-    client_secret: str = Field(min_length=1)
+        Raises:
+            ImportError: If the platform module cannot be imported.
+        """
+        try:
+            with open(self.platforms_config_file) as f:
+                platform_config = yaml.safe_load(f)
+        except FileNotFoundError:
+            raise FileNotFoundError(
+                f"Platform config file not found: {self.platforms_config_file}"
+            )
 
+        if not platform_config:
+            return
 
-class GcpSpecificSettings(PlatformSpecificSettings):
-    """GCP specific settings."""
+        for platform_config in platform_config:
+            platform_name = platform_config.get("platform")
+            if not platform_name:
+                raise ValueError("Platform name is required")
+            platform_name = platform_name.lower()
+            try:
+                platform_settings_cls = importlib.import_module(
+                    f"censys.cloud_connectors.{platform_name}.settings"
+                ).__settings__
+            except ImportError:
+                raise ImportError(
+                    f"Could not import the settings for the {platform_name} platform"
+                )
+            platform_settings = platform_settings_cls.from_dict(platform_config)
+            self.platforms[platform_name].append(platform_settings)
 
-    platform: str = "Gcp"
+    def write_platforms_config_file(self):
+        """Write platforms config file."""
+        all_platforms = []
+        for platform_settings in self.platforms.values():
+            all_platforms.extend([pss.as_dict() for pss in platform_settings])
+        with open(self.platforms_config_file, "w") as f:
+            yaml.safe_dump(all_platforms, f, default_flow_style=False, sort_keys=False)
 
-    organization_id: str = Field(min_length=36, max_length=36)
-    service_account_json_file: FilePath = Field(
-        default="service_account.json", env="SERVICE_ACCOUNT_JSON_FILE"
-    )
+    def scan_all(self):
+        """Scan all platforms.
 
-
-PLATFORM_TO_SETTINGS = {
-    "azure": AzureSpecificSettings,
-    "gcp": GcpSpecificSettings,
-}
-
-
-def create_azure_settings(platform_config: dict) -> List[AzureSpecificSettings]:
-    """Create Azure settings.
-
-    Args:
-        platform_config: Platform config.
-
-    Returns:
-        List of Azure settings.
-    """
-    azure_settings: List[AzureSpecificSettings] = []
-    if isinstance((subscription_ids := platform_config.get("subscription_id")), list):
-        for subscription_id in subscription_ids:
-            platform_config["subscription_id"] = subscription_id
-            azure_settings.append(AzureSpecificSettings(**platform_config))
-    else:
-        azure_settings.append(AzureSpecificSettings(**platform_config))
-    return azure_settings
-
-
-PLATFORM_SETTINGS_CREATION_FUNCTIONS = {"azure": create_azure_settings}
-
-
-def get_platform_settings_from_file(
-    file_path: str,
-) -> Dict[str, List[PlatformSpecificSettings]]:
-    """Get platform settings from file.
-
-    Args:
-        file_path: Path to platform settings yml file.
-
-    Returns:
-        Dict of platform settings.
-
-    Raises:
-        ValueError: If the platform settings file is invalid.
-    """
-    with open(file_path) as f:
-        platform_config = yaml.safe_load(f)
-
-    platforms: Dict[str, List[PlatformSpecificSettings]] = defaultdict(list)
-    for platform_config in platform_config:
-        platform_name = platform_config.get("platform")
-        if not platform_name:
-            raise ValueError("Platform name is required")
-        platform_name = platform_name.lower()
-        platform_settings_creation_func = PLATFORM_SETTINGS_CREATION_FUNCTIONS.get(
-            platform_name
-        )
-        if not platform_settings_creation_func:
-            raise ValueError(f"Unknown platform: {platform_name}")
-        platforms[platform_name].extend(
-            platform_settings_creation_func(platform_config)
-        )
-    return platforms
+        Raises:
+            ImportError: If the platform module cannot be imported.
+        """
+        for platform_name in self.platforms.keys():
+            try:
+                connector_cls = importlib.import_module(
+                    f"censys.cloud_connectors.{platform_name}.connector"
+                ).__connector__
+            except ImportError:
+                raise ImportError(
+                    f"Could not import the connector for the {platform_name} platform"
+                )
+            connector = connector_cls(self)
+            connector.scan_all()

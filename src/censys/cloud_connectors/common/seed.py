@@ -84,6 +84,8 @@ class DomainSeed(Seed):
         except ValueError:
             raise ValueError("Domain is not valid")
         host = url.host.lower()
+        if host.endswith("."):
+            host = host[:-1]
         if host in IGNORED_DOMAINS:
             raise ValueError("Domain is in the ignore list")
         return host

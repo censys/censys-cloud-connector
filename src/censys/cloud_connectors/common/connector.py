@@ -35,7 +35,7 @@ class CloudConnector(ABC):
         )
 
         self.seeds_api = Seeds(settings.censys_api_key)
-        self.add_cloud_asset_path = (
+        self._add_cloud_asset_path = (
             f"{settings.censys_beta_url}/cloudConnector/addCloudAssets"
         )
 
@@ -100,9 +100,9 @@ class CloudConnector(ABC):
         Returns:
             dict: The response from the Censys ASM.
         """
-        return self.seeds_api._post(self.add_cloud_asset_path, data=data)
+        return self.seeds_api._post(self._add_cloud_asset_path, data=data)
 
-    def submit(self):
+    def submit(self):  # pragma: no cover
         """Submit the seeds and cloud assets to the Censys ASM."""
         self.logger.info("Submitting seeds and assets...")
         # TODO: Re-enable

@@ -1,24 +1,24 @@
 {
   "TEST_IP_ADDRESS": {
-    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxcxxxxxxx/resourceGroups/Test-IP_group/providers/Microsoft.Network/publicIPAddresses/Test-IP-ip",
+    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/Test-IP_group/providers/Microsoft.Network/publicIPAddresses/Test-IP-ip",
     "name": "Test-IP-ip",
     "type": "Microsoft.Network/publicIPAddresses",
     "location": "eastus",
     "sku": { "name": "Basic", "tier": "Regional" },
-    "etag": "W/\"d13ca117-c26a-4442-8a72-1be9d50e205e\"",
+    "etag": "W/\"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\"",
     "public_ip_allocation_method": "Dynamic",
     "public_ip_address_version": "IPv4",
     "ip_configuration": {
-      "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxcxxxxxxx/resourceGroups/Test-IP_group/providers/Microsoft.Network/networkInterfaces/test-ip83/ipConfigurations/ipconfig1"
+      "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/Test-IP_group/providers/Microsoft.Network/networkInterfaces/test-ip83/ipConfigurations/ipconfig1"
     },
     "ip_tags": [],
-    "ip_address": "52.255.198.101",
+    "ip_address": "192.35.168.0",
     "idle_timeout_in_minutes": 4,
-    "resource_guid": "acd658dd-fe49-401b-a838-3f818bfba879",
+    "resource_guid": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
     "provisioning_state": "Succeeded"
   },
   "TEST_CONTAINER_ASSET": {
-    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxcxxxxxxx/resourceGroups/Test-IP_group/providers/Microsoft.ContainerInstance/containerGroups/test-container",
+    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/Test-IP_group/providers/Microsoft.ContainerInstance/containerGroups/test-container",
     "name": "test-container",
     "type": "Microsoft.ContainerInstance/containerGroups",
     "location": "eastus",
@@ -37,7 +37,7 @@
     "ip_address": {
       "ports": [{ "protocol": "TCP", "port": 80 }],
       "type": "Public",
-      "ip": "20.124.48.99",
+      "ip": "162.142.125.0",
       "dns_name_label": "cloud-connector-test",
       "fqdn": "cloud-connector-test.eastus.azurecontainer.io"
     },
@@ -46,7 +46,7 @@
     "init_containers": []
   },
   "TEST_SQL_SERVER": {
-    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxcxxxxxxx/resourceGroups/Test-IP_group/providers/Microsoft.Sql/servers/test-sql-name",
+    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/Test-IP_group/providers/Microsoft.Sql/servers/test-sql-name",
     "name": "test-sql-name",
     "type": "Microsoft.Sql/servers",
     "location": "eastus",
@@ -61,8 +61,8 @@
     "restrict_outbound_network_access": "Disabled"
   },
   "TEST_DNS_ZONE": {
-    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxcxxxxxxx/resourceGroups/test-ip_group/providers/Microsoft.Network/dnszones/azure.fsociety.dev",
-    "name": "azure.fsociety.dev",
+    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/test-ip_group/providers/Microsoft.Network/dnszones/azure.censys.io",
+    "name": "azure.censys.io",
     "type": "Microsoft.Network/dnszones",
     "location": "global",
     "tags": {},
@@ -78,23 +78,23 @@
     "zone_type": "Public"
   },
   "TEST_DNS_RECORD_A": {
-    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxcxxxxxxx/resourceGroups/test-ip_group/providers/Microsoft.Network/dnszones/azure.fsociety.dev/A/test",
+    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/test-ip_group/providers/Microsoft.Network/dnszones/azure.censys.io/A/test",
     "name": "test",
     "type": "Microsoft.Network/dnszones/A",
-    "etag": "c2cd43ce-cef6-492c-a97e-d30a262cc8d9",
+    "etag": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
     "ttl": 3600,
-    "fqdn": "test.azure.fsociety.dev.",
+    "fqdn": "test.azure.censys.io.",
     "provisioning_state": "Succeeded",
     "target_resource": {},
-    "a_records": [{ "ipv4_address": "192.35.168.0" }]
+    "a_records": [{ "ipv4_address": "167.248.133.0" }]
   },
   "TEST_DNS_RECORD_OTHER": {
-    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxcxxxxxxx/resourceGroups/test-ip_group/providers/Microsoft.Network/dnszones/azure.fsociety.dev/SOA/@",
+    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/test-ip_group/providers/Microsoft.Network/dnszones/azure.censys.io/SOA/@",
     "name": "@",
     "type": "Microsoft.Network/dnszones/SOA",
-    "etag": "4559d36f-ae73-4611-ba33-d21428ee9d68",
+    "etag": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
     "ttl": 3600,
-    "fqdn": "azure.fsociety.dev.",
+    "fqdn": "azure.censys.io.",
     "provisioning_state": "Succeeded",
     "target_resource": {},
     "soa_record": {
@@ -108,8 +108,8 @@
     }
   },
   "TEST_STORAGE_ACCOUNT": {
-    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxcxxxxxxx/resourceGroups/NetworkWatcherRG/providers/Microsoft.Storage/storageAccounts/ccteststorageacctount",
-    "name": "ccteststorageacctount",
+    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/NetworkWatcherRG/providers/Microsoft.Storage/storageAccounts/cc-test-storage-acctount-secondary",
+    "name": "cc-test-storage-acctount-secondary",
     "type": "Microsoft.Storage/storageAccounts",
     "tags": {},
     "location": "eastus",
@@ -117,29 +117,29 @@
     "kind": "StorageV2",
     "provisioning_state": "Succeeded",
     "primary_endpoints": {
-      "blob": "https://ccteststorageacctount.blob.core.windows.net/",
-      "queue": "https://ccteststorageacctount.queue.core.windows.net/",
-      "table": "https://ccteststorageacctount.table.core.windows.net/",
-      "file": "https://ccteststorageacctount.file.core.windows.net/",
-      "web": "https://ccteststorageacctount.z13.web.core.windows.net/",
-      "dfs": "https://ccteststorageacctount.dfs.core.windows.net/"
+      "blob": "https://cc-test-storage-acctount-secondary.blob.core.windows.net/",
+      "queue": "https://cc-test-storage-acctount-secondary.queue.core.windows.net/",
+      "table": "https://cc-test-storage-acctount-secondary.table.core.windows.net/",
+      "file": "https://cc-test-storage-acctount-secondary.file.core.windows.net/",
+      "web": "https://cc-test-storage-acctount-secondary.z13.web.core.windows.net/",
+      "dfs": "https://cc-test-storage-acctount-secondary.dfs.core.windows.net/"
     },
     "primary_location": "eastus",
     "status_of_primary": "available",
     "secondary_location": "westus",
     "status_of_secondary": "available",
     "creation_time": "2022-02-21T18:50:11.022227Z",
-    "custom_domain": { "name": "blobs.fsociety.dev" },
+    "custom_domain": { "name": "blobs.censys.io" },
     "key_creation_time": {
       "key1": "2022-02-21T18:50:11.147226Z",
       "key2": "2022-02-21T18:50:11.147226Z"
     },
     "secondary_endpoints": {
-      "blob": "https://ccteststorageacctount-secondary.blob.core.windows.net/",
-      "queue": "https://ccteststorageacctount-secondary.queue.core.windows.net/",
-      "table": "https://ccteststorageacctount-secondary.table.core.windows.net/",
-      "web": "https://ccteststorageacctount-secondary.z13.web.core.windows.net/",
-      "dfs": "https://ccteststorageacctount-secondary.dfs.core.windows.net/"
+      "blob": "https://cc-test-storage-acctount-secondary.blob.core.windows.net/",
+      "queue": "https://cc-test-storage-acctount-secondary.queue.core.windows.net/",
+      "table": "https://cc-test-storage-acctount-secondary.table.core.windows.net/",
+      "web": "https://cc-test-storage-acctount-secondary.z13.web.core.windows.net/",
+      "dfs": "https://cc-test-storage-acctount-secondary.dfs.core.windows.net/"
     },
     "encryption": {
       "services": {
