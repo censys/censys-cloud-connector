@@ -11,7 +11,7 @@ from censys.cloud_connectors.common.settings import Settings
 
 def cli_config(_: argparse.Namespace):
     """Configure Censys Cloud Connectors.
-    
+
     Args:
         _ (argparse.Namespace): Namespace.
     """

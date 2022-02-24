@@ -59,6 +59,9 @@ class PlatformSpecificSettings(BaseSettings):
 
         Args:
             data (Dict): The dictionary to use.
+
+        Returns:
+            PlatformSpecificSettings: The settings.
         """
         if platform_name := data.get("platform"):
             data["platform"] = platform_name.title()
@@ -98,6 +101,9 @@ class Settings(BaseSettings):
         """Read platform config file.
 
         Raises:
+            FileNotFoundError: If the file does not exist.
+            yaml.YAMLError: If the file is not valid YAML.
+            
             ImportError: If the platform module cannot be imported.
         """
         try:

@@ -1,8 +1,6 @@
 """Azure Cloud Connector."""
 from typing import List
 
-from msrest.serialization import Model as AzureModel
-
 from azure.core.exceptions import (
     ClientAuthenticationError,
     HttpResponseError,
@@ -15,6 +13,8 @@ from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.sql import SqlManagementClient
 from azure.mgmt.storage import StorageManagementClient
 from azure.storage.blob import BlobServiceClient
+from msrest.serialization import Model as AzureModel
+
 from censys.cloud_connectors.common.cloud_asset import AzureContainerAsset
 from censys.cloud_connectors.common.connector import CloudConnector
 from censys.cloud_connectors.common.seed import DomainSeed, IpSeed
@@ -150,18 +150,17 @@ class AzureCloudConnector(CloudConnector):
                 zone_resource_group, zone_dict.get("name")
             ):
                 asset_dict = asset.as_dict()
-                if (domain := asset_dict.get("fqdn")) and (
-                    a_records := asset_dict.get("a_records")
-                ):
+                if domain := asset_dict.get("fqdn"):
                     # TODO: Add support for CNAME records
                     self.add_seed(
                         DomainSeed(value=domain, label=self._format_label(zone))
                     )
-                    for a_record in a_records:
-                        if ip := a_record.get("ipv4_address"):
-                            self.add_seed(
-                                IpSeed(value=ip, label=self._format_label(zone))
-                            )
+                    if a_records := asset_dict.get("a_records"):
+                        for a_record in a_records:
+                            if ip := a_record.get("ipv4_address"):
+                                self.add_seed(
+                                    IpSeed(value=ip, label=self._format_label(zone))
+                                )
 
     def get_cloud_assets(self):
         """Get Azure cloud assets."""

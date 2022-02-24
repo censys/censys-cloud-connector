@@ -90,7 +90,7 @@ class TestSettings(TestCase):
         self.settings.write_platforms_config_file()
         assert same_yaml(original_file, temp_file.name)
 
-    @parameterized.expand([(c) for c in __connectors__])
+    @parameterized.expand(__connectors__)
     def test_scan_all(self, platform_name: str):
         self.settings.platforms[platform_name] = []
         mock_connector = self.mocker.MagicMock()

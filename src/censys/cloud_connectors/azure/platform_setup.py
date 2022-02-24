@@ -78,6 +78,14 @@ class AzureSetupCli(PlatformSetupCli):
         ]
 
     def generate_create_command(self, subscriptions: List[Dict[str, str]]) -> str:
+        """Generate the command to create a service principal.
+
+        Args:
+            subscriptions (List[Dict[str, str]]): List of subscriptions.
+
+        Returns:
+            str: Command to create a service principal.
+        """
         command = [
             "az",
             "ad",
@@ -95,6 +103,14 @@ class AzureSetupCli(PlatformSetupCli):
         return " ".join(command)
 
     def create_service_principal(self, subscriptions: List[Dict[str, str]]) -> dict:
+        """Create a service principal.
+
+        Args:
+            subscriptions (List[Dict[str, str]]): List of subscriptions.
+
+        Returns:
+            dict: Service principal.
+        """
         command = self.generate_create_command(subscriptions)
         print("$ " + command)
         answers = prompt(
@@ -148,6 +164,7 @@ class AzureSetupCli(PlatformSetupCli):
 
 
 def main(settings: Settings):
+    """Main function."""
     setup_cli = AzureSetupCli(settings)
     setup_cli.setup()
 

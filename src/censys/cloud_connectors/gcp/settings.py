@@ -13,4 +13,5 @@ class GcpSpecificSettings(PlatformSpecificSettings):
         default="service_account.json", env="SERVICE_ACCOUNT_JSON_FILE"
     )
 
+
 __settings__ = GcpSpecificSettings

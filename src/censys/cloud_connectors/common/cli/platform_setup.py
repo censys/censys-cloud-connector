@@ -30,6 +30,9 @@ def prompt_for_list(field: ModelField) -> List[str]:
 
     Returns:
         List[str]: The list of values.
+
+    Raises:
+        KeyboardInterrupt: If the user cancels the prompt.
     """
     questions = [
         {

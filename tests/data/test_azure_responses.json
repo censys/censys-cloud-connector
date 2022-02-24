@@ -1,4 +1,10 @@
 {
+  "TEST_CREDS": {
+    "subscription_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "tenant_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "client_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "client_secret": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  },
   "TEST_IP_ADDRESS": {
     "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/Test-IP_group/providers/Microsoft.Network/publicIPAddresses/Test-IP-ip",
     "name": "Test-IP-ip",
@@ -88,7 +94,7 @@
     "target_resource": {},
     "a_records": [{ "ipv4_address": "167.248.133.0" }]
   },
-  "TEST_DNS_RECORD_OTHER": {
+  "TEST_DNS_RECORD_SOA": {
     "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/test-ip_group/providers/Microsoft.Network/dnszones/azure.censys.io/SOA/@",
     "name": "@",
     "type": "Microsoft.Network/dnszones/SOA",
