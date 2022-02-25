@@ -5,6 +5,17 @@ __copyright__ = "Copyright 2022 Censys, Inc."
 import os.path
 from typing import List
 
+try:  # pragma: no cover
+    from importlib.metadata import PackageNotFoundError, version
+except ImportError:  # pragma: no cover
+    from importlib_metadata import PackageNotFoundError, version  # type: ignore
+
+# TODO: Fix this for local development.
+try:
+    __version__: str = version(__package__ or __name__)
+except PackageNotFoundError:
+    __version__ = "0.0.0"
+
 
 def get_connectors(ignore_prefix: str = "__") -> List[str]:
     """Get a list of all connectors.
@@ -26,4 +37,4 @@ def get_connectors(ignore_prefix: str = "__") -> List[str]:
 
 
 __connectors__ = get_connectors()
-__all__ = __connectors__
+__all__ = ["__version__", "__connectors__"] + __connectors__

@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
 """Interact with the Censys Search API through the command line."""
 import sys
-from importlib.metadata import PackageNotFoundError
+
+from censys.cloud_connectors import __version__
 
 from .args import get_parser
-
-try:
-    from censys.cloud_connectors.common.version import __version__
-except PackageNotFoundError:
-    __version__ = "0.0.0"
 
 
 def main():
