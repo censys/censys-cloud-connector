@@ -1,3 +1,4 @@
+"""Azure platform-specific setup CLI."""
 import json
 import subprocess
 from typing import Dict, List
@@ -49,6 +50,9 @@ class AzureSetupCli(PlatformSetupCli):
 
         Returns:
             List[Dict[str, str]]: List of selected subscriptions.
+
+        Raises:
+            KeyboardInterrupt: If the user cancels the prompt.
         """
         questions = [
             {
@@ -110,6 +114,9 @@ class AzureSetupCli(PlatformSetupCli):
 
         Returns:
             dict: Service principal.
+
+        Raises:
+            KeyboardInterrupt: If the user cancels the prompt.
         """
         command = self.generate_create_command(subscriptions)
         print("$ " + command)
@@ -140,7 +147,11 @@ class AzureSetupCli(PlatformSetupCli):
         return creds
 
     def setup(self) -> None:
-        """Setup the Azure platform."""
+        """Setup the Azure platform.
+
+        Returns:
+            None
+        """
         subscriptions = self.get_subscriptions_from_cli()
         if len(subscriptions) == 0:
             return super().setup()
@@ -164,7 +175,11 @@ class AzureSetupCli(PlatformSetupCli):
 
 
 def main(settings: Settings):
-    """Main function."""
+    """Main function.
+
+    Args:
+        settings (Settings): Settings object.
+    """
     setup_cli = AzureSetupCli(settings)
     setup_cli.setup()
 

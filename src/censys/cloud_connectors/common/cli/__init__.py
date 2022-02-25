@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Interact with the Censys Search API through the command line."""
-from importlib.metadata import PackageNotFoundError
 import sys
+from importlib.metadata import PackageNotFoundError
 
 from .args import get_parser
 

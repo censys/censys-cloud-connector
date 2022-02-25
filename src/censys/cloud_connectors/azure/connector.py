@@ -39,7 +39,12 @@ class AzureCloudConnector(CloudConnector):
         """
         super().__init__(self.platform, settings)
 
-    def scan(self):
+    def scan(self) -> None:
+        """Scan Azure.
+
+        Returns:
+            None
+        """
         try:
             return super().scan()
         except ClientAuthenticationError as error:
@@ -60,12 +65,13 @@ class AzureCloudConnector(CloudConnector):
                 client_id=platform_setting.client_id,
                 client_secret=platform_setting.client_secret,
             )
-            if isinstance(self.platform_settings.subscription_id, list):
-                for subscription_id in self.platform_settings.subscription_id:
-                    self.subscription_id = subscription_id
-                    self.scan()
-            else:
-                self.subscription_id = self.platform_settings.subscription_id
+            if not isinstance(self.platform_settings.subscription_id, list):
+                self.platform_settings.subscription_id = [
+                    self.platform_settings.subscription_id
+                ]
+
+            for subscription_id in self.platform_settings.subscription_id:
+                self.subscription_id = subscription_id
                 self.scan()
 
     def _format_label(self, asset: AzureModel):
@@ -143,6 +149,7 @@ class AzureCloudConnector(CloudConnector):
 
         for zone in zones:
             zone_dict = zone.as_dict()
+            # TODO: Do we need to check if zone is public? (ie. do we care?)
             if zone_dict.get("zone_type") != "Public":
                 continue
             zone_resource_group = zone_dict.get("id").split("/")[4]

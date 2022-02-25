@@ -1,7 +1,6 @@
 """Base for all platform-specific setup cli commands."""
 from typing import List, Union, get_args, get_origin
 
-from pydantic import ValidationError
 from pydantic.fields import ModelField
 from pydantic.utils import lenient_issubclass
 from PyInquirer import prompt
@@ -81,13 +80,8 @@ class PlatformSetupCli:
         platform_settings = self.prompt_for_settings()
         self.settings.platforms[self.platform].append(platform_settings)
 
-    def prompt_for_settings(
-        self, exclude_fields: List[str] = ["platform"]
-    ) -> PlatformSpecificSettings:
+    def prompt_for_settings(self) -> PlatformSpecificSettings:
         """Prompt for settings.
-
-        Args:
-            exclude_fields (List[str]): The fields to exclude.
 
         Returns:
             PlatformSpecificSettings: The settings.
@@ -95,11 +89,12 @@ class PlatformSetupCli:
         Raises:
             ValueError: If the settings are invalid.
         """
+        excluded_fields: List[str] = ["platform"]
         settings_fields = self.platform_specific_settings_class.__fields__
         questions = []
         answers = {}
         for field in settings_fields.values():
-            if field.name in exclude_fields:
+            if field.name in excluded_fields:
                 continue
             question = {
                 "name": field.name,

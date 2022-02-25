@@ -33,13 +33,8 @@ class PlatformSpecificSettings(BaseSettings):
 
     platform: str
 
-    def as_dict(
-        self, priority_keys=["platform"]
-    ) -> OrderedDict[str, Union[str, List[str]]]:
+    def as_dict(self) -> OrderedDict[str, Union[str, List[str]]]:
         """Return the settings as a dictionary.
-
-        Args:
-            priority_keys (List[str]): The keys to use as the priority.
 
         Returns:
             OrderedDict[str, Union[str, List[str]]]: The settings as a dictionary.
@@ -48,7 +43,7 @@ class PlatformSpecificSettings(BaseSettings):
         settings_as_dict = self.dict()
         if platform_name := settings_as_dict.get("platform"):
             settings_as_dict["platform"] = platform_name.lower()
-        for key in priority_keys:
+        for key in ["platform"]:
             res[key] = settings_as_dict.pop(key)
         res.update(settings_as_dict)
         return res
@@ -102,17 +97,16 @@ class Settings(BaseSettings):
 
         Raises:
             FileNotFoundError: If the file does not exist.
-            yaml.YAMLError: If the file is not valid YAML.
-            
+            ValueError: Platform name is not valid.
             ImportError: If the platform module cannot be imported.
         """
         try:
             with open(self.platforms_config_file) as f:
                 platform_config = yaml.safe_load(f)
-        except FileNotFoundError:
+        except FileNotFoundError as e:
             raise FileNotFoundError(
                 f"Platform config file not found: {self.platforms_config_file}"
-            )
+            ) from e
 
         if not platform_config:
             return

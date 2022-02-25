@@ -14,6 +14,9 @@ def cli_config(_: argparse.Namespace):
 
     Args:
         _ (argparse.Namespace): Namespace.
+
+    Raises:
+        KeyboardInterrupt: If the user cancels the prompt.
     """
     questions = [
         {

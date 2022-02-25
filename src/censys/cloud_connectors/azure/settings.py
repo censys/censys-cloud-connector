@@ -1,3 +1,4 @@
+"""Azure platform-specific settings."""
 from typing import List, Union
 
 from pydantic import Field

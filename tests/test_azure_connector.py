@@ -97,7 +97,27 @@ class TestAzureCloudConnector(TestCase):
         assert mock_error_logger.call_args[0][0].startswith(expected_message)
 
     def test_scan_all(self):
-        pass
+        # Test data
+        test_single_subscription = self.data["TEST_CREDS"]
+        test_multiple_subscriptions = test_single_subscription.copy()
+        test_multiple_subscriptions["subscription_id"] = [
+            test_multiple_subscriptions["subscription_id"],
+            test_multiple_subscriptions["subscription_id"].replace("x", "y"),
+        ]
+        platform_settings = [
+            AzureSpecificSettings.from_dict(test_single_subscription),
+            AzureSpecificSettings.from_dict(test_multiple_subscriptions),
+        ]
+        self.connector.settings.platforms[self.connector.platform] = platform_settings
+
+        # Mock scan
+        mock_scan = self.mocker.patch.object(self.connector, "scan")
+
+        # Actually call
+        self.connector.scan_all()
+
+        # Assertions
+        assert mock_scan.call_count == 3
 
     def test_format_label(self):
         test_location = "test-location"
@@ -245,7 +265,7 @@ class TestAzureCloudConnector(TestCase):
         mock_dns_client.assert_called_with(
             self.connector.credentials, self.connector.subscription_id
         )
-        mock_zones.list_all_by_dns_zone.call_count == len(test_zones)
+        assert mock_zones.list_all_by_dns_zone.call_count == len(test_zones)
         mock_records.list_all_by_dns_zone.assert_called_once()
         self.assert_seeds_with_values(
             self.connector.seeds[test_label], test_seed_values

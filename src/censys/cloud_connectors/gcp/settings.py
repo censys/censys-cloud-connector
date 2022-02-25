@@ -1,3 +1,4 @@
+"""Gcp platform-specific settings."""
 from pydantic import Field, FilePath
 
 from censys.cloud_connectors.common.settings import PlatformSpecificSettings
