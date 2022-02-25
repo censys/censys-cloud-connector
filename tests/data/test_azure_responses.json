@@ -113,6 +113,17 @@
       "minimum_ttl": 300
     }
   },
+  "TEST_DNS_RECORD_CNAME": {
+    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/test-ip_group/providers/Microsoft.Network/dnszones/azure.censys.io/CNAME/cname-test",
+    "name": "cname-test",
+    "type": "Microsoft.Network/dnszones/CNAME",
+    "etag": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "ttl": 3600,
+    "fqdn": "cname-test.azure.censys.io.",
+    "provisioning_state": "Succeeded",
+    "target_resource": {},
+    "cname_record": { "cname": "censys.io" }
+  },
   "TEST_STORAGE_ACCOUNT": {
     "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/NetworkWatcherRG/providers/Microsoft.Storage/storageAccounts/cc-test-storage-acctount-secondary",
     "name": "cc-test-storage-acctount-secondary",

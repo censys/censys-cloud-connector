@@ -10,7 +10,7 @@ try:  # pragma: no cover
 except ImportError:  # pragma: no cover
     from importlib_metadata import PackageNotFoundError, version  # type: ignore
 
-# TODO: Fix this for local development.
+# FIXME: Fix version for local development.
 try:
     __version__: str = version(__package__ or __name__)
 except PackageNotFoundError:

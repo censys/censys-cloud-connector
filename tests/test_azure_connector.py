@@ -13,7 +13,7 @@ from censys.cloud_connectors.common.settings import Settings
 
 failed_import = False
 try:
-    from azure.core.exceptions import ClientAuthenticationError
+    from azure.core.exceptions import ClientAuthenticationError, HttpResponseError
 
     from censys.cloud_connectors.azure import AzureCloudConnector
     from censys.cloud_connectors.azure.settings import AzureSpecificSettings
@@ -71,30 +71,20 @@ class TestAzureCloudConnector(TestCase):
         assert self.connector.label_prefix == "AZURE: "
         assert self.connector.settings == self.settings
 
-    @parameterized.expand(
-        [
-            (
-                ClientAuthenticationError,
-                "Authentication error for azure subscription ",
-            )
-        ]
-    )
-    def test_scan_fail(self, exception, expected_message):
+    @parameterized.expand([(ClientAuthenticationError,)])
+    def test_scan_fail(self, exception):
         # Mock super().scan()
         mock_scan = self.mocker.patch.object(
             self.connector.__class__.__bases__[0],
             "scan",
             side_effect=exception,
         )
-        mock_error_logger = self.mocker.patch.object(self.connector.logger, "error")
 
         # Actual call
         self.connector.scan()
 
         # Assertions
         mock_scan.assert_called_once()
-        mock_error_logger.assert_called_once()
-        assert mock_error_logger.call_args[0][0].startswith(expected_message)
 
     def test_scan_all(self):
         # Test data
@@ -126,6 +116,12 @@ class TestAzureCloudConnector(TestCase):
             self.connector._format_label(test_asset)
             == f"AZURE: {self.connector.subscription_id}/{test_location}"
         )
+
+    def test_format_label_no_location(self):
+        test_asset = self.mock_asset({})
+        del test_asset.location
+        with pytest.raises(ValueError, match="Asset has no location"):
+            self.connector._format_label(test_asset)
 
     def test_get_seeds(self):
         mocks = self.mocker.patch.multiple(
@@ -239,7 +235,11 @@ class TestAzureCloudConnector(TestCase):
         test_label = self.connector._format_label(test_zones[0])
         test_list_records = []
         test_seed_values = []
-        for data_key in ["TEST_DNS_RECORD_A", "TEST_DNS_RECORD_SOA"]:
+        for data_key in [
+            "TEST_DNS_RECORD_A",
+            "TEST_DNS_RECORD_SOA",
+            "TEST_DNS_RECORD_CNAME",
+        ]:
             test_record = self.data[data_key].copy()
             domain = test_record["fqdn"]
             if domain.endswith("."):
@@ -247,6 +247,8 @@ class TestAzureCloudConnector(TestCase):
             test_seed_values.append(domain)
             if a_records := test_record.get("a_records"):
                 test_seed_values.extend([a["ipv4_address"] for a in a_records])
+            if cname_record := test_record.get("cname_record"):
+                test_seed_values.append(cname_record["cname"])
             test_list_records.append(self.mock_asset(test_record))
 
         # Mock list
@@ -265,10 +267,29 @@ class TestAzureCloudConnector(TestCase):
         mock_dns_client.assert_called_with(
             self.connector.credentials, self.connector.subscription_id
         )
-        assert mock_zones.list_all_by_dns_zone.call_count == len(test_zones)
         mock_records.list_all_by_dns_zone.assert_called_once()
         self.assert_seeds_with_values(
             self.connector.seeds[test_label], test_seed_values
+        )
+
+    def test_get_dns_records_fail(self):
+        # Mock list
+        mock_dns_client = self.mock_client("DnsManagementClient")
+        mock_zones = self.mocker.patch.object(mock_dns_client.return_value, "zones")
+        mock_zones.list.side_effect = HttpResponseError
+        mock_error_logger = self.mocker.patch.object(self.connector.logger, "error")
+
+        # Actual call
+        self.connector._get_dns_records()
+
+        # Assertions
+        mock_dns_client.assert_called_with(
+            self.connector.credentials, self.connector.subscription_id
+        )
+        mock_zones.list.assert_called_once()
+        mock_error_logger.assert_called_once()
+        assert mock_error_logger.call_args[0][0].startswith(
+            "Failed to get Azure DNS records"
         )
 
     def test_get_cloud_assets(self):
@@ -282,4 +303,50 @@ class TestAzureCloudConnector(TestCase):
             mock.assert_called_once()
 
     def test_get_storage_containers(self):
-        pass
+        # Test data
+        test_storage_accounts = []
+        test_containers = []
+        test_seed_values = []
+        for i in range(3):
+            test_storage_account = self.data["TEST_STORAGE_ACCOUNT"].copy()
+            test_storage_account["name"] = f"test-{i}"
+            if custom_domain := test_storage_account.get("custom_domain"):
+                test_seed_values.append(custom_domain["name"])
+            test_storage_accounts.append(self.mock_asset(test_storage_account))
+            test_container = self.data["TEST_STORAGE_CONTAINER"].copy()
+            test_container["name"] = f"test-{i}"
+            test_containers.append(self.mock_asset(test_container))
+        test_label = self.connector._format_label(test_storage_accounts[0])
+
+        # Mock list
+        mock_storage_client = self.mock_client("StorageManagementClient")
+        mock_storage_accounts = self.mocker.patch.object(
+            mock_storage_client.return_value, "storage_accounts"
+        )
+        mock_storage_accounts.list.return_value = test_storage_accounts
+
+        # Mock list containers
+        mock_blob_client = self.mock_client("BlobServiceClient")
+        mock_blob_client.return_value.list_containers.return_value = test_containers
+
+        def get_container_with_url(container):
+            container.url = f"https://{container.name}.blob.core.windows.net"
+            return container
+
+        mock_blob_client.return_value.get_container_client.side_effect = (
+            get_container_with_url
+        )
+
+        # Actual call
+        self.connector._get_storage_containers()
+
+        # Assertions
+        mock_storage_client.assert_called_with(
+            self.connector.credentials, self.connector.subscription_id
+        )
+        assert mock_blob_client.call_count == len(test_storage_accounts)
+        self.assert_seeds_with_values(
+            self.connector.seeds[test_label], test_seed_values
+        )
+        test_uid = list(self.connector.cloud_assets.keys())[0]
+        assert len(self.connector.cloud_assets[test_uid]) == len(test_containers)

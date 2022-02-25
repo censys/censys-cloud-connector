@@ -1,6 +1,7 @@
 """Censys Cloud Connectors config command."""
 import argparse
 import importlib
+import contextlib
 
 from pydantic import ValidationError
 from PyInquirer import prompt
@@ -41,7 +42,8 @@ def cli_config(_: argparse.Namespace):
     ).main
 
     settings = Settings()
-    settings.read_platforms_config_file()
+    with contextlib.suppress(FileNotFoundError):
+        settings.read_platforms_config_file()
     try:
         platform_setup_func(settings)
     except ValidationError as e:

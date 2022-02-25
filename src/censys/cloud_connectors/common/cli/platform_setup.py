@@ -1,5 +1,5 @@
 """Base for all platform-specific setup cli commands."""
-from typing import List, Union, get_args, get_origin
+from typing import List, Type, Union, get_args, get_origin
 
 from pydantic.fields import ModelField
 from pydantic.utils import lenient_issubclass
@@ -62,7 +62,7 @@ class PlatformSetupCli:
     """Base for all platform-specific setup cli commands."""
 
     platform: str
-    platform_specific_settings_class: PlatformSpecificSettings
+    platform_specific_settings_class: Type[PlatformSpecificSettings]
 
     def __init__(self, settings: Settings):
         """Initialize the platform setup cli command.

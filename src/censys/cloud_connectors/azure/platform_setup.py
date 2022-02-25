@@ -1,7 +1,7 @@
 """Azure platform-specific setup CLI."""
 import json
 import subprocess
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from PyInquirer import prompt
 
@@ -102,18 +102,20 @@ class AzureSetupCli(PlatformSetupCli):
             "--scopes",
         ]
         for subscription in subscriptions:
-            subscription_id = subscription.get("id")
-            command.append(subscription_id)
+            if subscription_id := subscription.get("id"):
+                command.append(subscription_id)
         return " ".join(command)
 
-    def create_service_principal(self, subscriptions: List[Dict[str, str]]) -> dict:
+    def create_service_principal(
+        self, subscriptions: List[Dict[str, str]]
+    ) -> Optional[dict]:
         """Create a service principal.
 
         Args:
             subscriptions (List[Dict[str, str]]): List of subscriptions.
 
         Returns:
-            dict: Service principal.
+            Optional[dict]: Service principal.
 
         Raises:
             KeyboardInterrupt: If the user cancels the prompt.
@@ -134,44 +136,66 @@ class AzureSetupCli(PlatformSetupCli):
             raise KeyboardInterrupt
         if not answers.get("create_service_principal", False):
             print("Please manually create a service principal with the role 'Reader'")
-            return
+            return None
 
         res = subprocess.run(
             command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         if res.returncode != 0:
-            print(f"Error creating service principal: {res.stderr}")
+            error = res.stderr.decode("utf-8").strip()
+            print(f"Error creating service principal: {error}")
             exit(1)
         print("Service principal successfully created!")
         creds = json.loads(res.stdout)
         return creds
 
-    def setup(self) -> None:
+    def setup(self):
         """Setup the Azure platform.
 
-        Returns:
-            None
+        Raises:
+            KeyboardInterrupt: If the user cancels the prompt.
         """
-        subscriptions = self.get_subscriptions_from_cli()
-        if len(subscriptions) == 0:
-            return super().setup()
+        questions = [
+            {
+                "type": "list",
+                "name": "get_credentials_from",
+                "message": "Get credentials from",
+                "choices": ["CLI", "Input"],
+            }
+        ]
+        answers = prompt(questions)
+        if answers == {}:
+            raise KeyboardInterrupt
 
-        selected_subscriptions = self.prompt_select_subscriptions(subscriptions)
-        if len(selected_subscriptions) == 0:
-            return super().setup()
+        get_credentials_from = answers.get("get_credentials_from")
+        if get_credentials_from == "Input":
+            super().setup()
+        elif get_credentials_from == "CLI":
+            subscriptions = self.get_subscriptions_from_cli()
+            if len(subscriptions) == 0:
+                self.logger.error("No subscriptions found")
+                exit(1)
 
-        service_principal = self.create_service_principal(selected_subscriptions)
-        if service_principal is None:
-            return super().setup()
+            selected_subscriptions = self.prompt_select_subscriptions(subscriptions)
+            if len(selected_subscriptions) == 0:
+                self.logger.error("No subscriptions selected")
 
-        platform_settings = self.platform_specific_settings_class(
-            subscription_id=[s.get("subscription_id") for s in selected_subscriptions],
-            tenant_id=service_principal.get("tenant"),
-            client_id=service_principal.get("appId"),
-            client_secret=service_principal.get("password"),
-        )
+            service_principal = self.create_service_principal(selected_subscriptions)
+            if service_principal is None:
+                self.logger.error(
+                    "Service principal not created. Please try again or manually create a service principal"
+                )
 
-        self.settings.platforms[self.platform].append(platform_settings)
+            # Save the service principal
+            platform_settings = self.platform_specific_settings_class(
+                subscription_id=[
+                    s.get("subscription_id") for s in selected_subscriptions
+                ],
+                tenant_id=service_principal.get("tenant"),
+                client_id=service_principal.get("appId"),
+                client_secret=service_principal.get("password"),
+            )
+            self.settings.platforms[self.platform].append(platform_settings)
 
 
 def main(settings: Settings):
@@ -185,4 +209,4 @@ def main(settings: Settings):
 
 
 if __name__ == "__main__":
-    main()
+    main(Settings())

@@ -122,7 +122,7 @@ class TestPlatformSpecificSettings(TestCase):
         platform_settings = ExamplePlatformSettings(
             platform="test", advanced=True, other="other variable"
         )
-        settings_dict = platform_settings.as_dict(priority_keys=["platform"])
+        settings_dict = platform_settings.as_dict()
         assert isinstance(settings_dict, OrderedDict), "Must return an OrderedDict"
         assert settings_dict == {
             "platform": "test",

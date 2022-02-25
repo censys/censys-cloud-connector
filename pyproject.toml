@@ -116,8 +116,7 @@ strict_optional = true
 [[tool.mypy.overrides]]
 module = [
     # Common
-    "validators",
-    "IPy",
+    "PyInquirer",
     # GCP
     "googleapiclient.*",
     "oauth2client.*",

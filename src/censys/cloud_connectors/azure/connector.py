@@ -1,4 +1,5 @@
 """Azure Cloud Connector."""
+import contextlib
 from typing import List
 
 from azure.core.exceptions import (
@@ -39,18 +40,10 @@ class AzureCloudConnector(CloudConnector):
         """
         super().__init__(self.platform, settings)
 
-    def scan(self) -> None:
-        """Scan Azure.
-
-        Returns:
-            None
-        """
-        try:
-            return super().scan()
-        except ClientAuthenticationError as error:
-            self.logger.error(
-                f"Authentication error for {self.platform} subscription {self.subscription_id}: {error}"
-            )
+    def scan(self):
+        """Scan Azure."""
+        with contextlib.suppress(ClientAuthenticationError):
+            super().scan()
 
     def scan_all(self):
         """Scan all Azure Subscriptions."""
@@ -74,7 +67,7 @@ class AzureCloudConnector(CloudConnector):
                 self.subscription_id = subscription_id
                 self.scan()
 
-    def _format_label(self, asset: AzureModel):
+    def _format_label(self, asset: AzureModel) -> str:
         """Format Azure asset label.
 
         Args:
@@ -84,10 +77,10 @@ class AzureCloudConnector(CloudConnector):
             str: Formatted label.
 
         Raises:
-            ValueError: If asset does not have a location.
+            ValueError: If asset has no location.
         """
         if not hasattr(asset, "location"):
-            raise ValueError("Asset does not have location.")
+            raise ValueError("Asset has no location.")
         return f"{self.label_prefix}{self.subscription_id}/{asset.location}"  # type: ignore
 
     def get_seeds(self):
@@ -150,7 +143,7 @@ class AzureCloudConnector(CloudConnector):
         for zone in zones:
             zone_dict = zone.as_dict()
             # TODO: Do we need to check if zone is public? (ie. do we care?)
-            if zone_dict.get("zone_type") != "Public":
+            if zone_dict.get("zone_type") != "Public":  # pragma: no cover
                 continue
             zone_resource_group = zone_dict.get("id").split("/")[4]
             for asset in dns_client.record_sets.list_all_by_dns_zone(
@@ -158,7 +151,6 @@ class AzureCloudConnector(CloudConnector):
             ):
                 asset_dict = asset.as_dict()
                 if domain := asset_dict.get("fqdn"):
-                    # TODO: Add support for CNAME records
                     self.add_seed(
                         DomainSeed(value=domain, label=self._format_label(zone))
                     )
@@ -168,6 +160,11 @@ class AzureCloudConnector(CloudConnector):
                                 self.add_seed(
                                     IpSeed(value=ip, label=self._format_label(zone))
                                 )
+                    if cname_record := asset_dict.get("cname_record"):
+                        if cname := cname_record.get("cname"):
+                            self.add_seed(
+                                DomainSeed(value=cname, label=self._format_label(zone))
+                            )
 
     def get_cloud_assets(self):
         """Get Azure cloud assets."""
@@ -189,6 +186,7 @@ class AzureCloudConnector(CloudConnector):
                         label=self._format_label(account),
                     )
                 )
+            uid = f"{self.subscription_id}/{self.credentials._tenant_id}/{account.name}"
             for container in bucket_client.list_containers():
                 try:
                     container_client = bucket_client.get_container_client(container)
@@ -196,16 +194,17 @@ class AzureCloudConnector(CloudConnector):
                     self.add_cloud_asset(
                         AzureContainerAsset(
                             value=container_url,
-                            uid=f"{self.subscription_id}/{self.credentials._tenant_id}/{account.name}",
+                            uid=uid,
                             scan_data={
                                 "accountNumber": self.subscription_id,
                                 "publicAccess": container.public_access,
                             },
                         )
                     )
-                except ServiceRequestError as e:
+                except ServiceRequestError as error:  # pragma: no cover
                     self.logger.error(
-                        f"Failed to get Azure container {container} for {account.name}: {e}"
+                        f"Failed to get Azure container {container} for {account.name}: {error.message}",
+                        exc_info=True,
                     )
 
 
