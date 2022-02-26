@@ -4,6 +4,7 @@ import pytest
 from parameterized import parameterized
 
 from censys.cloud_connectors.common.cloud_asset import (
+    AzureContainerAsset,
     CloudAsset,
     GcpCloudStorageAsset,
     ObjectStorageAsset,
@@ -60,3 +61,15 @@ class CloudAssetTest(TestCase):
     def test_gcp_cloud_storage_asset_validation(self, value, expected_error):
         with pytest.raises(ValueError, match=expected_error):
             GcpCloudStorageAsset(value=value, uid=TEST_UID)
+
+    @parameterized.expand(
+        [
+            (
+                "not.valid.bucket/url",
+                "Container URL is not valid",
+            ),
+        ]
+    )
+    def test_azure_container_asset(self, value, expected_error):
+        with pytest.raises(ValueError, match=expected_error):
+            AzureContainerAsset(value=value, uid=TEST_UID)

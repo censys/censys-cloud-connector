@@ -2,7 +2,7 @@
 import json
 from typing import Dict
 
-from pydantic import AnyHttpUrl, BaseModel, validator
+from pydantic import AnyUrl, BaseModel, parse_obj_as, validator
 
 
 class CloudAsset(BaseModel):
@@ -38,7 +38,6 @@ class GcpCloudStorageAsset(ObjectStorageAsset):
     """GCP Cloud Storage asset."""
 
     cspLabel: str = "GCP"
-    value: AnyHttpUrl
 
     @validator("value")
     def value_is_valid_bucket_name(cls, v: str) -> str:
@@ -63,4 +62,22 @@ class AzureContainerAsset(ObjectStorageAsset):
     """Azure Container asset."""
 
     cspLabel: str = "AZURE"
-    value: AnyHttpUrl
+
+    @validator("value")
+    def value_is_valid_container_url(cls, v: str) -> str:
+        """Validate that the container URL is valid.
+
+        Args:
+            v (str): Container URL.
+
+        Raises:
+            ValueError: If the container URL is invalid.
+
+        Returns:
+            Container URL.
+        """
+        try:
+            url = parse_obj_as(AnyUrl, v)
+        except ValueError:
+            raise ValueError("Container URL is not valid")
+        return str(url)

@@ -1,7 +1,7 @@
 """Censys Cloud Connectors config command."""
 import argparse
-import importlib
 import contextlib
+import importlib
 
 from pydantic import ValidationError
 from PyInquirer import prompt

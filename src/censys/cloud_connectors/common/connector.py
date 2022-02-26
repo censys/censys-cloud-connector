@@ -108,14 +108,16 @@ class CloudConnector(ABC):
         # TODO: Re-enable
         # self.submit_seeds()
         # self.submit_cloud_assets()
-        self.logger.info("Submitted seeds and assets.")
 
+        # TODO: Remove
         for seed_subset in self.seeds.values():
             for seed in seed_subset:
-                self.logger.debug(f"Seed: {seed}")
+                self.logger.debug(f"Seed: {seed.to_dict()}")
         for cloud_asset_subset in self.cloud_assets.values():
             for cloud_asset in cloud_asset_subset:
-                self.logger.debug(f"Cloud Asset: {cloud_asset}")
+                self.logger.debug(f"Cloud Asset: {cloud_asset.to_dict()}")
+
+        self.logger.info("Submitted seeds and assets.")
 
     def scan(self):
         """Scan the seeds and cloud assets."""

@@ -130,7 +130,7 @@ class TestCloudConnector(TestCase):
             self.connector._add_cloud_asset_path, data=test_data
         )
 
-    @pytest.mark.skip("Not implemented")
+    @pytest.mark.skip("Submittion Not implemented")
     def test_submit(self):
         submit_seeds_mock = self.mocker.patch.object(self.connector, "submit_seeds")
         submit_cloud_assets_mock = self.mocker.patch.object(

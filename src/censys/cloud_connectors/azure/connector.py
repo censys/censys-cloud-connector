@@ -51,7 +51,7 @@ class AzureCloudConnector(CloudConnector):
             self.platform, []
         )
         for platform_setting in platform_settings:
-            # TODO: Add support for disabling specific cloud assets
+            # TODO: Add support for disabling specific services
             self.platform_settings = platform_setting
             self.credentials = ClientSecretCredential(
                 tenant_id=platform_setting.tenant_id,
@@ -64,6 +64,7 @@ class AzureCloudConnector(CloudConnector):
                 ]
 
             for subscription_id in self.platform_settings.subscription_id:
+                self.logger.debug(f"Scanning Azure Subscription {subscription_id}")
                 self.subscription_id = subscription_id
                 self.scan()
 
@@ -160,11 +161,12 @@ class AzureCloudConnector(CloudConnector):
                                 self.add_seed(
                                     IpSeed(value=ip, label=self._format_label(zone))
                                 )
-                    if cname_record := asset_dict.get("cname_record"):
-                        if cname := cname_record.get("cname"):
-                            self.add_seed(
-                                DomainSeed(value=cname, label=self._format_label(zone))
-                            )
+                    if (cname_record := asset_dict.get("cname_record")) and (
+                        cname := cname_record.get("cname")
+                    ):
+                        self.add_seed(
+                            DomainSeed(value=cname, label=self._format_label(zone))
+                        )
 
     def get_cloud_assets(self):
         """Get Azure cloud assets."""
