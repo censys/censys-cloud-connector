@@ -102,7 +102,7 @@ class TestSettings(TestCase):
         )
         self.settings.scan_all()
         mock_import_module.assert_called_once_with(
-            f"censys.cloud_connectors.{platform_name}.connector"
+            f"censys.cloud_connectors.{platform_name}"
         )
         mock_connector().scan_all.assert_called_once()
 

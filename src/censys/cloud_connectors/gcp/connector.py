@@ -67,6 +67,3 @@ class GcpCloudConnector(CloudConnector):
         return f"{self.label_prefix}{self.organization_id}/{asset_display_name}"
 
     # TODO: Port over existings methods
-
-
-__connector__ = GcpCloudConnector

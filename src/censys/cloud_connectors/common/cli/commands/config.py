@@ -37,15 +37,16 @@ def cli_config(_: argparse.Namespace):
     if answers == {}:
         raise KeyboardInterrupt
     platform_name = answers["platform"]
-    platform_setup_func = importlib.import_module(
-        f"censys.cloud_connectors.{platform_name}.platform_setup"
-    ).main
+    platform_setup_cls = importlib.import_module(
+        f"censys.cloud_connectors.{platform_name}"
+    ).__platform_setup__
 
     settings = Settings()
     with contextlib.suppress(FileNotFoundError):
         settings.read_platforms_config_file()
     try:
-        platform_setup_func(settings)
+        platform_setup = platform_setup_cls(settings)
+        platform_setup.setup()
     except ValidationError as e:
         print(e)
         return

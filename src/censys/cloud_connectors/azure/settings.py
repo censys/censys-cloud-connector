@@ -15,6 +15,3 @@ class AzureSpecificSettings(PlatformSpecificSettings):
     tenant_id: str = Field(min_length=36, max_length=36)
     client_id: str = Field(min_length=36, max_length=36)
     client_secret: str = Field(min_length=1)
-
-
-__settings__ = AzureSpecificSettings

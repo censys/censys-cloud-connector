@@ -7,7 +7,6 @@ from PyInquirer import prompt
 
 from censys.cloud_connectors.azure.settings import AzureSpecificSettings
 from censys.cloud_connectors.common.cli.platform_setup import PlatformSetupCli
-from censys.cloud_connectors.common.settings import Settings
 
 
 class AzureSetupCli(PlatformSetupCli):
@@ -196,17 +195,3 @@ class AzureSetupCli(PlatformSetupCli):
                 client_secret=service_principal.get("password"),
             )
             self.settings.platforms[self.platform].append(platform_settings)
-
-
-def main(settings: Settings):
-    """Main function.
-
-    Args:
-        settings (Settings): Settings object.
-    """
-    setup_cli = AzureSetupCli(settings)
-    setup_cli.setup()
-
-
-if __name__ == "__main__":
-    main(Settings())

@@ -118,7 +118,7 @@ class Settings(BaseSettings):
             platform_name = platform_name.lower()
             try:
                 platform_settings_cls = importlib.import_module(
-                    f"censys.cloud_connectors.{platform_name}.settings"
+                    f"censys.cloud_connectors.{platform_name}"
                 ).__settings__
             except ImportError:
                 raise ImportError(
@@ -144,7 +144,7 @@ class Settings(BaseSettings):
         for platform_name in self.platforms.keys():
             try:
                 connector_cls = importlib.import_module(
-                    f"censys.cloud_connectors.{platform_name}.connector"
+                    f"censys.cloud_connectors.{platform_name}"
                 ).__connector__
             except ImportError:
                 raise ImportError(

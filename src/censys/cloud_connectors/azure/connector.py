@@ -208,6 +208,3 @@ class AzureCloudConnector(CloudConnector):
                         f"Failed to get Azure container {container} for {account.name}: {error.message}",
                         exc_info=True,
                     )
-
-
-__connector__ = AzureCloudConnector
