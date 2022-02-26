@@ -1,0 +1,29 @@
+fail_fast: true
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  - repo: local
+    hooks:
+      - id: system
+        name: black
+        entry: poetry run black .
+        pass_filenames: false
+        language: system
+  - repo: local
+    hooks:
+      - id: system
+        name: isort
+        entry: poetry run isort .
+        pass_filenames: false
+        language: system
+  - repo: local
+    hooks:
+      - id: system
+        name: mypy
+        entry: poetry run mypy -p censys.cloud_connectors
+        pass_filenames: false
+        language: system
