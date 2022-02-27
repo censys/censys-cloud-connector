@@ -34,7 +34,7 @@ def cli_config(_: argparse.Namespace):
         }
     ]
     answers = prompt(questions)
-    if answers == {}:
+    if not answers:  # pragma: no cover
         raise KeyboardInterrupt
     platform_name = answers["platform"]
     platform_setup_cls = importlib.import_module(
@@ -58,14 +58,14 @@ def cli_config(_: argparse.Namespace):
         }
     ]
     answers = prompt(questions)
-    if answers == {}:
+    if not answers:  # pragma: no cover
         raise KeyboardInterrupt
-    if answers["save"]:
+    if answers.get("save", False):
         settings.write_platforms_config_file()
         print(f"Successfully saved settings to {settings.platforms_config_file}")
 
 
-def include(parent_parser: argparse._SubParsersAction):
+def include_cli(parent_parser: argparse._SubParsersAction):
     """Include this subcommand into the parent parser.
 
     Args:

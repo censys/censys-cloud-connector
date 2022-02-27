@@ -19,7 +19,6 @@ from msrest.serialization import Model as AzureModel
 from censys.cloud_connectors.common.cloud_asset import AzureContainerAsset
 from censys.cloud_connectors.common.connector import CloudConnector
 from censys.cloud_connectors.common.seed import DomainSeed, IpSeed
-from censys.cloud_connectors.common.settings import Settings
 
 from .settings import AzureSpecificSettings
 
@@ -31,14 +30,6 @@ class AzureCloudConnector(CloudConnector):
     subscription_id: str
     credentials: ClientSecretCredential
     platform_settings: AzureSpecificSettings
-
-    def __init__(self, settings: Settings):
-        """Initialize Azure Cloud Connector.
-
-        Args:
-            settings (Settings): Settings.
-        """
-        super().__init__(self.platform, settings)
 
     def scan(self):
         """Scan Azure."""

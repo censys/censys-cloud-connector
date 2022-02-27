@@ -25,7 +25,7 @@ def cli_scan(_: argparse.Namespace):
     settings.scan_all()
 
 
-def include(parent_parser: argparse._SubParsersAction):
+def include_cli(parent_parser: argparse._SubParsersAction):
     """Include this subcommand into the parent parser.
 
     Args:

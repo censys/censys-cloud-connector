@@ -20,18 +20,21 @@ class CloudConnector(ABC):
     seeds: Dict[str, List[Seed]] = defaultdict(list)
     cloud_assets: Dict[str, List[CloudAsset]] = defaultdict(list)
 
-    def __init__(self, platform: str, settings: Settings):
+    def __init__(self, settings: Settings):
         """Initialize the Cloud Connector.
 
         Args:
-            platform (str): The platform to scan.
             settings (Settings): The settings to use.
+
+        Raises:
+            ValueError: If the platform is not set.
         """
-        self.platform = platform
-        self.label_prefix = platform.upper() + ": "
+        if not self.platform:
+            raise ValueError("The platform must be set.")
+        self.label_prefix = self.platform.upper() + ": "
         self.settings = settings
         self.logger = get_logger(
-            log_name=f"{platform}_cloud_connector", level=settings.logging_level
+            log_name=f"{self.platform}_cloud_connector", level=settings.logging_level
         )
 
         self.seeds_api = Seeds(settings.censys_api_key)

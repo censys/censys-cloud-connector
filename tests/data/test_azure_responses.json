@@ -5,6 +5,11 @@
     "client_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
     "client_secret": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
   },
+  "TEST_SERVICE_PRINCIPAL": {
+    "tenant": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "appId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "password": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  },
   "TEST_IP_ADDRESS": {
     "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/Test-IP_group/providers/Microsoft.Network/publicIPAddresses/Test-IP-ip",
     "name": "Test-IP-ip",

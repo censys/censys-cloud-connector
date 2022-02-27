@@ -5,12 +5,25 @@ from unittest import TestCase
 import pytest
 from pytest_mock import MockerFixture
 
-from censys.common.exceptions import CensysAsmException
+from censys.common.exceptions import CensysAsmException, CensysException
 
 from censys.cloud_connectors.common.cloud_asset import CloudAsset
 from censys.cloud_connectors.common.connector import CloudConnector
 from censys.cloud_connectors.common.seed import Seed
 from censys.cloud_connectors.common.settings import Settings
+
+
+class ExampleCloudConnector(CloudConnector):
+    platform = "test-platform"
+
+    def get_seeds(self):
+        return super().get_seeds()
+
+    def get_cloud_assets(self) -> None:
+        return super().get_cloud_assets()
+
+    def scan_all(self):
+        return super().scan_all()
 
 
 class TestCloudConnector(TestCase):
@@ -30,8 +43,7 @@ class TestCloudConnector(TestCase):
             censys_api_key=self.data["censys_api_key"],
             platforms_config_file=str(self.shared_datadir / "test_empty_platforms.yml"),
         )
-        self.mocker.patch.object(CloudConnector, "__abstractmethods__", set())
-        self.connector = CloudConnector(self.data["test_platform_name"], self.settings)  # type: ignore
+        self.connector = ExampleCloudConnector(self.settings)
 
     def tearDown(self) -> None:
         # Reset the deaultdicts as they are immutable
@@ -40,7 +52,7 @@ class TestCloudConnector(TestCase):
         for cloud_asset_key in list(self.connector.cloud_assets.keys()):
             del self.connector.cloud_assets[cloud_asset_key]
 
-    def test_cloud_connector_init(self):
+    def test_init(self):
         assert self.connector.platform == self.data["test_platform_name"]
         assert (
             self.connector.label_prefix
@@ -55,6 +67,19 @@ class TestCloudConnector(TestCase):
         )
         assert list(self.connector.seeds.keys()) == []
         assert list(self.connector.cloud_assets.keys()) == []
+
+    def test_init_fail(self):
+        # Mock platform
+        self.mocker.patch.object(ExampleCloudConnector, "platform", None)
+
+        with pytest.raises(ValueError, match="The platform must be set."):
+            ExampleCloudConnector(Settings())
+
+    def test_seeds_api_fail(self):
+        self.mocker.patch.object(self.settings, "censys_api_key", None)
+
+        with pytest.raises(CensysException, match="No ASM API key configured."):
+            ExampleCloudConnector(self.settings)
 
     def test_add_seed(self):
         seed = Seed(type="TEST", value="test-value", label="test-label")
@@ -130,7 +155,7 @@ class TestCloudConnector(TestCase):
             self.connector._add_cloud_asset_path, data=test_data
         )
 
-    @pytest.mark.skip("Submittion Not implemented")
+    @pytest.mark.skip("Submission Not Implemented (Purposefully)")
     def test_submit(self):
         submit_seeds_mock = self.mocker.patch.object(self.connector, "submit_seeds")
         submit_cloud_assets_mock = self.mocker.patch.object(

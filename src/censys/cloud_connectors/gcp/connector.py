@@ -5,7 +5,6 @@ from googleapiclient.discovery import build as build_resource
 from oauth2client.service_account import ServiceAccountCredentials
 
 from censys.cloud_connectors.common.connector import CloudConnector
-from censys.cloud_connectors.common.settings import Settings
 
 from .settings import GcpSpecificSettings
 
@@ -19,14 +18,6 @@ class GcpCloudConnector(CloudConnector):
     organization_id: str
     credentials: ServiceAccountCredentials
     platform_settings: GcpSpecificSettings
-
-    def __init__(self, settings: Settings):
-        """Initialize Gcp Cloud Connector.
-
-        Args:
-            settings (Settings): Settings.
-        """
-        super().__init__(self.platform, settings)
 
     def scan_all(self):
         """Scan all Gcp Organizations."""

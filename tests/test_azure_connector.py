@@ -103,7 +103,7 @@ class TestAzureCloudConnector(TestCase):
         # Mock scan
         mock_scan = self.mocker.patch.object(self.connector, "scan")
 
-        # Actually call
+        # Actual call
         self.connector.scan_all()
 
         # Assertions

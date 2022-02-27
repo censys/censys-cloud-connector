@@ -34,9 +34,9 @@ class AzureSetupCli(PlatformSetupCli):
                 ]
                 return subscriptions
             except CredentialUnavailableError:
-                print("Unable to get subscriptions from the CLI")
+                self.logger.info("Unable to get subscriptions from the CLI")
         except ImportError:
-            print("Please install the Azure SDK for Python")
+            self.logger.info("Please install the Azure SDK for Python")
         return []
 
     def prompt_select_subscriptions(
@@ -71,7 +71,7 @@ class AzureSetupCli(PlatformSetupCli):
             }
         ]
         answers = prompt(questions)
-        if answers == {}:
+        if not answers:  # pragma: no cover
             raise KeyboardInterrupt
         selected_subscription_ids = answers.get("subscription_ids", [])
         return [
@@ -98,12 +98,16 @@ class AzureSetupCli(PlatformSetupCli):
             '"Censys Cloud Connector"',
             "--role",
             "Reader",
+            "--output",
+            "json",
             "--scopes",
         ]
         for subscription in subscriptions:
             if subscription_id := subscription.get("id"):
                 command.append(subscription_id)
-        return " ".join(command)
+        create_command = " ".join(command)
+        self.logger.debug(f"Azure create sp command: {create_command}")
+        return create_command
 
     def create_service_principal(
         self, subscriptions: List[Dict[str, str]]
@@ -131,9 +135,9 @@ class AzureSetupCli(PlatformSetupCli):
                 }
             ]
         )
-        if answers == {}:
+        if not answers:  # pragma: no cover
             raise KeyboardInterrupt
-        if not answers.get("create_service_principal", False):
+        if not answers.get("create_service_principal", False):  # pragma: no cover
             print("Please manually create a service principal with the role 'Reader'")
             return None
 
@@ -143,7 +147,7 @@ class AzureSetupCli(PlatformSetupCli):
         if res.returncode != 0:
             error = res.stderr.decode("utf-8").strip()
             print(f"Error creating service principal: {error}")
-            exit(1)
+            return None
         print("Service principal successfully created!")
         creds = json.loads(res.stdout)
         return creds
@@ -163,7 +167,7 @@ class AzureSetupCli(PlatformSetupCli):
             }
         ]
         answers = prompt(questions)
-        if answers == {}:
+        if not answers:  # pragma: no cover
             raise KeyboardInterrupt
 
         get_credentials_from = answers.get("get_credentials_from")
@@ -178,12 +182,14 @@ class AzureSetupCli(PlatformSetupCli):
             selected_subscriptions = self.prompt_select_subscriptions(subscriptions)
             if len(selected_subscriptions) == 0:
                 self.logger.error("No subscriptions selected")
+                exit(1)
 
             service_principal = self.create_service_principal(selected_subscriptions)
             if service_principal is None:
                 self.logger.error(
                     "Service principal not created. Please try again or manually create a service principal"
                 )
+                exit(1)
 
             # Save the service principal
             platform_settings = self.platform_specific_settings_class(

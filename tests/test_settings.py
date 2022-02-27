@@ -85,7 +85,7 @@ class TestSettings(TestCase):
         self.settings.platforms_config_file = original_file
         self.settings.read_platforms_config_file()
 
-        temp_file = NamedTemporaryFile(mode="w+", delete=False)
+        temp_file = NamedTemporaryFile(mode="w+")
         self.settings.platforms_config_file = temp_file.name
         self.settings.write_platforms_config_file()
         assert same_yaml(original_file, temp_file.name)
