@@ -4,7 +4,11 @@ import sys
 
 from censys.cloud_connectors import __version__
 
+from . import commands
 from .args import get_parser
+
+__commands__ = commands.__all__
+__all__ = ["__commands__"]
 
 
 def main():

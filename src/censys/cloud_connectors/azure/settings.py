@@ -7,7 +7,7 @@ from censys.cloud_connectors.common.settings import PlatformSpecificSettings
 
 # Avoid mypy error about AzureId not being a valid type.
 if TYPE_CHECKING:
-    AzureId = str
+    AzureId = str  # pragma: no cover
 else:
     AzureId = constr(strip_whitespace=True, min_length=36, max_length=36)
 

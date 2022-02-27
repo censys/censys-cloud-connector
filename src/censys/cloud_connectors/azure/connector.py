@@ -49,11 +49,6 @@ class AzureCloudConnector(CloudConnector):
                 client_id=platform_setting.client_id,
                 client_secret=platform_setting.client_secret,
             )
-            if not isinstance(self.platform_settings.subscription_id, list):
-                self.platform_settings.subscription_id = [
-                    self.platform_settings.subscription_id
-                ]
-
             for subscription_id in self.platform_settings.subscription_id:
                 self.logger.debug(f"Scanning Azure Subscription {subscription_id}")
                 self.subscription_id = subscription_id
