@@ -66,9 +66,11 @@ class PlatformSpecificSettings(BaseModel):
 class Settings(BaseSettings):
     """Settings for the Cloud Connector."""
 
+    # Platforms settings
+    platforms: DefaultDict[str, list] = collections.defaultdict(list)
+
     # Required
     censys_api_key: str = Field(env="CENSYS_API_KEY", min_length=36, max_length=36)
-    platforms: DefaultDict[str, list] = collections.defaultdict(list)
 
     # Optional
     platforms_config_file: str = Field(

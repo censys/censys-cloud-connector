@@ -34,6 +34,8 @@ unit-test-job: # This job runs in the test stage.
   stage: test
   script:
     - pytest
+  variables:
+    CENSYS_API_KEY: "ci-censys-api-key-xxxxxxxxxxxxxxxxxx"
 
 lint-job: # This job also runs in the lint stage.
   extends: .poetry
