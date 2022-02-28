@@ -18,7 +18,7 @@ def cli_scan(_: argparse.Namespace):
     try:
         settings = Settings()
         settings.read_platforms_config_file()
-    except ValidationError as e:
+    except ValidationError as e:  # pragma: no cover
         logger.error(e)
         return
 

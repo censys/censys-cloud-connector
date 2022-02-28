@@ -1,6 +1,6 @@
 """Base for all platform-specific setup cli commands."""
 from logging import Logger
-from typing import Callable, List, Type, Union, get_args, get_origin
+from typing import Any, Callable, Dict, List, Type, Union, get_origin
 
 from pydantic.fields import ModelField
 from pydantic.utils import lenient_issubclass
@@ -32,11 +32,11 @@ def generate_validation(field: ModelField) -> Callable:
         Callable: The validation function.
     """
 
-    def validate(value: str) -> Union[bool, str]:
+    def validate(value: Any) -> Union[bool, str]:
         """Validate the value.
 
         Args:
-            value (str): The value to validate.
+            value (Any): The value to validate.
 
         Returns:
             Union[bool, str]: True or the error message.
@@ -46,6 +46,9 @@ def generate_validation(field: ModelField) -> Callable:
             return True
         if isinstance(error, list):
             error = error[0]
+            # If the value is a list, then we need to validate each item
+            if isinstance(value, list):
+                error = error[0]  # type: ignore
         return str(error.exc)  # type: ignore
 
     return validate
@@ -123,9 +126,12 @@ class PlatformSetupCli:
             ValueError: If the settings are invalid.
         """
         excluded_fields: List[str] = ["platform"]
-        settings_fields = self.platform_specific_settings_class.__fields__
+        settings_fields: Dict[
+            str, ModelField
+        ] = self.platform_specific_settings_class.__fields__
         questions = []
         answers = {}
+        type_cast_map: Dict[str, Type] = {}
         for field in settings_fields.values():
             if field.name in excluded_fields:
                 continue
@@ -134,24 +140,36 @@ class PlatformSetupCli:
                 "message": f"{snake_case_to_english(field.name)}:",
                 "validate": generate_validation(field),
             }
-            if lenient_issubclass(field.type_, str):
+            field_type = field.type_
+            if lenient_issubclass(field.outer_type_, list) or lenient_issubclass(
+                get_origin(field.outer_type_), list
+            ):
+                answers[field.name] = prompt_for_list(field)
+                continue
+            elif lenient_issubclass(field_type, bool):
+                question["type"] = "confirm"
+            elif lenient_issubclass(field_type, (str, int, float)):
                 question["type"] = "input"
                 question["message"] = "Enter a " + question["message"]  # type: ignore
-            elif lenient_issubclass(field.type_, bool):
-                question["type"] = "confirm"
-            elif get_origin(field.type_) is Union:
-                args = get_args(field.type_)
-                if any([lenient_issubclass(arg, list) for arg in args]):
-                    answers[field.name] = prompt_for_list(field)
-                    continue
-                else:
-                    self.logger.debug(f"Unsupported union type: {field.type_}")
-                    raise ValueError(f"Unsupported union type for field {field.name}.")
-            else:
+
+                # TODO: Is this something we want?
+                if "secret" in field.name.lower():
+                    question["type"] = "password"
+
+                # Cast to type if float or int
+                if lenient_issubclass(field_type, float):
+                    type_cast_map[field.name] = float
+                elif lenient_issubclass(field_type, int):
+                    type_cast_map[field.name] = int
+            else:  # pragma: no cover
+                self.logger.debug(f"Unsupported field type: {field_type}")
                 raise ValueError(f"Unsupported type for field {field.name}.")
 
             questions.append(question)
         answers.update(prompt(questions))
-        if not answers:
+        if not answers:  # pragma: no cover
             raise ValueError("No answers provided.")
+        if type_cast_map:
+            for key, type_ in type_cast_map.items():
+                answers[key] = type_(answers[key])
         return self.platform_specific_settings_class(**answers)

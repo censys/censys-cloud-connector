@@ -7,6 +7,7 @@ from pydantic import ValidationError
 from PyInquirer import prompt
 
 from censys.cloud_connectors import __connectors__
+from censys.cloud_connectors.common.logger import get_logger
 from censys.cloud_connectors.common.settings import Settings
 
 
@@ -19,6 +20,7 @@ def cli_config(_: argparse.Namespace):
     Raises:
         KeyboardInterrupt: If the user cancels the prompt.
     """
+    logger = get_logger(log_name="censys_cloud_connectors", level="INFO")
     questions = [
         {
             "type": "list",
@@ -47,8 +49,8 @@ def cli_config(_: argparse.Namespace):
     try:
         platform_setup = platform_setup_cls(settings)
         platform_setup.setup()
-    except ValidationError as e:
-        print(e)
+    except ValidationError as e:  # pragma: no cover
+        logger.error(e)
         return
     questions = [
         {

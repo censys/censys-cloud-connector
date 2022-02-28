@@ -4,7 +4,7 @@ import importlib
 from typing import DefaultDict, Dict, List, OrderedDict, Union
 
 import yaml
-from pydantic import BaseModel, BaseSettings, Field, HttpUrl
+from pydantic import BaseSettings, Field, HttpUrl
 
 
 def ordered_dict_representer(
@@ -28,7 +28,7 @@ yaml.representer.SafeRepresenter.add_representer(
 )
 
 
-class PlatformSpecificSettings(BaseModel):
+class PlatformSpecificSettings(BaseSettings):
     """Base class for all platform-specific settings."""
 
     platform: str

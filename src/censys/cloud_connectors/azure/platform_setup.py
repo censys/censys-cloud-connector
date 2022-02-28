@@ -106,7 +106,6 @@ class AzureSetupCli(PlatformSetupCli):
             if subscription_id := subscription.get("id"):
                 command.append(subscription_id)
         create_command = " ".join(command)
-        self.logger.debug(f"Azure create sp command: {create_command}")
         return create_command
 
     def create_service_principal(
@@ -146,7 +145,7 @@ class AzureSetupCli(PlatformSetupCli):
         )
         if res.returncode != 0:
             error = res.stderr.decode("utf-8").strip()
-            print(f"Error creating service principal: {error}")
+            self.logger.error(f"Error creating service principal: {error}")
             return None
         print("Service principal successfully created!")
         creds = json.loads(res.stdout)

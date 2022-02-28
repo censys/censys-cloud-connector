@@ -1,15 +1,19 @@
+from typing import Any, List, Type
 from unittest import TestCase
 
 import pytest
 from parameterized import parameterized
+from pydantic import BaseConfig, confloat, conint, conlist, constr
+from pydantic.fields import ModelField
 from pytest_mock import MockerFixture
 
 from censys.cloud_connectors.common.cli.platform_setup import (
     PlatformSetupCli,
+    generate_validation,
     prompt_for_list,
     snake_case_to_english,
 )
-from censys.cloud_connectors.common.settings import Settings
+from censys.cloud_connectors.common.settings import PlatformSpecificSettings, Settings
 
 
 class TestPlatformSetup(TestCase):
@@ -25,6 +29,33 @@ class TestPlatformSetup(TestCase):
     )
     def test_snake_case_to_english(self, snake_case: str, expected_output: str):
         assert snake_case_to_english(snake_case) == expected_output
+
+    @parameterized.expand(
+        [
+            (constr(min_length=1), "Test Variable", True),
+            (constr(min_length=1), "", "ensure this value has at least 1 characters"),
+            (conlist(str, min_items=1), ["Test Variable"], True),
+            (conlist(str, min_items=1), [], "ensure this value has at least 1 items"),
+            (
+                conlist(constr(min_length=10), min_items=1),
+                ["lessthan"],
+                "ensure this value has at least 10 characters",
+            ),
+        ]
+    )
+    def test_generate_validation(self, type_: Type, value: Any, expected_output: Any):
+        # Make ModelField
+        field = ModelField.infer(
+            name="test_field",
+            value=value,
+            annotation=type_,
+            class_validators={},
+            config=BaseConfig,
+        )
+        # Generate function
+        validation_func = generate_validation(field)
+        # Validate
+        assert validation_func(value) == expected_output
 
     @parameterized.expand(
         [
@@ -64,8 +95,28 @@ class TestPlatformSetup(TestCase):
         assert mock_prompt.call_count == prompt_call_count
 
 
+class ExamplePlatformSpecificSettings(PlatformSpecificSettings):
+    platform = "test_platform"
+
+    string_1: str
+    string_2_with_default: str = "default_value_1"
+    string_3_with_constr: constr(min_length=1)  # type: ignore
+    list_1: List[str]
+    list_2_with_default: List[str] = ["default_value_2"]
+    list_3_with_conlist: conlist(str, min_items=1)  # type: ignore
+    bool_1: bool
+    bool_2_with_default: bool = True
+    int_1: int
+    int_2_with_default: int = 1
+    int_3_with_conint: conint(gt=1)  # type: ignore
+    float_1: float
+    float_2_with_default: float = 1.0
+    float_3_with_condecimal: confloat(gt=1)  # type: ignore
+
+
 class ExamplePlatformSetupCli(PlatformSetupCli):
-    platform: str = "test_platform"
+    platform = "test_platform"
+    platform_specific_settings_class = ExamplePlatformSpecificSettings
 
 
 class TestPlatformSetupCli(TestCase):
@@ -98,4 +149,55 @@ class TestPlatformSetupCli(TestCase):
         ]
 
     def test_prompt_for_settings(self):
-        pass
+        # Test data
+        expected_str_fields = {
+            "string_1": "user_value_1",
+            "string_2_with_default": "user_value_2",
+            "string_3_with_constr": "user_value_3",
+        }
+        expected_list_fields = {
+            "list_1": ["user_input_1", "user_input_2"],
+            "list_2_with_default": ["default_value_2", "user_input_3"],
+            "list_3_with_conlist": ["user_input_4", "user_input_5"],
+        }
+        expected_bool_fields = {
+            "bool_1": False,
+            "bool_2_with_default": True,
+        }
+        expected_int_fields = {
+            "int_1": 2,
+            "int_2_with_default": 3,
+            "int_3_with_conint": 4,
+        }
+        expected_float_fields = {
+            "float_1": 5.0,
+            "float_2_with_default": 6.0,
+            "float_3_with_condecimal": 7.0,
+        }
+        expected_field_values = (
+            expected_str_fields
+            | expected_list_fields
+            | expected_bool_fields
+            | expected_int_fields
+            | expected_float_fields
+        )
+
+        # Mock
+        mock_prompt_for_list = self.mocker.patch(
+            "censys.cloud_connectors.common.cli.platform_setup.prompt_for_list",
+            side_effect=list(expected_list_fields.values()),
+        )
+        mock_prompt = self.mocker.patch(
+            "censys.cloud_connectors.common.cli.platform_setup.prompt",
+            return_value=expected_field_values,
+        )
+
+        # Actual call
+        actual_settings = self.setup_cli.prompt_for_settings()
+
+        # Assertions
+        assert actual_settings.platform == ExamplePlatformSetupCli.platform
+        assert mock_prompt_for_list.call_count == len(expected_list_fields)
+        mock_prompt.assert_called_once()
+        for field_name, field_value in expected_field_values.items():
+            assert getattr(actual_settings, field_name) == field_value
