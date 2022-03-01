@@ -1,6 +1,5 @@
 """Azure Cloud Connector."""
 import contextlib
-from typing import List
 
 from azure.core.exceptions import (
     ClientAuthenticationError,
@@ -18,6 +17,7 @@ from msrest.serialization import Model as AzureModel
 
 from censys.cloud_connectors.common.cloud_asset import AzureContainerAsset
 from censys.cloud_connectors.common.connector import CloudConnector
+from censys.cloud_connectors.common.enums import PlatformEnum
 from censys.cloud_connectors.common.seed import DomainSeed, IpSeed
 
 from .settings import AzureSpecificSettings
@@ -26,7 +26,7 @@ from .settings import AzureSpecificSettings
 class AzureCloudConnector(CloudConnector):
     """Azure Cloud Connector."""
 
-    platform = "azure"
+    platform = PlatformEnum.AZURE
     subscription_id: str
     credentials: ClientSecretCredential
     platform_settings: AzureSpecificSettings
@@ -38,7 +38,7 @@ class AzureCloudConnector(CloudConnector):
 
     def scan_all(self):
         """Scan all Azure Subscriptions."""
-        platform_settings: List[AzureSpecificSettings] = self.settings.platforms.get(
+        platform_settings: list[AzureSpecificSettings] = self.settings.platforms.get(
             self.platform, []
         )
         for platform_setting in platform_settings:

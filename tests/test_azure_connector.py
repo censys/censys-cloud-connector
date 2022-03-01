@@ -1,6 +1,5 @@
 import json
 from pathlib import Path
-from typing import List
 from unittest import TestCase
 from unittest.mock import MagicMock
 
@@ -61,13 +60,13 @@ class TestAzureCloudConnector(TestCase):
             f"censys.cloud_connectors.azure.connector.{client_name}"
         )
 
-    def assert_seeds_with_values(self, seeds: List[Seed], values: List[str]):
+    def assert_seeds_with_values(self, seeds: list[Seed], values: list[str]):
         assert len(seeds) == len(values)
         for seed in seeds:
             assert seed.value in values
 
     def test_init(self):
-        assert self.connector.platform == "azure"
+        assert self.connector.platform == "Azure"
         assert self.connector.label_prefix == "AZURE: "
         assert self.connector.settings == self.settings
 

@@ -119,6 +119,8 @@ warn_unused_ignores = true
 module = [
     # Common
     "PyInquirer",
+    # Tests
+    "parameterized",
     # GCP
     "googleapiclient.*",
     "oauth2client.*",

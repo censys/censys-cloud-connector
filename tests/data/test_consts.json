@@ -1,4 +1,3 @@
 {
-  "censys_api_key": "test-censys-api-key-xxxxxxxxxxxxxxxx",
-  "test_platform_name": "test-platform"
+  "censys_api_key": "test-censys-api-key-xxxxxxxxxxxxxxxx"
 }

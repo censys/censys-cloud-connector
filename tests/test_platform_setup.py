@@ -5,6 +5,7 @@ import pytest
 from parameterized import parameterized
 from pydantic import (
     BaseConfig,
+    Field,
     NegativeFloat,
     NonNegativeFloat,
     NonPositiveInt,
@@ -115,9 +116,11 @@ class ExamplePlatformSpecificSettings(PlatformSpecificSettings):
     string_1: str
     string_2_with_default: str = "default_value_1"
     string_3_with_constr: constr(min_length=1)  # type: ignore
+    string_4_with_field: str = Field(min_length=2)
     list_1: list[str]
     list_2_with_default: list[str] = ["default_value_2"]
     list_3_with_conlist: conlist(str, min_items=1)  # type: ignore
+    list_4_with_field: list[str] = Field(min_items=2)
     bool_1: bool
     bool_2_with_default: bool = True
     int_1: int
@@ -125,15 +128,17 @@ class ExamplePlatformSpecificSettings(PlatformSpecificSettings):
     int_3_with_conint: conint(gt=1)  # type: ignore
     int_4_positive: PositiveInt
     int_5_non_positive: NonPositiveInt
+    int_6_with_field: int = Field(gt=1)
     float_1: float
     float_2_with_default: float = 1.0
     float_3_with_confloat: confloat(gt=1)  # type: ignore
     float_4_negative: NegativeFloat
     float_5_non_negative: NonNegativeFloat
+    float_6_with_field: float = Field(gt=1)
 
 
 class ExamplePlatformSetupCli(PlatformSetupCli):
-    platform = "test_platform"
+    platform = "test_platform"  # type: ignore
     platform_specific_settings_class = ExamplePlatformSpecificSettings
 
 
@@ -172,11 +177,13 @@ class TestPlatformSetupCli(TestCase):
             "string_1": "user_value_1",
             "string_2_with_default": "user_value_2",
             "string_3_with_constr": "user_value_3",
+            "string_4_with_field": "user_value_4",
         }
         expected_list_fields = {
             "list_1": ["user_input_1", "user_input_2"],
             "list_2_with_default": ["default_value_2", "user_input_3"],
             "list_3_with_conlist": ["user_input_4", "user_input_5"],
+            "list_4_with_field": ["user_input_6", "user_input_7"],
         }
         expected_bool_fields = {
             "bool_1": False,
@@ -188,6 +195,7 @@ class TestPlatformSetupCli(TestCase):
             "int_3_with_conint": 4,
             "int_4_positive": 5,
             "int_5_non_positive": -1,
+            "int_6_with_field": 7,
         }
         expected_float_fields = {
             "float_1": 5.0,
@@ -195,6 +203,7 @@ class TestPlatformSetupCli(TestCase):
             "float_3_with_confloat": 7.0,
             "float_4_negative": -8.0,
             "float_5_non_negative": 9.0,
+            "float_6_with_field": 10.0,
         }
         expected_field_values = (
             expected_str_fields

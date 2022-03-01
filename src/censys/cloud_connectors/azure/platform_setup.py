@@ -1,21 +1,23 @@
 """Azure platform-specific setup CLI."""
 import json
 import subprocess
-from typing import Dict, List, Optional
+from typing import Optional
 
 from PyInquirer import prompt
 
-from censys.cloud_connectors.azure.settings import AzureSpecificSettings
 from censys.cloud_connectors.common.cli.platform_setup import PlatformSetupCli
+from censys.cloud_connectors.common.enums import PlatformEnum
+
+from .settings import AzureSpecificSettings
 
 
 class AzureSetupCli(PlatformSetupCli):
     """Azure platform setup cli command."""
 
-    platform = "azure"
+    platform = PlatformEnum.AZURE
     platform_specific_settings_class = AzureSpecificSettings
 
-    def get_subscriptions_from_cli(self) -> List[Dict[str, str]]:
+    def get_subscriptions_from_cli(self) -> list[dict[str, str]]:
         """Get subscriptions from the CLI.
 
         Returns:
@@ -40,8 +42,8 @@ class AzureSetupCli(PlatformSetupCli):
         return []
 
     def prompt_select_subscriptions(
-        self, subscriptions: List[Dict[str, str]]
-    ) -> List[Dict[str, str]]:
+        self, subscriptions: list[dict[str, str]]
+    ) -> list[dict[str, str]]:
         """Prompt the user to select subscriptions.
 
         Args:
@@ -80,7 +82,7 @@ class AzureSetupCli(PlatformSetupCli):
             if s.get("subscription_id") in selected_subscription_ids
         ]
 
-    def generate_create_command(self, subscriptions: List[Dict[str, str]]) -> str:
+    def generate_create_command(self, subscriptions: list[dict[str, str]]) -> str:
         """Generate the command to create a service principal.
 
         Args:
@@ -109,7 +111,7 @@ class AzureSetupCli(PlatformSetupCli):
         return create_command
 
     def create_service_principal(
-        self, subscriptions: List[Dict[str, str]]
+        self, subscriptions: list[dict[str, str]]
     ) -> Optional[dict]:
         """Create a service principal.
 
@@ -140,9 +142,7 @@ class AzureSetupCli(PlatformSetupCli):
             print("Please manually create a service principal with the role 'Reader'")
             return None
 
-        res = subprocess.run(
-            command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
+        res = subprocess.run(command, shell=True, capture_output=True)
         if res.returncode != 0:
             error = res.stderr.decode("utf-8").strip()
             self.logger.error(f"Error creating service principal: {error}")
@@ -193,7 +193,9 @@ class AzureSetupCli(PlatformSetupCli):
             # Save the service principal
             platform_settings = self.platform_specific_settings_class(
                 subscription_id=[
-                    s.get("subscription_id") for s in selected_subscriptions
+                    subscription_id
+                    for s in selected_subscriptions
+                    if s and (subscription_id := s.get("subscription_id"))
                 ],
                 tenant_id=service_principal.get("tenant"),
                 client_id=service_principal.get("appId"),

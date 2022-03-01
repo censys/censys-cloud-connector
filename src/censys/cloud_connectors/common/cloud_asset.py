@@ -1,8 +1,9 @@
 """Cloud Asset Objects."""
 import json
-from typing import Dict
 
 from pydantic import AnyUrl, BaseModel, parse_obj_as, validator
+
+from censys.cloud_connectors.common.enums import PlatformEnum
 
 
 class CloudAsset(BaseModel):
@@ -10,11 +11,11 @@ class CloudAsset(BaseModel):
 
     type: str
     value: str
-    cspLabel: str
+    cspLabel: PlatformEnum
     scan_data: dict = {}
     uid: str  # Used as cloudConnectorUid
 
-    def to_dict(self) -> Dict[str, str]:
+    def to_dict(self) -> dict[str, str]:
         """Convert the cloud asset to a dictionary.
 
         Returns:
@@ -23,7 +24,7 @@ class CloudAsset(BaseModel):
         return {
             "type": self.type,
             "value": self.value,
-            "cspLabel": self.cspLabel,
+            "cspLabel": self.cspLabel.label(),
             "scanData": json.dumps(self.scan_data),
         }
 
@@ -37,7 +38,7 @@ class ObjectStorageAsset(CloudAsset):
 class GcpCloudStorageAsset(ObjectStorageAsset):
     """GCP Cloud Storage asset."""
 
-    cspLabel: str = "GCP"
+    cspLabel = PlatformEnum.GCP
 
     @validator("value")
     def value_is_valid_bucket_name(cls, v: str) -> str:
@@ -61,7 +62,7 @@ class GcpCloudStorageAsset(ObjectStorageAsset):
 class AzureContainerAsset(ObjectStorageAsset):
     """Azure Container asset."""
 
-    cspLabel: str = "AZURE"
+    cspLabel = PlatformEnum.AZURE
 
     @validator("value")
     def value_is_valid_container_url(cls, v: str) -> str:

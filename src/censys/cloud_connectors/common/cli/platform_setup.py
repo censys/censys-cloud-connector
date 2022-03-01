@@ -1,11 +1,12 @@
 """Base for all platform-specific setup cli commands."""
 from logging import Logger
-from typing import Any, Callable, Dict, List, Type, Union, get_origin
+from typing import Any, Callable, Union, get_origin
 
 from pydantic.fields import ModelField
 from pydantic.utils import lenient_issubclass
 from PyInquirer import prompt
 
+from censys.cloud_connectors.common.enums import PlatformEnum
 from censys.cloud_connectors.common.logger import get_logger
 from censys.cloud_connectors.common.settings import PlatformSpecificSettings, Settings
 
@@ -44,17 +45,15 @@ def generate_validation(field: ModelField) -> Callable:
         _, error = field.validate(value, {}, loc=field.name)
         if not error:
             return True
-        if isinstance(error, list):
+        while isinstance(error, list):
+            # Sometimes the error is embedded in a nested list
             error = error[0]
-            # If the value is a list, then we need to validate each item
-            if isinstance(value, list):
-                error = error[0]  # type: ignore
         return str(error.exc)  # type: ignore
 
     return validate
 
 
-def prompt_for_list(field: ModelField) -> List[str]:
+def prompt_for_list(field: ModelField) -> list[str]:
     """Prompt for a list of values.
 
     Args:
@@ -95,8 +94,8 @@ def prompt_for_list(field: ModelField) -> List[str]:
 class PlatformSetupCli:
     """Base for all platform-specific setup cli commands."""
 
-    platform: str
-    platform_specific_settings_class: Type[PlatformSpecificSettings]
+    platform: PlatformEnum
+    platform_specific_settings_class: type[PlatformSpecificSettings]
     settings: Settings
     logger: Logger
 
@@ -125,13 +124,13 @@ class PlatformSetupCli:
         Raises:
             ValueError: If the settings are invalid.
         """
-        excluded_fields: List[str] = ["platform"]
-        settings_fields: Dict[
+        excluded_fields: list[str] = ["platform"]
+        settings_fields: dict[
             str, ModelField
         ] = self.platform_specific_settings_class.__fields__
         questions = []
         answers = {}
-        type_cast_map: Dict[str, Type] = {}
+        type_cast_map: dict[str, type] = {}
         for field in settings_fields.values():
             if field.name in excluded_fields:
                 continue
