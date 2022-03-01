@@ -24,3 +24,11 @@ class PlatformEnum(str, Enum):
             str: The label of the platform.
         """
         return self.name
+
+    def module_path(self) -> str:
+        """Gets the module path of the platform.
+
+        Returns:
+            str: The module path of the platform.
+        """
+        return f"censys.cloud_connectors.{self.name.lower()}"

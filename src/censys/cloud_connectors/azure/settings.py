@@ -34,6 +34,6 @@ class AzureSpecificSettings(PlatformSpecificSettings):
         Returns:
             List[str]: The validated value.
         """
-        if isinstance(v, str):
+        if not isinstance(v, list):
             return [v]
         return v

@@ -6,6 +6,8 @@ from typing import DefaultDict, OrderedDict, Union
 import yaml
 from pydantic import BaseSettings, Field, HttpUrl
 
+from .enums import PlatformEnum
+
 
 def ordered_dict_representer(
     dumper: yaml.Dumper, data: OrderedDict
@@ -100,7 +102,6 @@ class Settings(BaseSettings):
         Raises:
             FileNotFoundError: If the file does not exist.
             ValueError: Platform name is not valid.
-            ImportError: If the platform module cannot be imported.
         """
         try:
             with open(self.platforms_config_file) as f:
@@ -117,17 +118,15 @@ class Settings(BaseSettings):
             platform_name = platform_config.get("platform")
             if not platform_name:
                 raise ValueError("Platform name is required")
-            platform_name = platform_name.lower()
             try:
-                platform_settings_cls = importlib.import_module(
-                    f"censys.cloud_connectors.{platform_name}"
-                ).__settings__
-            except ImportError:
-                raise ImportError(
-                    f"Could not import the settings for the {platform_name} platform"
-                )
+                platform = PlatformEnum[platform_name.upper()]
+            except KeyError as e:
+                raise ValueError(f"Platform name is not valid: {platform_name}") from e
+            platform_settings_cls = importlib.import_module(
+                platform.module_path()
+            ).__settings__
             platform_settings = platform_settings_cls.from_dict(platform_config)
-            self.platforms[platform_name].append(platform_settings)
+            self.platforms[platform].append(platform_settings)
 
     def write_platforms_config_file(self):
         """Write platforms config file."""
@@ -138,19 +137,10 @@ class Settings(BaseSettings):
             yaml.safe_dump(all_platforms, f, default_flow_style=False, sort_keys=False)
 
     def scan_all(self):
-        """Scan all platforms.
-
-        Raises:
-            ImportError: If the platform module cannot be imported.
-        """
-        for platform_name in self.platforms.keys():
-            try:
-                connector_cls = importlib.import_module(
-                    f"censys.cloud_connectors.{platform_name}"
-                ).__connector__
-            except ImportError:
-                raise ImportError(
-                    f"Could not import the connector for the {platform_name} platform"
-                )
+        """Scan all platforms."""
+        for platform in self.platforms.keys():
+            connector_cls = importlib.import_module(
+                platform.module_path()
+            ).__connector__
             connector = connector_cls(self)
             connector.scan_all()

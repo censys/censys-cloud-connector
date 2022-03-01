@@ -65,17 +65,18 @@ def prompt_for_list(field: ModelField) -> list[str]:
     Raises:
         KeyboardInterrupt: If the user cancels the prompt.
     """
+    field_name = snake_case_to_english(field.name)
     questions = [
         {
             "type": "input",
             "name": field.name,
-            "message": f"Enter a {snake_case_to_english(field.name)}",
+            "message": f"Enter a {field_name}",
             "validate": generate_validation(field),
         },
         {
             "type": "confirm",
             "name": "add_another",
-            "message": "Add another",
+            "message": f"Add another {field_name}?",
         },
     ]
     answers = prompt(questions)

@@ -5,7 +5,6 @@ default:
 stages:
   - test
   - lint
-  # - deploy
 
 .poetry:
   image: python:3.9
@@ -49,12 +48,6 @@ static-type-check-job: # This job runs in the lint stage.
   allow_failure: true
   script:
     - mypy -p censys.cloud_connectors
-
-# deploy-job:      # This job runs in the deploy stage.
-#   stage: deploy  # It only runs when *both* jobs in the test stage complete successfully.
-#   script:
-#     - echo "Deploying application..."
-#     - echo "Application successfully deployed."
 
 sast:
   stage: test

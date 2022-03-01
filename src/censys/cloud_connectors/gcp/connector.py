@@ -3,6 +3,7 @@ from googleapiclient.discovery import build as build_resource
 from oauth2client.service_account import ServiceAccountCredentials
 
 from censys.cloud_connectors.common.connector import CloudConnector
+from censys.cloud_connectors.common.enums import PlatformEnum
 
 from .settings import GcpSpecificSettings
 
@@ -12,7 +13,7 @@ SCOPES = ["https://www.googleapis.com/auth/cloud-platform"]
 class GcpCloudConnector(CloudConnector):
     """Gcp Cloud Connector."""
 
-    platform = "gcp"
+    platform = PlatformEnum.GCP
     organization_id: str
     credentials: ServiceAccountCredentials
     platform_settings: GcpSpecificSettings

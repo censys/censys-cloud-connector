@@ -10,6 +10,7 @@ from parameterized import parameterized
 from pytest_mock import MockerFixture
 
 from censys.cloud_connectors import __connectors__
+from censys.cloud_connectors.common.enums import PlatformEnum
 from censys.cloud_connectors.common.settings import PlatformSpecificSettings, Settings
 
 TEST_AZURE_KEY = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
@@ -51,7 +52,7 @@ class TestSettings(TestCase):
 
     @parameterized.expand(
         [
-            ("azure", "test_azure_platforms.yml", 2),
+            (PlatformEnum.AZURE, "test_azure_platforms.yml", 2),
         ]
     )
     def test_read_platforms_config_file(self, platform, file_name, expected_count):
@@ -69,8 +70,8 @@ class TestSettings(TestCase):
             ("test_no_name_platforms.yml", ValueError, "Platform name is required"),
             (
                 "test_unknown_platforms.yml",
-                ImportError,
-                "Could not import the settings for the unknown platform",
+                ValueError,
+                "Platform name is not valid: Unknown",
             ),
         ]
     )
@@ -92,7 +93,8 @@ class TestSettings(TestCase):
 
     @parameterized.expand(__connectors__)
     def test_scan_all(self, platform_name: str):
-        self.settings.platforms[platform_name] = []
+        platform = PlatformEnum[platform_name.upper()]
+        self.settings.platforms[platform] = []
         mock_connector = self.mocker.MagicMock()
         mock_connector().scan_all.return_value = []
         mock_platform = self.mocker.MagicMock()
@@ -105,11 +107,6 @@ class TestSettings(TestCase):
             f"censys.cloud_connectors.{platform_name}"
         )
         mock_connector().scan_all.assert_called_once()
-
-    def test_scan_all_fail(self):
-        self.settings.platforms["this_platform_does_not_exist"] = []
-        with pytest.raises(ImportError, match="Could not import the connector for the"):
-            self.settings.scan_all()
 
 
 class ExamplePlatformSettings(PlatformSpecificSettings):
