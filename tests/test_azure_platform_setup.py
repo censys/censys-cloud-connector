@@ -177,7 +177,7 @@ class TestAzurePlatformSetup(TestCase):
         # Mock prompt
         mock_prompt = self.mocker.patch(
             "censys.cloud_connectors.azure.platform_setup.prompt",
-            return_value={"get_credentials_from": "Input"},
+            return_value={"get_credentials_from": "Input existing credentials"},
         )
         mock_setup = self.mocker.patch.object(
             self.setup_cli.__class__.__bases__[0],
@@ -198,7 +198,7 @@ class TestAzurePlatformSetup(TestCase):
         # Mock prompt
         mock_prompt = self.mocker.patch(
             "censys.cloud_connectors.azure.platform_setup.prompt",
-            return_value={"get_credentials_from": "CLI"},
+            return_value={"get_credentials_from": "Generate with CLI"},
         )
         # Mock get_subscriptions_from_cli
         mock_get_subscriptions = self.mocker.patch.object(

@@ -157,12 +157,14 @@ class AzureSetupCli(PlatformSetupCli):
         Raises:
             KeyboardInterrupt: If the user cancels the prompt.
         """
+        cli_choice = "Generate with CLI"
+        input_choice = "Input existing credentials"
         questions = [
             {
                 "type": "list",
                 "name": "get_credentials_from",
-                "message": "Get credentials from",
-                "choices": ["CLI", "Input"],
+                "message": "Select a method to configure your credentials",
+                "choices": [cli_choice, input_choice],
             }
         ]
         answers = prompt(questions)
@@ -170,9 +172,9 @@ class AzureSetupCli(PlatformSetupCli):
             raise KeyboardInterrupt
 
         get_credentials_from = answers.get("get_credentials_from")
-        if get_credentials_from == "Input":
+        if get_credentials_from == input_choice:
             super().setup()
-        elif get_credentials_from == "CLI":
+        elif get_credentials_from == cli_choice:
             subscriptions = self.get_subscriptions_from_cli()
             if len(subscriptions) == 0:
                 self.logger.error("No subscriptions found")
