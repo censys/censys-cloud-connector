@@ -1,1 +1,1 @@
-"""Aws platform-specific settings."""
+"""Aws specific settings."""

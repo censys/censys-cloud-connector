@@ -1,5 +1,5 @@
-- # name of platform
-  platform: azure
+- # name of cloud service provider
+  provider: azure
   tenant_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
   client_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
   client_secret: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx

@@ -17,7 +17,7 @@ from msrest.serialization import Model as AzureModel
 
 from censys.cloud_connectors.common.cloud_asset import AzureContainerAsset
 from censys.cloud_connectors.common.connector import CloudConnector
-from censys.cloud_connectors.common.enums import PlatformEnum
+from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.seed import DomainSeed, IpSeed
 
 from .settings import AzureSpecificSettings
@@ -26,10 +26,10 @@ from .settings import AzureSpecificSettings
 class AzureCloudConnector(CloudConnector):
     """Azure Cloud Connector."""
 
-    platform = PlatformEnum.AZURE
+    provider = ProviderEnum.AZURE
     subscription_id: str
     credentials: ClientSecretCredential
-    platform_settings: AzureSpecificSettings
+    provider_settings: AzureSpecificSettings
 
     def scan(self):
         """Scan Azure."""
@@ -38,18 +38,18 @@ class AzureCloudConnector(CloudConnector):
 
     def scan_all(self):
         """Scan all Azure Subscriptions."""
-        platform_settings: list[AzureSpecificSettings] = self.settings.platforms.get(
-            self.platform, []
+        provider_settings: list[AzureSpecificSettings] = self.settings.providers.get(
+            self.provider, []
         )
-        for platform_setting in platform_settings:
+        for provider_setting in provider_settings:
             # TODO: Add support for disabling specific services
-            self.platform_settings = platform_setting
+            self.provider_settings = provider_setting
             self.credentials = ClientSecretCredential(
-                tenant_id=platform_setting.tenant_id,
-                client_id=platform_setting.client_id,
-                client_secret=platform_setting.client_secret,
+                tenant_id=provider_setting.tenant_id,
+                client_id=provider_setting.client_id,
+                client_secret=provider_setting.client_secret,
             )
-            for subscription_id in self.platform_settings.subscription_id:
+            for subscription_id in self.provider_settings.subscription_id:
                 self.logger.debug(f"Scanning Azure Subscription {subscription_id}")
                 self.subscription_id = subscription_id
                 self.scan()

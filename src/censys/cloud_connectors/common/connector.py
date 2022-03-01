@@ -6,7 +6,7 @@ from censys.asm import Seeds
 from censys.common.exceptions import CensysAsmException
 
 from .cloud_asset import CloudAsset
-from .enums import PlatformEnum
+from .enums import ProviderEnum
 from .logger import get_logger
 from .seed import Seed
 from .settings import Settings
@@ -15,7 +15,7 @@ from .settings import Settings
 class CloudConnector(ABC):
     """Base class for Cloud Connectors."""
 
-    platform: PlatformEnum
+    provider: ProviderEnum
     label_prefix: str = ""
     seeds: dict[str, list[Seed]] = defaultdict(list)
     cloud_assets: dict[str, list[CloudAsset]] = defaultdict(list)
@@ -27,14 +27,15 @@ class CloudConnector(ABC):
             settings (Settings): The settings to use.
 
         Raises:
-            ValueError: If the platform is not set.
+            ValueError: If the provider is not set.
         """
-        if not self.platform:
-            raise ValueError("The platform must be set.")
-        self.label_prefix = self.platform.label() + ": "
+        if not self.provider:
+            raise ValueError("The provider must be set.")
+        self.label_prefix = self.provider.label() + ": "
         self.settings = settings
         self.logger = get_logger(
-            log_name=f"{self.platform}_cloud_connector", level=settings.logging_level
+            log_name=f"{self.provider.lower()}_cloud_connector",
+            level=settings.logging_level,
         )
 
         self.seeds_api = Seeds(settings.censys_api_key)

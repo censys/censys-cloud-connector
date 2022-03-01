@@ -6,7 +6,7 @@ from typing import DefaultDict, OrderedDict, Union
 import yaml
 from pydantic import BaseSettings, Field, HttpUrl
 
-from .enums import PlatformEnum
+from .enums import ProviderEnum
 
 
 def ordered_dict_representer(
@@ -30,10 +30,10 @@ yaml.representer.SafeRepresenter.add_representer(
 )
 
 
-class PlatformSpecificSettings(BaseSettings):
-    """Base class for all platform-specific settings."""
+class ProviderSpecificSettings(BaseSettings):
+    """Base class for all provider-specific settings."""
 
-    platform: str
+    provider: str
 
     def as_dict(self) -> OrderedDict[str, Union[str, list[str]]]:
         """Return the settings as a dictionary.
@@ -43,40 +43,40 @@ class PlatformSpecificSettings(BaseSettings):
         """
         res = OrderedDict()
         settings_as_dict = self.dict()
-        if platform_name := settings_as_dict.get("platform"):
-            settings_as_dict["platform"] = platform_name.lower()
-        for key in ["platform"]:
+        if provider_name := settings_as_dict.get("provider"):
+            settings_as_dict["provider"] = provider_name.lower()
+        for key in ["provider"]:
             res[key] = settings_as_dict.pop(key)
         res.update(settings_as_dict)
         return res
 
     @classmethod
     def from_dict(cls, data: dict):
-        """Create a PlatformSpecificSettings object from a dictionary.
+        """Create a ProviderSpecificSettings object from a dictionary.
 
         Args:
             data (dict): The dictionary to use.
 
         Returns:
-            PlatformSpecificSettings: The settings.
+            ProviderSpecificSettings: The settings.
         """
-        if platform_name := data.get("platform"):
-            data["platform"] = platform_name.title()
+        if provider_name := data.get("provider"):
+            data["provider"] = provider_name.title()
         return cls(**data)
 
 
 class Settings(BaseSettings):
     """Settings for the Cloud Connector."""
 
-    # Platforms settings
-    platforms: DefaultDict[str, list] = collections.defaultdict(list)
+    # Providers settings
+    providers: DefaultDict[str, list] = collections.defaultdict(list)
 
     # Required
     censys_api_key: str = Field(env="CENSYS_API_KEY", min_length=36, max_length=36)
 
     # Optional
-    platforms_config_file: str = Field(
-        default="platforms.yml", env="PLATFORMS_CONFIG_FILE"
+    providers_config_file: str = Field(
+        default="providers.yml", env="PROVIDERS_CONFIG_FILE"
     )
     scan_frequency: int = Field(default=-1)
     logging_level: str = Field(default="INFO", env="LOGGING_LEVEL")
@@ -96,51 +96,51 @@ class Settings(BaseSettings):
 
         env_file = ".env"
 
-    def read_platforms_config_file(self):
-        """Read platform config file.
+    def read_providers_config_file(self):
+        """Read provider config file.
 
         Raises:
             FileNotFoundError: If the file does not exist.
-            ValueError: Platform name is not valid.
+            ValueError: Provider name is not valid.
         """
         try:
-            with open(self.platforms_config_file) as f:
-                platform_config = yaml.safe_load(f)
+            with open(self.providers_config_file) as f:
+                provider_config = yaml.safe_load(f)
         except FileNotFoundError as e:
             raise FileNotFoundError(
-                f"Platform config file not found: {self.platforms_config_file}"
+                f"Provider config file not found: {self.providers_config_file}"
             ) from e
 
-        if not platform_config:
+        if not provider_config:
             return
 
-        for platform_config in platform_config:
-            platform_name = platform_config.get("platform")
-            if not platform_name:
-                raise ValueError("Platform name is required")
+        for provider_config in provider_config:
+            provider_name = provider_config.get("provider")
+            if not provider_name:
+                raise ValueError("Provider name is required")
             try:
-                platform = PlatformEnum[platform_name.upper()]
+                provider = ProviderEnum[provider_name.upper()]
             except KeyError as e:
-                raise ValueError(f"Platform name is not valid: {platform_name}") from e
-            platform_settings_cls = importlib.import_module(
-                platform.module_path()
+                raise ValueError(f"Provider name is not valid: {provider_name}") from e
+            provider_settings_cls = importlib.import_module(
+                provider.module_path()
             ).__settings__
-            platform_settings = platform_settings_cls.from_dict(platform_config)
-            self.platforms[platform].append(platform_settings)
+            provider_settings = provider_settings_cls.from_dict(provider_config)
+            self.providers[provider].append(provider_settings)
 
-    def write_platforms_config_file(self):
-        """Write platforms config file."""
-        all_platforms = []
-        for platform_settings in self.platforms.values():
-            all_platforms.extend([pss.as_dict() for pss in platform_settings])
-        with open(self.platforms_config_file, "w") as f:
-            yaml.safe_dump(all_platforms, f, default_flow_style=False, sort_keys=False)
+    def write_providers_config_file(self):
+        """Write providers config file."""
+        all_providers = []
+        for provider_settings in self.providers.values():
+            all_providers.extend([pss.as_dict() for pss in provider_settings])
+        with open(self.providers_config_file, "w") as f:
+            yaml.safe_dump(all_providers, f, default_flow_style=False, sort_keys=False)
 
     def scan_all(self):
-        """Scan all platforms."""
-        for platform in self.platforms.keys():
+        """Scan all providers."""
+        for provider in self.providers.keys():
             connector_cls = importlib.import_module(
-                platform.module_path()
+                provider.module_path()
             ).__connector__
             connector = connector_cls(self)
             connector.scan_all()

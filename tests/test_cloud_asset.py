@@ -10,7 +10,7 @@ from censys.cloud_connectors.common.cloud_asset import (
     GcpCloudStorageAsset,
     ObjectStorageAsset,
 )
-from censys.cloud_connectors.common.enums import PlatformEnum
+from censys.cloud_connectors.common.enums import ProviderEnum
 
 TEST_TYPE = "test_type"
 TEST_VALUE = "test_value"
@@ -27,7 +27,7 @@ class CloudAssetTest(TestCase):
         cloud_asset = CloudAsset(
             type=TEST_TYPE,
             value=TEST_VALUE,
-            cspLabel=PlatformEnum.AWS,
+            cspLabel=ProviderEnum.AWS,
             scan_data=TEST_SCAN_DATA,
             uid=TEST_UID,
         )
@@ -35,13 +35,13 @@ class CloudAssetTest(TestCase):
         assert cloud_asset.to_dict() == {
             "type": TEST_TYPE,
             "value": TEST_VALUE,
-            "cspLabel": PlatformEnum.AWS.label(),
+            "cspLabel": ProviderEnum.AWS.label(),
             "scanData": '{"test_scan_data": "test_scan_data"}',
         }
 
     def test_object_storage_asset(self):
         cloud_asset = ObjectStorageAsset(
-            value=TEST_VALUE, cspLabel=PlatformEnum.AWS, uid=TEST_UID
+            value=TEST_VALUE, cspLabel=ProviderEnum.AWS, uid=TEST_UID
         )
         assert cloud_asset.type == "OBJECT_STORAGE"
 
@@ -51,7 +51,7 @@ class CloudAssetTest(TestCase):
         cloud_asset = GcpCloudStorageAsset(value=test_value, uid=test_object_name)
         assert cloud_asset.type == "OBJECT_STORAGE"
         assert cloud_asset.value == test_value
-        assert cloud_asset.cspLabel == PlatformEnum.GCP
+        assert cloud_asset.cspLabel == ProviderEnum.GCP
         assert cloud_asset.scan_data == {}
         assert cloud_asset.uid == "test-bucket"
 
@@ -73,7 +73,7 @@ class CloudAssetTest(TestCase):
         cloud_asset = AzureContainerAsset(value=test_value, uid=test_object_name)
         assert cloud_asset.type == "OBJECT_STORAGE"
         assert cloud_asset.value == test_value
-        assert cloud_asset.cspLabel == PlatformEnum.AZURE
+        assert cloud_asset.cspLabel == ProviderEnum.AZURE
         assert cloud_asset.scan_data == {}
         assert cloud_asset.uid == "test-container"
 

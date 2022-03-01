@@ -3,31 +3,31 @@ from googleapiclient.discovery import build as build_resource
 from oauth2client.service_account import ServiceAccountCredentials
 
 from censys.cloud_connectors.common.connector import CloudConnector
-from censys.cloud_connectors.common.enums import PlatformEnum
+from censys.cloud_connectors.common.enums import ProviderEnum
 
 from .settings import GcpSpecificSettings
 
-SCOPES = ["https://www.googleapis.com/auth/cloud-platform"]
+SCOPES = ["https://www.googleapis.com/auth/cloud-provider"]
 
 
 class GcpCloudConnector(CloudConnector):
     """Gcp Cloud Connector."""
 
-    platform = PlatformEnum.GCP
+    provider = ProviderEnum.GCP
     organization_id: str
     credentials: ServiceAccountCredentials
-    platform_settings: GcpSpecificSettings
+    provider_settings: GcpSpecificSettings
 
     def scan_all(self):
         """Scan all Gcp Organizations."""
-        platform_settings: list[GcpSpecificSettings] = self.settings.platforms.get(
-            self.platform, []
+        provider_settings: list[GcpSpecificSettings] = self.settings.providers.get(
+            self.provider, []
         )
-        for platform_setting in platform_settings:
-            self.platform_settings = platform_setting
-            self.organization_id = platform_setting.organization_id
+        for provider_setting in provider_settings:
+            self.provider_settings = provider_setting
+            self.organization_id = provider_setting.organization_id
             self.credentials = ServiceAccountCredentials.from_json_keyfile_dict(
-                platform_setting.service_account_json_file, scopes=SCOPES
+                provider_setting.service_account_json_file, scopes=SCOPES
             )
             self.security_center_client = build_resource(
                 "securitycenter",

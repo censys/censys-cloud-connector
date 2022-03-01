@@ -1,4 +1,4 @@
-"""Base for all platform-specific setup cli commands."""
+"""Base for all provider-specific setup cli commands."""
 from logging import Logger
 from typing import Any, Callable, Union, get_origin
 
@@ -6,9 +6,9 @@ from pydantic.fields import ModelField
 from pydantic.utils import lenient_issubclass
 from PyInquirer import prompt
 
-from censys.cloud_connectors.common.enums import PlatformEnum
+from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.logger import get_logger
-from censys.cloud_connectors.common.settings import PlatformSpecificSettings, Settings
+from censys.cloud_connectors.common.settings import ProviderSpecificSettings, Settings
 
 
 def snake_case_to_english(snake_case: str) -> str:
@@ -92,43 +92,43 @@ def prompt_for_list(field: ModelField) -> list[str]:
     return values
 
 
-class PlatformSetupCli:
-    """Base for all platform-specific setup cli commands."""
+class ProviderSetupCli:
+    """Base for all provider-specific setup cli commands."""
 
-    platform: PlatformEnum
-    platform_specific_settings_class: type[PlatformSpecificSettings]
+    provider: ProviderEnum
+    provider_specific_settings_class: type[ProviderSpecificSettings]
     settings: Settings
     logger: Logger
 
     def __init__(self, settings: Settings):
-        """Initialize the platform setup cli command.
+        """Initialize the provider setup cli command.
 
         Args:
             settings (Settings): The settings to use.
         """
         self.settings = settings
         self.logger = get_logger(
-            log_name=f"{self.platform}_setup", level=settings.logging_level
+            log_name=f"{self.provider}_setup", level=settings.logging_level
         )
 
     def setup(self) -> None:
-        """Setup the platform."""
-        platform_settings = self.prompt_for_settings()
-        self.settings.platforms[self.platform].append(platform_settings)
+        """Setup the provider."""
+        provider_settings = self.prompt_for_settings()
+        self.settings.providers[self.provider].append(provider_settings)
 
-    def prompt_for_settings(self) -> PlatformSpecificSettings:
+    def prompt_for_settings(self) -> ProviderSpecificSettings:
         """Prompt for settings.
 
         Returns:
-            PlatformSpecificSettings: The settings.
+            ProviderSpecificSettings: The settings.
 
         Raises:
             ValueError: If the settings are invalid.
         """
-        excluded_fields: list[str] = ["platform"]
+        excluded_fields: list[str] = ["provider"]
         settings_fields: dict[
             str, ModelField
-        ] = self.platform_specific_settings_class.__fields__
+        ] = self.provider_specific_settings_class.__fields__
         questions = []
         answers = {}
         type_cast_map: dict[str, type] = {}
@@ -172,4 +172,4 @@ class PlatformSetupCli:
         if type_cast_map:
             for key, type_ in type_cast_map.items():
                 answers[key] = type_(answers[key])
-        return self.platform_specific_settings_class(**answers)
+        return self.provider_specific_settings_class(**answers)

@@ -1,10 +1,10 @@
-- platform: azure
+- provider: azure
   tenant_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
   client_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
   client_secret: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
   subscription_id:
     - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-- platform: azure
+- provider: azure
   tenant_id: yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
   client_id: yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
   client_secret: yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy

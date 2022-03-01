@@ -1,21 +1,21 @@
-"""Azure platform-specific setup CLI."""
+"""Azure specific setup CLI."""
 import json
 import subprocess
 from typing import Optional
 
 from PyInquirer import prompt
 
-from censys.cloud_connectors.common.cli.platform_setup import PlatformSetupCli
-from censys.cloud_connectors.common.enums import PlatformEnum
+from censys.cloud_connectors.common.cli.provider_setup import ProviderSetupCli
+from censys.cloud_connectors.common.enums import ProviderEnum
 
 from .settings import AzureSpecificSettings
 
 
-class AzureSetupCli(PlatformSetupCli):
-    """Azure platform setup cli command."""
+class AzureSetupCli(ProviderSetupCli):
+    """Azure provider setup cli command."""
 
-    platform = PlatformEnum.AZURE
-    platform_specific_settings_class = AzureSpecificSettings
+    provider = ProviderEnum.AZURE
+    provider_specific_settings_class = AzureSpecificSettings
 
     def get_subscriptions_from_cli(self) -> list[dict[str, str]]:
         """Get subscriptions from the CLI.
@@ -152,7 +152,7 @@ class AzureSetupCli(PlatformSetupCli):
         return creds
 
     def setup(self):
-        """Setup the Azure platform.
+        """Setup the Azure provider.
 
         Raises:
             KeyboardInterrupt: If the user cancels the prompt.
@@ -193,7 +193,7 @@ class AzureSetupCli(PlatformSetupCli):
                 exit(1)
 
             # Save the service principal
-            platform_settings = self.platform_specific_settings_class(
+            provider_settings = self.provider_specific_settings_class(
                 subscription_id=[
                     subscription_id
                     for s in selected_subscriptions
@@ -203,4 +203,4 @@ class AzureSetupCli(PlatformSetupCli):
                 client_id=service_principal.get("appId"),
                 client_secret=service_principal.get("password"),
             )
-            self.settings.platforms[self.platform].append(platform_settings)
+            self.settings.providers[self.provider].append(provider_settings)

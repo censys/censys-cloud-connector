@@ -18,16 +18,16 @@ from pydantic import (
 from pydantic.fields import ModelField
 from pytest_mock import MockerFixture
 
-from censys.cloud_connectors.common.cli.platform_setup import (
-    PlatformSetupCli,
+from censys.cloud_connectors.common.cli.provider_setup import (
+    ProviderSetupCli,
     generate_validation,
     prompt_for_list,
     snake_case_to_english,
 )
-from censys.cloud_connectors.common.settings import PlatformSpecificSettings, Settings
+from censys.cloud_connectors.common.settings import ProviderSpecificSettings, Settings
 
 
-class TestPlatformSetup(TestCase):
+class TestProviderSetup(TestCase):
     @pytest.fixture(autouse=True)
     def __inject_fixtures(self, mocker: MockerFixture):
         self.mocker = mocker
@@ -96,7 +96,7 @@ class TestPlatformSetup(TestCase):
         test_field.type_ = str
         test_field.validate.return_value = (None, None)
         mock_prompt = self.mocker.patch(
-            "censys.cloud_connectors.common.cli.platform_setup.prompt"
+            "censys.cloud_connectors.common.cli.provider_setup.prompt"
         )
         mock_prompt.side_effect = prompt_side_effect
 
@@ -110,8 +110,8 @@ class TestPlatformSetup(TestCase):
         assert mock_prompt.call_count == prompt_call_count
 
 
-class ExamplePlatformSpecificSettings(PlatformSpecificSettings):
-    platform = "test_platform"
+class ExampleProviderSpecificSettings(ProviderSpecificSettings):
+    provider = "test_provider"
 
     string_1: str
     string_2_with_default: str = "default_value_1"
@@ -137,19 +137,19 @@ class ExamplePlatformSpecificSettings(PlatformSpecificSettings):
     float_6_with_field: float = Field(gt=1)
 
 
-class ExamplePlatformSetupCli(PlatformSetupCli):
-    platform = "test_platform"  # type: ignore
-    platform_specific_settings_class = ExamplePlatformSpecificSettings
+class ExampleProviderSetupCli(ProviderSetupCli):
+    provider = "test_provider"  # type: ignore
+    provider_specific_settings_class = ExampleProviderSpecificSettings
 
 
-class TestPlatformSetupCli(TestCase):
+class TestProviderSetupCli(TestCase):
     @pytest.fixture(autouse=True)
     def __inject_fixtures(self, mocker: MockerFixture):
         self.mocker = mocker
 
     def setUp(self) -> None:
         self.settings = Settings()
-        self.setup_cli = ExamplePlatformSetupCli(self.settings)
+        self.setup_cli = ExampleProviderSetupCli(self.settings)
 
     def test_init(self):
         assert self.setup_cli.settings == self.settings
@@ -159,15 +159,15 @@ class TestPlatformSetupCli(TestCase):
         # Mock prompt
         mock_prompt = self.mocker.patch.object(self.setup_cli, "prompt_for_settings")
         mock_prompt.return_value = self.mocker.MagicMock()
-        test_platform = ExamplePlatformSetupCli.platform
-        assert self.setup_cli.settings.platforms[test_platform] == []
+        test_provider = ExampleProviderSetupCli.provider
+        assert self.setup_cli.settings.providers[test_provider] == []
 
         # Actual call
         self.setup_cli.setup()
 
         # Assertions
         mock_prompt.assert_called_once()
-        assert self.setup_cli.settings.platforms[test_platform] == [
+        assert self.setup_cli.settings.providers[test_provider] == [
             mock_prompt.return_value
         ]
 
@@ -215,11 +215,11 @@ class TestPlatformSetupCli(TestCase):
 
         # Mock
         mock_prompt_for_list = self.mocker.patch(
-            "censys.cloud_connectors.common.cli.platform_setup.prompt_for_list",
+            "censys.cloud_connectors.common.cli.provider_setup.prompt_for_list",
             side_effect=list(expected_list_fields.values()),
         )
         mock_prompt = self.mocker.patch(
-            "censys.cloud_connectors.common.cli.platform_setup.prompt",
+            "censys.cloud_connectors.common.cli.provider_setup.prompt",
             return_value=expected_field_values,
         )
 
@@ -227,7 +227,7 @@ class TestPlatformSetupCli(TestCase):
         actual_settings = self.setup_cli.prompt_for_settings()
 
         # Assertions
-        assert actual_settings.platform == ExamplePlatformSetupCli.platform
+        assert actual_settings.provider == ExampleProviderSetupCli.provider
         assert mock_prompt_for_list.call_count == len(expected_list_fields)
         mock_prompt.assert_called_once()
         for field_name, field_value in expected_field_values.items():

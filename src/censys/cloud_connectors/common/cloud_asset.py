@@ -3,7 +3,7 @@ import json
 
 from pydantic import AnyUrl, BaseModel, parse_obj_as, validator
 
-from censys.cloud_connectors.common.enums import PlatformEnum
+from censys.cloud_connectors.common.enums import ProviderEnum
 
 
 class CloudAsset(BaseModel):
@@ -11,7 +11,7 @@ class CloudAsset(BaseModel):
 
     type: str
     value: str
-    cspLabel: PlatformEnum
+    cspLabel: ProviderEnum
     scan_data: dict = {}
     uid: str  # Used as cloudConnectorUid
 
@@ -38,7 +38,7 @@ class ObjectStorageAsset(CloudAsset):
 class GcpCloudStorageAsset(ObjectStorageAsset):
     """GCP Cloud Storage asset."""
 
-    cspLabel = PlatformEnum.GCP
+    cspLabel = ProviderEnum.GCP
 
     @validator("value")
     def value_is_valid_bucket_name(cls, v: str) -> str:
@@ -62,7 +62,7 @@ class GcpCloudStorageAsset(ObjectStorageAsset):
 class AzureContainerAsset(ObjectStorageAsset):
     """Azure Container asset."""
 
-    cspLabel = PlatformEnum.AZURE
+    cspLabel = ProviderEnum.AZURE
 
     @validator("value")
     def value_is_valid_container_url(cls, v: str) -> str:

@@ -1,10 +1,10 @@
-"""GCP platform-specific settings."""
+"""GCP provider-specific settings."""
 from typing import Union
 
 from pydantic import ConstrainedStr, Field, FilePath, validator
 
-from censys.cloud_connectors.common.enums import PlatformEnum
-from censys.cloud_connectors.common.settings import PlatformSpecificSettings
+from censys.cloud_connectors.common.enums import ProviderEnum
+from censys.cloud_connectors.common.settings import ProviderSpecificSettings
 
 
 class ProjectId(ConstrainedStr):
@@ -14,10 +14,10 @@ class ProjectId(ConstrainedStr):
     max_length = 30
 
 
-class GcpSpecificSettings(PlatformSpecificSettings):
+class GcpSpecificSettings(ProviderSpecificSettings):
     """GCP specific settings."""
 
-    platform: str = PlatformEnum.GCP
+    provider: str = ProviderEnum.GCP
 
     service_account_json_file: FilePath = Field(env="GOOGLE_APPLICATION_CREDENTIALS")
     organization_id: str = Field(min_length=36, max_length=36, default=None)

@@ -149,7 +149,4 @@ cython_debug/
 .vscode/
 
 # Censys Config
-platforms.yml
-
-# Azure Config
-azure-sp.json
+providers.yml

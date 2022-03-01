@@ -6,7 +6,7 @@ import pytest
 from parameterized import parameterized
 from pytest_mock import MockerFixture
 
-from censys.cloud_connectors.azure import __platform_setup__
+from censys.cloud_connectors.azure import __provider_setup__
 from censys.cloud_connectors.common.settings import Settings
 
 failed_import = False
@@ -18,7 +18,7 @@ except ImportError:
 
 
 @pytest.mark.skipif(failed_import, reason="Azure SDK not installed")
-class TestAzurePlatformSetup(TestCase):
+class TestAzureProviderSetup(TestCase):
     @pytest.fixture(autouse=True)
     def __inject_fixtures(self, mocker: MockerFixture, shared_datadir: Path):
         self.mocker = mocker
@@ -28,7 +28,7 @@ class TestAzurePlatformSetup(TestCase):
         with open(self.shared_datadir / "test_azure_responses.json") as f:
             self.data = json.load(f)
         self.settings = Settings()
-        self.setup_cli = __platform_setup__(self.settings)
+        self.setup_cli = __provider_setup__(self.settings)
 
     def test_get_subscriptions_from_cli(self):
         # Test data
@@ -104,7 +104,7 @@ class TestAzurePlatformSetup(TestCase):
 
         # Mock prompt
         mock_prompt = self.mocker.patch(
-            "censys.cloud_connectors.azure.platform_setup.prompt"
+            "censys.cloud_connectors.azure.provider_setup.prompt"
         )
         mock_selected_ids = ["subscription_0", "subscription_1", "subscription_2"]
         mock_prompt.return_value = {"subscription_ids": mock_selected_ids}
@@ -152,11 +152,11 @@ class TestAzurePlatformSetup(TestCase):
 
         # Mock prompt
         mock_prompt = self.mocker.patch(
-            "censys.cloud_connectors.azure.platform_setup.prompt",
+            "censys.cloud_connectors.azure.provider_setup.prompt",
             return_value={"create_service_principal": True},
         )
         mock_run = self.mocker.patch(
-            "censys.cloud_connectors.azure.platform_setup.subprocess.run"
+            "censys.cloud_connectors.azure.provider_setup.subprocess.run"
         )
         mock_run.return_value.returncode = return_code
         mock_creds = {"test_service_principal": "test_secret"}
@@ -176,7 +176,7 @@ class TestAzurePlatformSetup(TestCase):
     def test_setup_input(self):
         # Mock prompt
         mock_prompt = self.mocker.patch(
-            "censys.cloud_connectors.azure.platform_setup.prompt",
+            "censys.cloud_connectors.azure.provider_setup.prompt",
             return_value={"get_credentials_from": "Input existing credentials"},
         )
         mock_setup = self.mocker.patch.object(
@@ -197,7 +197,7 @@ class TestAzurePlatformSetup(TestCase):
         test_subscriptions = [{"id": test_subscription_id}]
         # Mock prompt
         mock_prompt = self.mocker.patch(
-            "censys.cloud_connectors.azure.platform_setup.prompt",
+            "censys.cloud_connectors.azure.provider_setup.prompt",
             return_value={"get_credentials_from": "Generate with CLI"},
         )
         # Mock get_subscriptions_from_cli
@@ -226,12 +226,12 @@ class TestAzurePlatformSetup(TestCase):
         with pytest.raises(SystemExit):
             self.setup_cli.setup()
         mock_create_service_principal.return_value = self.data["TEST_SERVICE_PRINCIPAL"]
-        # Assert no platform settings are created
-        assert self.setup_cli.settings.platforms[self.setup_cli.platform] == []
+        # Assert no provider settings are created
+        assert self.setup_cli.settings.providers[self.setup_cli.provider] == []
 
         # Actual call
         self.setup_cli.setup()
 
         # Assertions
         mock_prompt.assert_called()
-        assert len(self.setup_cli.settings.platforms[self.setup_cli.platform]) == 1
+        assert len(self.setup_cli.settings.providers[self.setup_cli.provider]) == 1

@@ -33,7 +33,7 @@ class TestAzureCloudConnector(TestCase):
         with open(self.shared_datadir / "test_azure_responses.json") as f:
             self.data = json.load(f)
         self.settings = Settings(censys_api_key=self.consts["censys_api_key"])
-        self.settings.platforms["azure"] = [
+        self.settings.providers["azure"] = [
             AzureSpecificSettings.from_dict(self.data["TEST_CREDS"])
         ]
         self.connector = AzureCloudConnector(self.settings)
@@ -66,7 +66,7 @@ class TestAzureCloudConnector(TestCase):
             assert seed.value in values
 
     def test_init(self):
-        assert self.connector.platform == "Azure"
+        assert self.connector.provider == "Azure"
         assert self.connector.label_prefix == "AZURE: "
         assert self.connector.settings == self.settings
 
@@ -93,11 +93,11 @@ class TestAzureCloudConnector(TestCase):
             test_multiple_subscriptions["subscription_id"],
             test_multiple_subscriptions["subscription_id"].replace("x", "y"),
         ]
-        platform_settings = [
+        provider_settings = [
             AzureSpecificSettings.from_dict(test_single_subscription),
             AzureSpecificSettings.from_dict(test_multiple_subscriptions),
         ]
-        self.connector.settings.platforms[self.connector.platform] = platform_settings
+        self.connector.settings.providers[self.connector.provider] = provider_settings
 
         # Mock scan
         mock_scan = self.mocker.patch.object(self.connector, "scan")

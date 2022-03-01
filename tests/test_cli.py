@@ -51,7 +51,7 @@ class TestConfigCli(TestCase):
             "censys.cloud_connectors.common.cli.commands.config.prompt",
             side_effect=[
                 {
-                    "platform": "test_connector_1",
+                    "provider": "test_connector_1",
                 },
                 {"save": True},
             ],
@@ -60,12 +60,12 @@ class TestConfigCli(TestCase):
             "censys.cloud_connectors.common.cli.commands.config.importlib.import_module"
         )
         mock_setup_cls = (
-            mock_importlib.return_value.__platform_setup__
+            mock_importlib.return_value.__provider_setup__
         ) = self.mocker.Mock()
         mock_settings = self.mocker.patch(
             "censys.cloud_connectors.common.cli.commands.config.Settings"
         )
-        mock_settings.return_value.read_platforms_config_file = self.mocker.Mock()
+        mock_settings.return_value.read_providers_config_file = self.mocker.Mock()
 
         # Actual call
         config.cli_config(None)
@@ -75,7 +75,7 @@ class TestConfigCli(TestCase):
         mock_importlib.assert_called_once_with(
             "censys.cloud_connectors.test_connector_1"
         )
-        mock_settings.return_value.read_platforms_config_file.assert_called_once_with()
+        mock_settings.return_value.read_providers_config_file.assert_called_once_with()
         mock_setup_cls.assert_called_once()
         mock_setup_cls.return_value.setup.assert_called_once()
 
@@ -90,12 +90,12 @@ class TestScanCli(TestCase):
         mock_settings = self.mocker.patch(
             "censys.cloud_connectors.common.cli.commands.scan.Settings"
         )
-        mock_settings.return_value.read_platforms_config_file = self.mocker.Mock()
+        mock_settings.return_value.read_providers_config_file = self.mocker.Mock()
         mock_settings.return_value.scan_all = self.mocker.Mock()
 
         # Actual call
         scan.cli_scan(None)
 
         # Assertions
-        mock_settings.return_value.read_platforms_config_file.assert_called_once_with()
+        mock_settings.return_value.read_providers_config_file.assert_called_once_with()
         mock_settings.return_value.scan_all.assert_called_once_with()

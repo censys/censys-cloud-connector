@@ -24,8 +24,8 @@ def cli_config(_: argparse.Namespace):
     questions = [
         {
             "type": "list",
-            "name": "platform",
-            "message": "Select a platform",
+            "name": "provider",
+            "message": "Select a provider",
             "choices": [
                 {
                     "name": c.capitalize(),
@@ -38,17 +38,17 @@ def cli_config(_: argparse.Namespace):
     answers = prompt(questions)
     if not answers:  # pragma: no cover
         raise KeyboardInterrupt
-    platform_name = answers["platform"]
-    platform_setup_cls = importlib.import_module(
-        f"censys.cloud_connectors.{platform_name}"
-    ).__platform_setup__
+    provider_name = answers["provider"]
+    provider_setup_cls = importlib.import_module(
+        f"censys.cloud_connectors.{provider_name}"
+    ).__provider_setup__
 
     settings = Settings()
     with contextlib.suppress(FileNotFoundError):
-        settings.read_platforms_config_file()
+        settings.read_providers_config_file()
     try:
-        platform_setup = platform_setup_cls(settings)
-        platform_setup.setup()
+        provider_setup = provider_setup_cls(settings)
+        provider_setup.setup()
     except ValidationError as e:  # pragma: no cover
         logger.error(e)
         return
@@ -63,8 +63,8 @@ def cli_config(_: argparse.Namespace):
     if not answers:  # pragma: no cover
         raise KeyboardInterrupt
     if answers.get("save", False):
-        settings.write_platforms_config_file()
-        print(f"Successfully saved settings to {settings.platforms_config_file}")
+        settings.write_providers_config_file()
+        print(f"Successfully saved settings to {settings.providers_config_file}")
 
 
 def include_cli(parent_parser: argparse._SubParsersAction):

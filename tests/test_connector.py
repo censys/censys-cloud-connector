@@ -9,13 +9,13 @@ from censys.common.exceptions import CensysAsmException, CensysException
 
 from censys.cloud_connectors.common.cloud_asset import CloudAsset
 from censys.cloud_connectors.common.connector import CloudConnector
-from censys.cloud_connectors.common.enums import PlatformEnum
+from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.seed import Seed
 from censys.cloud_connectors.common.settings import Settings
 
 
 class ExampleCloudConnector(CloudConnector):
-    platform = PlatformEnum.AWS
+    provider = ProviderEnum.AWS
 
     def get_seeds(self):
         return super().get_seeds()
@@ -42,7 +42,7 @@ class TestCloudConnector(TestCase):
             self.data = json.load(f)
         self.settings = Settings(
             censys_api_key=self.data["censys_api_key"],
-            platforms_config_file=str(self.shared_datadir / "test_empty_platforms.yml"),
+            providers_config_file=str(self.shared_datadir / "test_empty_providers.yml"),
         )
         self.connector = ExampleCloudConnector(self.settings)
 
@@ -54,8 +54,8 @@ class TestCloudConnector(TestCase):
             del self.connector.cloud_assets[cloud_asset_key]
 
     def test_init(self):
-        assert self.connector.platform == PlatformEnum.AWS
-        assert self.connector.label_prefix == PlatformEnum.AWS.label() + ": "
+        assert self.connector.provider == ProviderEnum.AWS
+        assert self.connector.label_prefix == ProviderEnum.AWS.label() + ": "
         assert self.connector.settings == self.settings
         assert self.connector.logger is not None
         assert self.connector.seeds_api is not None
@@ -67,10 +67,10 @@ class TestCloudConnector(TestCase):
         assert list(self.connector.cloud_assets.keys()) == []
 
     def test_init_fail(self):
-        # Mock platform
-        self.mocker.patch.object(ExampleCloudConnector, "platform", None)
+        # Mock provider
+        self.mocker.patch.object(ExampleCloudConnector, "provider", None)
 
-        with pytest.raises(ValueError, match="The platform must be set."):
+        with pytest.raises(ValueError, match="The provider must be set."):
             ExampleCloudConnector(Settings())
 
     def test_seeds_api_fail(self):
@@ -88,7 +88,7 @@ class TestCloudConnector(TestCase):
 
     def test_add_cloud_asset(self):
         asset = CloudAsset(
-            type="TEST", value="test-value", cspLabel=PlatformEnum.AWS, uid="test-uid"
+            type="TEST", value="test-value", cspLabel=ProviderEnum.AWS, uid="test-uid"
         )
         self.connector.add_cloud_asset(asset)
         test_uid = self.connector.label_prefix + "test-uid"
@@ -120,7 +120,7 @@ class TestCloudConnector(TestCase):
 
     def test_submit_cloud_assets(self):
         asset = CloudAsset(
-            type="TEST", value="test-value", cspLabel=PlatformEnum.AWS, uid="test-uid"
+            type="TEST", value="test-value", cspLabel=ProviderEnum.AWS, uid="test-uid"
         )
         self.connector.add_cloud_asset(asset)
         add_cloud_mock = self.mocker.patch.object(self.connector, "_add_cloud_assets")
@@ -134,7 +134,7 @@ class TestCloudConnector(TestCase):
 
     def test_fail_submit_cloud_assets(self):
         asset = CloudAsset(
-            type="TEST", value="test-value", cspLabel=PlatformEnum.AWS, uid="test-uid"
+            type="TEST", value="test-value", cspLabel=ProviderEnum.AWS, uid="test-uid"
         )
         self.connector.add_cloud_asset(asset)
         add_cloud_mock = self.mocker.patch.object(self.connector, "_add_cloud_assets")

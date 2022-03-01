@@ -1,10 +1,10 @@
-"""Azure platform-specific settings."""
+"""Azure specific settings."""
 from typing import Union
 
 from pydantic import ConstrainedStr, Field, validator
 
-from censys.cloud_connectors.common.enums import PlatformEnum
-from censys.cloud_connectors.common.settings import PlatformSpecificSettings
+from censys.cloud_connectors.common.enums import ProviderEnum
+from censys.cloud_connectors.common.settings import ProviderSpecificSettings
 
 
 class AzureId(ConstrainedStr):
@@ -14,10 +14,10 @@ class AzureId(ConstrainedStr):
     max_length = 36
 
 
-class AzureSpecificSettings(PlatformSpecificSettings):
+class AzureSpecificSettings(ProviderSpecificSettings):
     """Azure specific settings."""
 
-    platform = PlatformEnum.AZURE
+    provider = ProviderEnum.AZURE
 
     subscription_id: list[AzureId] = Field(min_items=1)
     tenant_id: AzureId
