@@ -1,9 +1,19 @@
-from typing import Any, List, Type
+from typing import Any
 from unittest import TestCase
 
 import pytest
 from parameterized import parameterized
-from pydantic import BaseConfig, confloat, conint, conlist, constr
+from pydantic import (
+    BaseConfig,
+    NegativeFloat,
+    NonNegativeFloat,
+    NonPositiveInt,
+    PositiveInt,
+    confloat,
+    conint,
+    conlist,
+    constr,
+)
 from pydantic.fields import ModelField
 from pytest_mock import MockerFixture
 
@@ -41,9 +51,13 @@ class TestPlatformSetup(TestCase):
                 ["lessthan"],
                 "ensure this value has at least 10 characters",
             ),
+            (conint(ge=0), 0, True),
+            (conint(ge=0), -1, "ensure this value is greater than or equal to 0"),
+            (confloat(ge=0), 0.0, True),
+            (confloat(ge=0), -1.0, "ensure this value is greater than or equal to 0"),
         ]
     )
-    def test_generate_validation(self, type_: Type, value: Any, expected_output: Any):
+    def test_generate_validation(self, type_: type, value: Any, expected_output: Any):
         # Make ModelField
         field = ModelField.infer(
             name="test_field",
@@ -101,17 +115,21 @@ class ExamplePlatformSpecificSettings(PlatformSpecificSettings):
     string_1: str
     string_2_with_default: str = "default_value_1"
     string_3_with_constr: constr(min_length=1)  # type: ignore
-    list_1: List[str]
-    list_2_with_default: List[str] = ["default_value_2"]
+    list_1: list[str]
+    list_2_with_default: list[str] = ["default_value_2"]
     list_3_with_conlist: conlist(str, min_items=1)  # type: ignore
     bool_1: bool
     bool_2_with_default: bool = True
     int_1: int
     int_2_with_default: int = 1
     int_3_with_conint: conint(gt=1)  # type: ignore
+    int_4_positive: PositiveInt
+    int_5_non_positive: NonPositiveInt
     float_1: float
     float_2_with_default: float = 1.0
-    float_3_with_condecimal: confloat(gt=1)  # type: ignore
+    float_3_with_confloat: confloat(gt=1)  # type: ignore
+    float_4_negative: NegativeFloat
+    float_5_non_negative: NonNegativeFloat
 
 
 class ExamplePlatformSetupCli(PlatformSetupCli):
@@ -168,11 +186,15 @@ class TestPlatformSetupCli(TestCase):
             "int_1": 2,
             "int_2_with_default": 3,
             "int_3_with_conint": 4,
+            "int_4_positive": 5,
+            "int_5_non_positive": -1,
         }
         expected_float_fields = {
             "float_1": 5.0,
             "float_2_with_default": 6.0,
-            "float_3_with_condecimal": 7.0,
+            "float_3_with_confloat": 7.0,
+            "float_4_negative": -8.0,
+            "float_5_non_negative": 9.0,
         }
         expected_field_values = (
             expected_str_fields

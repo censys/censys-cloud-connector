@@ -1,6 +1,4 @@
 """Gcp Cloud Connector."""
-from typing import List
-
 from googleapiclient.discovery import build as build_resource
 from oauth2client.service_account import ServiceAccountCredentials
 
@@ -21,7 +19,7 @@ class GcpCloudConnector(CloudConnector):
 
     def scan_all(self):
         """Scan all Gcp Organizations."""
-        platform_settings: List[GcpSpecificSettings] = self.settings.platforms.get(
+        platform_settings: list[GcpSpecificSettings] = self.settings.platforms.get(
             self.platform, []
         )
         for platform_setting in platform_settings:

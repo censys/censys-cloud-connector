@@ -1,7 +1,7 @@
 """Settings for the Censys Cloud Connector."""
 import collections
 import importlib
-from typing import DefaultDict, Dict, List, OrderedDict, Union
+from typing import DefaultDict, OrderedDict, Union
 
 import yaml
 from pydantic import BaseSettings, Field, HttpUrl
@@ -33,7 +33,7 @@ class PlatformSpecificSettings(BaseSettings):
 
     platform: str
 
-    def as_dict(self) -> OrderedDict[str, Union[str, List[str]]]:
+    def as_dict(self) -> OrderedDict[str, Union[str, list[str]]]:
         """Return the settings as a dictionary.
 
         Returns:
@@ -49,11 +49,11 @@ class PlatformSpecificSettings(BaseSettings):
         return res
 
     @classmethod
-    def from_dict(cls, data: Dict):
+    def from_dict(cls, data: dict):
         """Create a PlatformSpecificSettings object from a dictionary.
 
         Args:
-            data (Dict): The dictionary to use.
+            data (dict): The dictionary to use.
 
         Returns:
             PlatformSpecificSettings: The settings.

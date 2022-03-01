@@ -1,6 +1,5 @@
 """Seed Objects."""
 from ipaddress import IPv4Address, IPv4Network
-from typing import Dict
 
 from pydantic import AnyUrl, BaseModel, parse_obj_as, validator
 
@@ -14,7 +13,7 @@ class Seed(BaseModel):
     value: str
     label: str
 
-    def to_dict(self) -> Dict[str, str]:
+    def to_dict(self) -> dict[str, str]:
         """Convert the seed to a dictionary.
 
         Returns:

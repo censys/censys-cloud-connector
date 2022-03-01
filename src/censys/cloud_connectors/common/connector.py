@@ -1,7 +1,6 @@
 """Base class for all cloud connectors."""
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import Dict, List
 
 from censys.asm import Seeds
 from censys.common.exceptions import CensysAsmException
@@ -17,8 +16,8 @@ class CloudConnector(ABC):
 
     platform: str
     label_prefix: str = ""
-    seeds: Dict[str, List[Seed]] = defaultdict(list)
-    cloud_assets: Dict[str, List[CloudAsset]] = defaultdict(list)
+    seeds: dict[str, list[Seed]] = defaultdict(list)
+    cloud_assets: dict[str, list[CloudAsset]] = defaultdict(list)
 
     def __init__(self, settings: Settings):
         """Initialize the Cloud Connector.
