@@ -1,6 +1,7 @@
 """Settings for the Censys Cloud Connector."""
 import collections
 import importlib
+import pathlib
 from typing import DefaultDict, OrderedDict, Union
 
 import yaml
@@ -24,10 +25,29 @@ def ordered_dict_representer(
     return yaml.representer.SafeRepresenter.represent_dict(dumper, data.items())
 
 
-"""This allows ordereddict to be represented as a mapping."""
-yaml.representer.SafeRepresenter.add_representer(
-    collections.OrderedDict, ordered_dict_representer  # type: ignore
-)
+def posix_path_representer(
+    dumper: yaml.Dumper, path: pathlib.PosixPath
+) -> yaml.nodes.ScalarNode:  # pragma: no cover
+    """Represent a path as a scalar.
+
+    Args:
+        dumper (yaml.Dumper): The dumper.
+        path (pathlib.PosixPath): The path to represent.
+
+    Returns:
+        yaml.nodes.ScalarNode: The scalar node.
+    """
+    return yaml.representer.SafeRepresenter.represent_str(dumper, str(path))
+
+
+type_to_representer = {
+    collections.OrderedDict: ordered_dict_representer,
+    pathlib.PosixPath: posix_path_representer,
+}
+
+# Add additional yaml representers.
+for type_, representer in type_to_representer.items():
+    yaml.representer.SafeRepresenter.add_representer(type_, representer)  # type: ignore
 
 
 class ProviderSpecificSettings(BaseSettings):
@@ -80,6 +100,9 @@ class Settings(BaseSettings):
     )
     scan_frequency: int = Field(default=-1)
     logging_level: str = Field(default="INFO", env="LOGGING_LEVEL")
+
+    # Toggle services
+    # TODO: Add toggle services/rework this into providers.yml
     search_ips: bool = Field(default=True, env="SEARCH_IPS")
     search_containers: bool = Field(default=True, env="SEARCH_CONTAINERS")
     search_databases: bool = Field(default=True, env="SEARCH_DATABASES")

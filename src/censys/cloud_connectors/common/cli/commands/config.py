@@ -3,8 +3,8 @@ import argparse
 import contextlib
 import importlib
 
+from InquirerPy import prompt
 from pydantic import ValidationError
-from PyInquirer import prompt
 
 from censys.cloud_connectors import __connectors__
 from censys.cloud_connectors.common.logger import get_logger

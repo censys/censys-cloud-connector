@@ -1,11 +1,14 @@
+from pathlib import Path
 from typing import Any
 from unittest import TestCase
 
 import pytest
 from parameterized import parameterized
+from prompt_toolkit.validation import Document, ValidationError
 from pydantic import (
     BaseConfig,
     Field,
+    FilePath,
     NegativeFloat,
     NonNegativeFloat,
     NonPositiveInt,
@@ -43,22 +46,34 @@ class TestProviderSetup(TestCase):
 
     @parameterized.expand(
         [
-            (constr(min_length=1), "Test Variable", True),
-            (constr(min_length=1), "", "ensure this value has at least 1 characters"),
-            (conlist(str, min_items=1), ["Test Variable"], True),
-            (conlist(str, min_items=1), [], "ensure this value has at least 1 items"),
+            ("Valid str", constr(min_length=1), "Test Variable", True),
             (
-                conlist(constr(min_length=10), min_items=1),
-                ["lessthan"],
-                "ensure this value has at least 10 characters",
+                "Empty str",
+                constr(min_length=1),
+                "",
+                "ensure this value has at least 1 characters",
             ),
-            (conint(ge=0), 0, True),
-            (conint(ge=0), -1, "ensure this value is greater than or equal to 0"),
-            (confloat(ge=0), 0.0, True),
-            (confloat(ge=0), -1.0, "ensure this value is greater than or equal to 0"),
+            ("Valid int", conint(ge=0), "0", True),
+            (
+                "Negative int",
+                conint(ge=0),
+                "-1",
+                "ensure this value is greater than or equal to 0",
+            ),
+            ("Valid float", confloat(ge=0), "0.0", True),
+            (
+                "Negative float",
+                confloat(ge=0),
+                "-1.0",
+                "ensure this value is greater than or equal to 0",
+            ),
         ]
     )
-    def test_generate_validation(self, type_: type, value: Any, expected_output: Any):
+    def test_generate_validation(
+        self, description: str, type_: type, value: Any, expected_output: Any
+    ):
+        # Test data
+        test_document = Document(text=value, cursor_position=0)
         # Make ModelField
         field = ModelField.infer(
             name="test_field",
@@ -67,10 +82,14 @@ class TestProviderSetup(TestCase):
             class_validators={},
             config=BaseConfig,
         )
-        # Generate function
-        validation_func = generate_validation(field)
+        # Generate class
+        validation_cls = generate_validation(field)
         # Validate
-        assert validation_func(value) == expected_output
+        if expected_output is True:
+            validation_cls.validate(test_document)
+        else:
+            with pytest.raises(ValidationError, match=expected_output):
+                validation_cls.validate(test_document)
 
     @parameterized.expand(
         [
@@ -113,28 +132,40 @@ class TestProviderSetup(TestCase):
 class ExampleProviderSpecificSettings(ProviderSpecificSettings):
     provider = "test_provider"
 
+    # Strings
     string_1: str
     string_2_with_default: str = "default_value_1"
     string_3_with_constr: constr(min_length=1)  # type: ignore
     string_4_with_field: str = Field(min_length=2)
+
+    # Lists
     list_1: list[str]
     list_2_with_default: list[str] = ["default_value_2"]
     list_3_with_conlist: conlist(str, min_items=1)  # type: ignore
     list_4_with_field: list[str] = Field(min_items=2)
+
+    # Booleans
     bool_1: bool
     bool_2_with_default: bool = True
+
+    # Integers
     int_1: int
     int_2_with_default: int = 1
     int_3_with_conint: conint(gt=1)  # type: ignore
     int_4_positive: PositiveInt
     int_5_non_positive: NonPositiveInt
     int_6_with_field: int = Field(gt=1)
+
+    # Floats
     float_1: float
     float_2_with_default: float = 1.0
     float_3_with_confloat: confloat(gt=1)  # type: ignore
     float_4_negative: NegativeFloat
     float_5_non_negative: NonNegativeFloat
     float_6_with_field: float = Field(gt=1)
+
+    # Other
+    file_path: FilePath
 
 
 class ExampleProviderSetupCli(ProviderSetupCli):
@@ -144,8 +175,9 @@ class ExampleProviderSetupCli(ProviderSetupCli):
 
 class TestProviderSetupCli(TestCase):
     @pytest.fixture(autouse=True)
-    def __inject_fixtures(self, mocker: MockerFixture):
+    def __inject_fixtures(self, mocker: MockerFixture, shared_datadir: Path):
         self.mocker = mocker
+        self.shared_datadir = shared_datadir
 
     def setUp(self) -> None:
         self.settings = Settings()
@@ -205,12 +237,16 @@ class TestProviderSetupCli(TestCase):
             "float_5_non_negative": 9.0,
             "float_6_with_field": 10.0,
         }
+        expected_other_fields = {
+            "file_path": self.shared_datadir / "test_consts.json",
+        }
         expected_field_values = (
             expected_str_fields
             | expected_list_fields
             | expected_bool_fields
             | expected_int_fields
             | expected_float_fields
+            | expected_other_fields
         )
 
         # Mock
@@ -229,6 +265,6 @@ class TestProviderSetupCli(TestCase):
         # Assertions
         assert actual_settings.provider == ExampleProviderSetupCli.provider
         assert mock_prompt_for_list.call_count == len(expected_list_fields)
-        mock_prompt.assert_called_once()
+        mock_prompt.assert_called()
         for field_name, field_value in expected_field_values.items():
             assert getattr(actual_settings, field_name) == field_value

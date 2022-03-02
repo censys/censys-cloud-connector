@@ -1,10 +1,13 @@
 """Base for all provider-specific setup cli commands."""
 from logging import Logger
-from typing import Any, Callable, Union, get_origin
+from typing import get_origin
 
+from InquirerPy import prompt
+from InquirerPy.validator import PathValidator
+from prompt_toolkit.validation import Document, ValidationError, Validator
+from pydantic import FilePath
 from pydantic.fields import ModelField
 from pydantic.utils import lenient_issubclass
-from PyInquirer import prompt
 
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.logger import get_logger
@@ -23,34 +26,37 @@ def snake_case_to_english(snake_case: str) -> str:
     return " ".join(word.capitalize() for word in snake_case.split("_"))
 
 
-def generate_validation(field: ModelField) -> Callable:
+def generate_validation(field: ModelField) -> Validator:
     """Generate a validation function for a field.
 
     Args:
         field (ModelField): The field to generate the validation for.
 
     Returns:
-        Callable: The validation function.
+        Validator: The validation class.
     """
 
-    def validate(value: Any) -> Union[bool, str]:
-        """Validate the value.
+    class FieldValidator(Validator):
+        def validate(self, document: Document) -> None:
+            """Validate the value.
 
-        Args:
-            value (Any): The value to validate.
+            Args:
+                document (Document): The document to validate.
 
-        Returns:
-            Union[bool, str]: True or the error message.
-        """
-        _, error = field.validate(value, {}, loc=field.name)
-        if not error:
-            return True
-        while isinstance(error, list):
-            # Sometimes the error is embedded in a nested list
-            error = error[0]
-        return str(error.exc)  # type: ignore
+            Raises:
+                ValidationError: If the value is invalid.
+            """
+            _, error = field.validate(document.text, {}, loc=field.name)
+            if not error:
+                return
+            while isinstance(error, list):  # pragma: no cover
+                # Sometimes the error is embedded in a nested list
+                error = error[0]
+            raise ValidationError(
+                message=str(error.exc), cursor_position=document.cursor_position  # type: ignore
+            )
 
-    return validate
+    return FieldValidator()
 
 
 def prompt_for_list(field: ModelField) -> list[str]:
@@ -129,9 +135,7 @@ class ProviderSetupCli:
         settings_fields: dict[
             str, ModelField
         ] = self.provider_specific_settings_class.__fields__
-        questions = []
         answers = {}
-        type_cast_map: dict[str, type] = {}
         for field in settings_fields.values():
             if field.name in excluded_fields:
                 continue
@@ -141,35 +145,32 @@ class ProviderSetupCli:
                 "validate": generate_validation(field),
             }
             field_type = field.type_
-            if lenient_issubclass(field.outer_type_, list) or lenient_issubclass(
-                get_origin(field.outer_type_), list
+            outer_type = field.outer_type_
+            if lenient_issubclass(outer_type, list) or lenient_issubclass(
+                get_origin(outer_type), list
             ):
                 answers[field.name] = prompt_for_list(field)
                 continue
             elif lenient_issubclass(field_type, bool):
                 question["type"] = "confirm"
-            elif lenient_issubclass(field_type, (str, int, float)):
+            elif lenient_issubclass(field_type, (int, float)):
+                question["type"] = "number"
+                question["float_allowed"] = lenient_issubclass(field_type, float)
+            elif lenient_issubclass(field_type, str):
                 question["type"] = "input"
                 question["message"] = "Enter a " + question["message"]  # type: ignore
 
                 # TODO: Is this something we want?
                 if "secret" in field.name.lower():
                     question["type"] = "password"
-
-                # Cast to type if float or int
-                if lenient_issubclass(field_type, float):
-                    type_cast_map[field.name] = float
-                elif lenient_issubclass(field_type, int):
-                    type_cast_map[field.name] = int
+            elif lenient_issubclass(field_type, FilePath):
+                question["type"] = "filepath"
+                question["validate"] = PathValidator(is_file=True)
             else:  # pragma: no cover
                 self.logger.debug(f"Unsupported field type: {field_type}")
                 raise ValueError(f"Unsupported type for field {field.name}.")
 
-            questions.append(question)
-        answers.update(prompt(questions))
+            answers.update(prompt(question))
         if not answers:  # pragma: no cover
             raise ValueError("No answers provided.")
-        if type_cast_map:
-            for key, type_ in type_cast_map.items():
-                answers[key] = type_(answers[key])
         return self.provider_specific_settings_class(**answers)

@@ -3,7 +3,7 @@ import json
 import subprocess
 from typing import Optional
 
-from PyInquirer import prompt
+from InquirerPy import prompt
 
 from censys.cloud_connectors.common.cli.provider_setup import ProviderSetupCli
 from censys.cloud_connectors.common.enums import ProviderEnum
@@ -64,11 +64,9 @@ class AzureSetupCli(ProviderSetupCli):
                     {
                         "name": s.get("display_name"),
                         "value": s.get("subscription_id"),
-                        "disabled": "Subscription Disabled"
-                        if s.get("state") != "Enabled"
-                        else False,
                     }
                     for s in subscriptions
+                    if s.get("state") == "Enabled"
                 ],
             }
         ]

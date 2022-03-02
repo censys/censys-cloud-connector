@@ -12,6 +12,7 @@ class ProjectId(ConstrainedStr):
 
     min_length = 6
     max_length = 30
+    to_lower = True
 
 
 class GcpSpecificSettings(ProviderSpecificSettings):
@@ -21,7 +22,7 @@ class GcpSpecificSettings(ProviderSpecificSettings):
 
     service_account_json_file: FilePath = Field(env="GOOGLE_APPLICATION_CREDENTIALS")
     organization_id: str = Field(min_length=36, max_length=36, default=None)
-    project_id: str = Field(min_length=6, max_length=30, to_lower=True, default=None)
+    project_id: list[ProjectId] = Field(min_items=1)
 
     @validator("project_id", pre=True, allow_reuse=True)
     def validate_project_id(cls, v: Union[str, list[str]]) -> list[str]:
