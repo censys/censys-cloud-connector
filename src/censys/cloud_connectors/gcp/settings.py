@@ -1,18 +1,8 @@
 """GCP provider-specific settings."""
-from typing import Union
-
-from pydantic import ConstrainedStr, Field, FilePath, validator
+from pydantic import Field, FilePath
 
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.settings import ProviderSpecificSettings
-
-
-class ProjectId(ConstrainedStr):
-    """GCP Project ID."""
-
-    min_length = 6
-    max_length = 30
-    to_lower = True
 
 
 class GcpSpecificSettings(ProviderSpecificSettings):
@@ -20,20 +10,9 @@ class GcpSpecificSettings(ProviderSpecificSettings):
 
     provider: str = ProviderEnum.GCP
 
-    service_account_json_file: FilePath = Field(env="GOOGLE_APPLICATION_CREDENTIALS")
-    organization_id: str = Field(min_length=36, max_length=36, default=None)
-    project_id: list[ProjectId] = Field(min_items=1)
-
-    @validator("project_id", pre=True, allow_reuse=True)
-    def validate_project_id(cls, v: Union[str, list[str]]) -> list[str]:
-        """Validate the project id.
-
-        Args:
-            v (Union[str, List[str]]): The value to validate.
-
-        Returns:
-            List[str]: The validated value.
-        """
-        if not isinstance(v, list):
-            return [v]
-        return v
+    service_account_json_file: FilePath = Field(
+        description="Path to service account json file."
+    )
+    organization_id: str = Field(
+        min_length=1, max_length=64, description="GCP organization ID."
+    )

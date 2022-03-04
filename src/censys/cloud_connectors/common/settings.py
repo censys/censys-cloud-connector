@@ -89,7 +89,9 @@ class Settings(BaseSettings):
     """Settings for the Cloud Connector."""
 
     # Providers settings
-    providers: DefaultDict[str, list] = collections.defaultdict(list)
+    providers: DefaultDict[
+        str, list[ProviderSpecificSettings]
+    ] = collections.defaultdict(list)
 
     # Required
     censys_api_key: str = Field(env="CENSYS_API_KEY", min_length=36, max_length=36)
@@ -98,11 +100,12 @@ class Settings(BaseSettings):
     providers_config_file: str = Field(
         default="providers.yml", env="PROVIDERS_CONFIG_FILE"
     )
-    scan_frequency: int = Field(default=-1)
     logging_level: str = Field(default="INFO", env="LOGGING_LEVEL")
+    dry_run: bool = Field(default=False, env="DRY_RUN")
 
     # Toggle services
     # TODO: Add toggle services/rework this into providers.yml
+    scan_frequency: int = Field(default=-1)
     search_ips: bool = Field(default=True, env="SEARCH_IPS")
     search_containers: bool = Field(default=True, env="SEARCH_CONTAINERS")
     search_databases: bool = Field(default=True, env="SEARCH_DATABASES")

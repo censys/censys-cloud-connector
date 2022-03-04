@@ -2,6 +2,8 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
 
+from requests.exceptions import JSONDecodeError
+
 from censys.asm import Seeds
 from censys.common.exceptions import CensysAsmException
 
@@ -92,7 +94,7 @@ class CloudConnector(ABC):
                     "cloudAssets": [asset.to_dict() for asset in cloud_assets],
                 }
                 self._add_cloud_assets(data)
-            except CensysAsmException as e:
+            except (CensysAsmException, JSONDecodeError) as e:
                 self.logger.error(f"Error submitting cloud assets for {uid}: {e}")
 
     def _add_cloud_assets(self, data: dict) -> dict:
@@ -103,25 +105,37 @@ class CloudConnector(ABC):
 
         Returns:
             dict: The response from the Censys ASM.
+
+        Raises:
+            CensysAsmException: If the response is not valid.
         """
-        return self.seeds_api._post(self._add_cloud_asset_path, data=data)
+        res = self.seeds_api._session.post(self._add_cloud_asset_path, json=data)
+        json_data = res.json()
+        if error_message := json_data.get("error"):
+            print(json_data)
+            raise CensysAsmException(
+                res.status_code,
+                error_message,
+                res.text,
+                error_code=json_data.get("errorCode"),
+            )
+        return json_data
 
     def submit(self):  # pragma: no cover
         """Submit the seeds and cloud assets to the Censys ASM."""
-        self.logger.info("Submitting seeds and assets...")
-        # TODO: Re-enable
-        # self.submit_seeds()
-        # self.submit_cloud_assets()
-
-        # TODO: Remove
-        for seed_subset in self.seeds.values():
-            for seed in seed_subset:
-                self.logger.debug(f"Seed: {seed.to_dict()}")
-        for cloud_asset_subset in self.cloud_assets.values():
-            for cloud_asset in cloud_asset_subset:
-                self.logger.debug(f"Cloud Asset: {cloud_asset.to_dict()}")
-
-        self.logger.info("Submitted seeds and assets.")
+        if not self.settings.dry_run:
+            self.logger.info("Submitting seeds and assets...")
+            self.submit_seeds()
+            self.submit_cloud_assets()
+            self.logger.info("Submitted seeds and assets.")
+        else:
+            self.logger.info("Dry run enabled. Skipping submission.")
+            for seed_subset in self.seeds.values():
+                for seed in seed_subset:
+                    self.logger.debug(f"Seed: {seed.to_dict()}")
+            for cloud_asset_subset in self.cloud_assets.values():
+                for cloud_asset in cloud_asset_subset:
+                    self.logger.debug(f"Cloud Asset: {cloud_asset.to_dict()}")
 
     def scan(self):
         """Scan the seeds and cloud assets."""

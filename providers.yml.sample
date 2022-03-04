@@ -8,3 +8,6 @@
   # subscription_id:
   #   - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
   #   - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+- provider: gcp
+  service_account_json_file: service_account.json
+  organization_id: xxxxxxxx-xxxx-xxxx

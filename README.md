@@ -21,12 +21,15 @@ poetry install  # Only core dependencies
 poetry install -E azure  # Only Azure dependencies
 poetry install -E gcp  # Only GCP dependencies
 poetry install -E azure -E gcp  # All dependencies
+
+# Setup your .env file
+cp .env.sample .env
 ```
 
 ### Commands
 
 ```sh
-censys-cc config  # Configure Cloud Connectors
+censys-cc config  # Configure supported providers
 censys-cc scan  # Scan for assets
 ```
 

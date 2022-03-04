@@ -19,3 +19,10 @@ class GcpSetupCli(ProviderSetupCli):
 
     provider = ProviderEnum.GCP
     provider_specific_settings_class = GcpSpecificSettings
+
+    # TODO: Ensure that the service account has the required APIs enabled.
+    # role: roles/iam.securityReviewer
+    # role: roles/resourcemanager.folderViewer
+    # role: roles/resourcemanager.organizationViewer
+    # role: roles/securitycenter.assetsDiscoveryRunner
+    # role: roles/securitycenter.assetsViewer

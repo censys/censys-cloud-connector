@@ -16,14 +16,12 @@ class Seed(BaseModel):
     def to_dict(self) -> dict[str, str]:
         """Convert the seed to a dictionary.
 
+        Please note that the label should not be included.
+
         Returns:
             Dictionary representation of the seed.
         """
-        return {
-            "type": self.type,
-            "value": self.value,
-            "label": self.label,
-        }
+        return {"type": self.type, "value": self.value}
 
 
 class AsnSeed(Seed):

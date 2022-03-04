@@ -146,7 +146,7 @@ cython_debug/
 
 # IDE-maintained configuration
 .idea/
-.vscode/
+.vscode/settings.json
 
 # Censys Config
 providers.yml
