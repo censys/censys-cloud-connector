@@ -1,12 +1,12 @@
 {
-    "recommendations": [
-        "bungcip.better-toml",
-        "gruntfuggly.todo-tree",
-        "hbenl.vscode-test-explorer",
-        "littlefoxteam.vscode-python-test-adapter",
-        "mikestead.dotenv",
-        "ms-python.python",
-        "njpwerner.autodocstring",
-        "streetsidesoftware.code-spell-checker",
-    ]
+  "recommendations": [
+    "bungcip.better-toml",
+    "gruntfuggly.todo-tree",
+    "hbenl.vscode-test-explorer",
+    "littlefoxteam.vscode-python-test-adapter",
+    "mikestead.dotenv",
+    "ms-python.python",
+    "njpwerner.autodocstring",
+    "streetsidesoftware.code-spell-checker"
+  ]
 }

@@ -23,7 +23,6 @@ class SeedTest(TestCase):
         assert seed.to_dict() == {
             "type": test_type,
             "value": test_value,
-            "label": TEST_LABEL,
         }
 
     def test_asn_seed(self):

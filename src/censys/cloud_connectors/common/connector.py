@@ -64,6 +64,8 @@ class CloudConnector(ABC):
         if not seed.label.startswith(self.label_prefix):
             seed.label = self.label_prefix + seed.label
         self.seeds[seed.label].append(seed)
+        if self.settings.dry_run:
+            self.logger.debug(f"Found Seed: {seed.to_dict()}")
 
     def add_cloud_asset(self, cloud_asset: CloudAsset):
         """Add a cloud asset.
@@ -74,6 +76,8 @@ class CloudConnector(ABC):
         if not cloud_asset.uid.startswith(self.label_prefix):
             cloud_asset.uid = self.label_prefix + cloud_asset.uid
         self.cloud_assets[cloud_asset.uid].append(cloud_asset)
+        if self.settings.dry_run:
+            self.logger.debug(f"Found Cloud Asset: {cloud_asset.to_dict()}")
 
     def submit_seeds(self):
         """Submit the seeds to the Censys ASM."""
@@ -112,7 +116,6 @@ class CloudConnector(ABC):
         res = self.seeds_api._session.post(self._add_cloud_asset_path, json=data)
         json_data = res.json()
         if error_message := json_data.get("error"):
-            print(json_data)
             raise CensysAsmException(
                 res.status_code,
                 error_message,
@@ -123,19 +126,13 @@ class CloudConnector(ABC):
 
     def submit(self):  # pragma: no cover
         """Submit the seeds and cloud assets to the Censys ASM."""
-        if not self.settings.dry_run:
+        if self.settings.dry_run:
+            self.logger.info("Dry run enabled. Skipping submission.")
+        else:
             self.logger.info("Submitting seeds and assets...")
             self.submit_seeds()
             self.submit_cloud_assets()
             self.logger.info("Submitted seeds and assets.")
-        else:
-            self.logger.info("Dry run enabled. Skipping submission.")
-            for seed_subset in self.seeds.values():
-                for seed in seed_subset:
-                    self.logger.debug(f"Seed: {seed.to_dict()}")
-            for cloud_asset_subset in self.cloud_assets.values():
-                for cloud_asset in cloud_asset_subset:
-                    self.logger.debug(f"Cloud Asset: {cloud_asset.to_dict()}")
 
     def scan(self):
         """Scan the seeds and cloud assets."""

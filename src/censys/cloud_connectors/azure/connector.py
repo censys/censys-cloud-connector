@@ -54,7 +54,7 @@ class AzureCloudConnector(CloudConnector):
                 self.subscription_id = subscription_id
                 self.scan()
 
-    def _format_label(self, asset: AzureModel) -> str:
+    def format_label(self, asset: AzureModel) -> str:
         """Format Azure asset label.
 
         Args:
@@ -72,20 +72,20 @@ class AzureCloudConnector(CloudConnector):
 
     def get_seeds(self):
         """Get Azure seeds."""
-        self._get_ip_addresses()
-        self._get_clusters()
-        self._get_sql_servers()
-        self._get_dns_records()
+        self.get_ip_addresses()
+        self.get_clusters()
+        self.get_sql_servers()
+        self.get_dns_records()
 
-    def _get_ip_addresses(self):
+    def get_ip_addresses(self):
         """Get Azure IP addresses."""
         network_client = NetworkManagementClient(self.credentials, self.subscription_id)
         for asset in network_client.public_ip_addresses.list_all():
             asset_dict = asset.as_dict()
             if ip_address := asset_dict.get("ip_address"):
-                self.add_seed(IpSeed(value=ip_address, label=self._format_label(asset)))
+                self.add_seed(IpSeed(value=ip_address, label=self.format_label(asset)))
 
-    def _get_clusters(self):
+    def get_clusters(self):
         """Get Azure clusters."""
         container_client = ContainerInstanceManagementClient(
             self.credentials, self.subscription_id
@@ -96,14 +96,14 @@ class AzureCloudConnector(CloudConnector):
                 "type"
             ) == "Public":
                 self.add_seed(
-                    IpSeed(value=ip_address.get("ip"), label=self._format_label(asset))
+                    IpSeed(value=ip_address.get("ip"), label=self.format_label(asset))
                 )
                 if domain := ip_address.get("fqdn"):
                     self.add_seed(
-                        DomainSeed(value=domain, label=self._format_label(asset))
+                        DomainSeed(value=domain, label=self.format_label(asset))
                     )
 
-    def _get_sql_servers(self):
+    def get_sql_servers(self):
         """Get Azure SQL servers."""
         sql_client = SqlManagementClient(self.credentials, self.subscription_id)
 
@@ -112,9 +112,9 @@ class AzureCloudConnector(CloudConnector):
             if (
                 domain := asset_dict.get("fully_qualified_domain_name")
             ) and asset_dict.get("public_network_access") == "Enabled":
-                self.add_seed(DomainSeed(value=domain, label=self._format_label(asset)))
+                self.add_seed(DomainSeed(value=domain, label=self.format_label(asset)))
 
-    def _get_dns_records(self):
+    def get_dns_records(self):
         """Get Azure DNS records."""
         dns_client = DnsManagementClient(self.credentials, self.subscription_id)
 
@@ -139,26 +139,26 @@ class AzureCloudConnector(CloudConnector):
                 asset_dict = asset.as_dict()
                 if domain := asset_dict.get("fqdn"):
                     self.add_seed(
-                        DomainSeed(value=domain, label=self._format_label(zone))
+                        DomainSeed(value=domain, label=self.format_label(zone))
                     )
                     if a_records := asset_dict.get("a_records"):
                         for a_record in a_records:
                             if ip := a_record.get("ipv4_address"):
                                 self.add_seed(
-                                    IpSeed(value=ip, label=self._format_label(zone))
+                                    IpSeed(value=ip, label=self.format_label(zone))
                                 )
                     if (cname_record := asset_dict.get("cname_record")) and (
                         cname := cname_record.get("cname")
                     ):
                         self.add_seed(
-                            DomainSeed(value=cname, label=self._format_label(zone))
+                            DomainSeed(value=cname, label=self.format_label(zone))
                         )
 
     def get_cloud_assets(self):
         """Get Azure cloud assets."""
-        self._get_storage_containers()
+        self.get_storage_containers()
 
-    def _get_storage_containers(self):
+    def get_storage_containers(self):
         """Get Azure containers."""
         storage_client = StorageManagementClient(self.credentials, self.subscription_id)
 
@@ -171,7 +171,7 @@ class AzureCloudConnector(CloudConnector):
                 self.add_seed(
                     DomainSeed(
                         value=custom_domain.get("name"),
-                        label=self._format_label(account),
+                        label=self.format_label(account),
                     )
                 )
             uid = f"{self.subscription_id}/{self.credentials._tenant_id}/{account.name}"

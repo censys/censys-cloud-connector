@@ -60,8 +60,9 @@ class TestCloudConnector(TestCase):
         assert self.connector.logger is not None
         assert self.connector.seeds_api is not None
         assert self.connector.seeds_api._api_key == self.data["censys_api_key"]
-        assert self.connector._add_cloud_asset_path == (
-            f"{self.settings.censys_beta_url}/cloudConnector/addCloudAssets"
+        assert (
+            self.connector._add_cloud_asset_path
+            == f"{self.settings.censys_beta_url}/cloudConnector/addCloudAssets"
         )
         assert list(self.connector.seeds.keys()) == []
         assert list(self.connector.cloud_assets.keys()) == []
@@ -73,7 +74,7 @@ class TestCloudConnector(TestCase):
         with pytest.raises(ValueError, match="The provider must be set."):
             ExampleCloudConnector(Settings())
 
-    def test_seeds_api_fail(self):
+    def test_no_api_key_fail(self):
         self.mocker.patch.object(self.settings, "censys_api_key", None)
 
         with pytest.raises(CensysException, match="No ASM API key configured."):
@@ -144,13 +145,21 @@ class TestCloudConnector(TestCase):
         logger_mock.assert_called_once()
 
     def test_add_cloud_assets(self):
+        # Test data
         test_data = {
             "cloudConnectorUid": "test-uid",
         }
-        post_mock = self.mocker.patch.object(self.connector.seeds_api, "_post")
+
+        # Mock
+        post_mock = self.mocker.patch.object(self.connector.seeds_api._session, "post")
+        post_mock.return_value.json.return_value = {"status": "success"}
+
+        # Actual call
         self.connector._add_cloud_assets(test_data)
+
+        # Assertions
         post_mock.assert_called_once_with(
-            self.connector._add_cloud_asset_path, data=test_data
+            self.connector._add_cloud_asset_path, json=test_data
         )
 
     @pytest.mark.skip("Submission Not Implemented (Purposefully)")

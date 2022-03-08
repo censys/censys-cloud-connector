@@ -7,6 +7,7 @@ import pytest
 from parameterized import parameterized
 from pytest_mock import MockerFixture
 
+from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.seed import Seed
 from censys.cloud_connectors.common.settings import Settings
 
@@ -66,7 +67,7 @@ class TestAzureCloudConnector(TestCase):
             assert seed.value in values
 
     def test_init(self):
-        assert self.connector.provider == "Azure"
+        assert self.connector.provider == ProviderEnum.AZURE
         assert self.connector.label_prefix == "AZURE: "
         assert self.connector.settings == self.settings
 
@@ -109,28 +110,39 @@ class TestAzureCloudConnector(TestCase):
         assert mock_scan.call_count == 3
 
     def test_format_label(self):
+        # Test data
         test_location = "test-location"
         test_asset = self.mock_asset({"location": test_location})
-        assert (
-            self.connector._format_label(test_asset)
-            == f"AZURE: {self.connector.subscription_id}/{test_location}"
-        )
+
+        # Actual call
+        label = self.connector.format_label(test_asset)
+
+        # Assertions
+        assert label == f"AZURE: {self.connector.subscription_id}/{test_location}"
 
     def test_format_label_no_location(self):
+        # Test data
         test_asset = self.mock_asset({})
         del test_asset.location
+
+        # Actual call
         with pytest.raises(ValueError, match="Asset has no location"):
-            self.connector._format_label(test_asset)
+            self.connector.format_label(test_asset)
 
     def test_get_seeds(self):
+        # Mock
         mocks = self.mocker.patch.multiple(
             AzureCloudConnector,
-            _get_ip_addresses=self.mocker.Mock(),
-            _get_clusters=self.mocker.Mock(),
-            _get_sql_servers=self.mocker.Mock(),
-            _get_dns_records=self.mocker.Mock(),
+            get_ip_addresses=self.mocker.Mock(),
+            get_clusters=self.mocker.Mock(),
+            get_sql_servers=self.mocker.Mock(),
+            get_dns_records=self.mocker.Mock(),
         )
+
+        # Actual call
         self.connector.get_seeds()
+
+        # Assertions
         for mock in mocks.values():
             mock.assert_called_once()
 
@@ -144,7 +156,7 @@ class TestAzureCloudConnector(TestCase):
             test_ip_response["ip_address"] = ip_address
             test_seed_values.append(ip_address)
             test_list_all_response.append(self.mock_asset(test_ip_response))
-        test_label = self.connector._format_label(test_list_all_response[0])
+        test_label = self.connector.format_label(test_list_all_response[0])
 
         # Mock list_all
         mock_network_client = self.mock_client("NetworkManagementClient")
@@ -154,7 +166,7 @@ class TestAzureCloudConnector(TestCase):
         mock_public_ips.list_all.return_value = test_list_all_response
 
         # Actual call
-        self.connector._get_ip_addresses()
+        self.connector.get_ip_addresses()
 
         # Assertions
         mock_network_client.assert_called_with(
@@ -178,7 +190,7 @@ class TestAzureCloudConnector(TestCase):
             test_container_response["ip_address"]["fqdn"] = domain
             test_seed_values.append(domain)
             test_list_response.append(self.mock_asset(test_container_response))
-        test_label = self.connector._format_label(test_list_response[0])
+        test_label = self.connector.format_label(test_list_response[0])
 
         # Mock list
         mock_container_client = self.mock_client("ContainerInstanceManagementClient")
@@ -188,7 +200,7 @@ class TestAzureCloudConnector(TestCase):
         mock_container_groups.list.return_value = test_list_response
 
         # Actual call
-        self.connector._get_clusters()
+        self.connector.get_clusters()
 
         # Assertions
         mock_container_client.assert_called_with(
@@ -209,7 +221,7 @@ class TestAzureCloudConnector(TestCase):
             test_server_response["fully_qualified_domain_name"] = domain
             test_seed_values.append(domain)
             test_list_response.append(self.mock_asset(test_server_response))
-        test_label = self.connector._format_label(test_list_response[0])
+        test_label = self.connector.format_label(test_list_response[0])
 
         # Mock list
         mock_sql_client = self.mock_client("SqlManagementClient")
@@ -217,7 +229,7 @@ class TestAzureCloudConnector(TestCase):
         mock_servers.list.return_value = test_list_response
 
         # Actual call
-        self.connector._get_sql_servers()
+        self.connector.get_sql_servers()
 
         # Assertions
         mock_sql_client.assert_called_with(
@@ -231,7 +243,7 @@ class TestAzureCloudConnector(TestCase):
     def test_get_dns_records(self):
         # Test data
         test_zones = [self.mock_asset(self.data["TEST_DNS_ZONE"])]
-        test_label = self.connector._format_label(test_zones[0])
+        test_label = self.connector.format_label(test_zones[0])
         test_list_records = []
         test_seed_values = []
         for data_key in [
@@ -260,7 +272,7 @@ class TestAzureCloudConnector(TestCase):
         mock_records.list_all_by_dns_zone.return_value = test_list_records
 
         # Actual call
-        self.connector._get_dns_records()
+        self.connector.get_dns_records()
 
         # Assertions
         mock_dns_client.assert_called_with(
@@ -279,7 +291,7 @@ class TestAzureCloudConnector(TestCase):
         mock_error_logger = self.mocker.patch.object(self.connector.logger, "error")
 
         # Actual call
-        self.connector._get_dns_records()
+        self.connector.get_dns_records()
 
         # Assertions
         mock_dns_client.assert_called_with(
@@ -292,12 +304,17 @@ class TestAzureCloudConnector(TestCase):
         )
 
     def test_get_cloud_assets(self):
+        # Mock
         mocks = self.mocker.patch.multiple(
             AzureCloudConnector,
-            _get_storage_containers=self.mocker.Mock(),
+            get_storage_containers=self.mocker.Mock(),
             # Include more when needed
         )
+
+        # Actual call
         self.connector.get_cloud_assets()
+
+        # Assertions
         for mock in mocks.values():
             mock.assert_called_once()
 
@@ -315,7 +332,7 @@ class TestAzureCloudConnector(TestCase):
             test_container = self.data["TEST_STORAGE_CONTAINER"].copy()
             test_container["name"] = f"test-{i}"
             test_containers.append(self.mock_asset(test_container))
-        test_label = self.connector._format_label(test_storage_accounts[0])
+        test_label = self.connector.format_label(test_storage_accounts[0])
 
         # Mock list
         mock_storage_client = self.mock_client("StorageManagementClient")
@@ -337,7 +354,7 @@ class TestAzureCloudConnector(TestCase):
         )
 
         # Actual call
-        self.connector._get_storage_containers()
+        self.connector.get_storage_containers()
 
         # Assertions
         mock_storage_client.assert_called_with(

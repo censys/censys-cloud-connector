@@ -7,7 +7,7 @@ from pytest_mock import MockerFixture
 from censys.cloud_connectors.common.cloud_asset import (
     AzureContainerAsset,
     CloudAsset,
-    GcpCloudStorageAsset,
+    GcpStorageBucketAsset,
     ObjectStorageAsset,
 )
 from censys.cloud_connectors.common.enums import ProviderEnum
@@ -48,7 +48,7 @@ class CloudAssetTest(TestCase):
     def test_gcp_cloud_storage_asset(self):
         test_object_name = "test-bucket"
         test_value = f"https://storage.googleapis.com/{test_object_name}"
-        cloud_asset = GcpCloudStorageAsset(value=test_value, uid=test_object_name)
+        cloud_asset = GcpStorageBucketAsset(value=test_value, uid=test_object_name)
         assert cloud_asset.type == "OBJECT_STORAGE"
         assert cloud_asset.value == test_value
         assert cloud_asset.cspLabel == ProviderEnum.GCP
@@ -65,7 +65,7 @@ class CloudAssetTest(TestCase):
     )
     def test_gcp_cloud_storage_asset_validation(self, value, expected_error):
         with pytest.raises(ValueError, match=expected_error):
-            GcpCloudStorageAsset(value=value, uid=TEST_UID)
+            GcpStorageBucketAsset(value=value, uid=TEST_UID)
 
     def test_azure_container_asset(self):
         test_object_name = "test-container"

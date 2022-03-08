@@ -2,7 +2,7 @@
 from .cloud_asset import (
     AzureContainerAsset,
     CloudAsset,
-    GcpCloudStorageAsset,
+    GcpStorageBucketAsset,
     ObjectStorageAsset,
 )
 from .connector import CloudConnector
@@ -18,7 +18,7 @@ __all__ = [
     "CloudAsset",
     "CloudConnector",
     "DomainSeed",
-    "GcpCloudStorageAsset",
+    "GcpStorageBucketAsset",
     "get_logger",
     "IGNORED_DOMAINS",
     "IGNORED_IPS",

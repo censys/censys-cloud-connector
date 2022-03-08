@@ -71,7 +71,7 @@ class TestSettings(TestCase):
         with pytest.raises(exec, match=error_msg):
             self.settings.read_providers_config_file()
 
-    @parameterized.expand([("test_azure_providers.yml")])
+    @parameterized.expand(["test_azure_providers.yml"])
     def test_write_providers_config_file(self, file_name):
         original_file = self.shared_datadir / file_name
         self.settings.providers_config_file = original_file

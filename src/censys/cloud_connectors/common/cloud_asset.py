@@ -35,7 +35,7 @@ class ObjectStorageAsset(CloudAsset):
     type: str = "OBJECT_STORAGE"
 
 
-class GcpCloudStorageAsset(ObjectStorageAsset):
+class GcpStorageBucketAsset(ObjectStorageAsset):
     """GCP Cloud Storage asset."""
 
     cspLabel = ProviderEnum.GCP
@@ -53,6 +53,7 @@ class GcpCloudStorageAsset(ObjectStorageAsset):
         Returns:
             Bucket name.
         """
+        # TODO: Should https://www.googleapis.com/storage/v1/b/ (self) links be supported?
         url_prefix = "https://storage.googleapis.com/"
         if not v.startswith(url_prefix):
             raise ValueError(f"Bucket name must start with {url_prefix}")
