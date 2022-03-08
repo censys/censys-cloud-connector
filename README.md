@@ -43,3 +43,16 @@ poetry run isort .  # Run import formatter
 poetry run mypy .  # Run type checker
 pre-commit run --all-files  # Run pre-commit hooks (lint, type check, etc.)
 ```
+
+### VSCode Config
+
+Please note that there is a sample vscode `settings.json` and `extensions.json`
+files in the `.vscode` directory.
+
+Features inlcuded in the extensions:
+
+- Use pytest as a test runner
+- View `.toml`, `.env` files
+- View all todos
+- Automatically generate docsstrings
+- Spell check

@@ -9,7 +9,6 @@
   "python.linting.mypyEnabled": true,
   "python.poetryPath": "poetry",
   "python.terminal.activateEnvironment": true,
-  // Required for pytest to be recognized as a test runner
   "python.testing.pytestArgs": ["--no-cov"],
   "python.testing.pytestEnabled": true,
   "python.testing.pytestPath": "${workspaceFolder}/.venv/bin/pytest",
