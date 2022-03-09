@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import Any
 from unittest import TestCase
@@ -180,7 +181,9 @@ class TestProviderSetupCli(TestCase):
         self.shared_datadir = shared_datadir
 
     def setUp(self) -> None:
-        self.settings = Settings()
+        with open(self.shared_datadir / "test_consts.json") as f:
+            self.consts = json.load(f)
+        self.settings = Settings(censys_api_key=self.consts["censys_api_key"])
         self.setup_cli = ExampleProviderSetupCli(self.settings)
 
     def test_init(self):

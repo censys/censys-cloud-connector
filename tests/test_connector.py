@@ -71,14 +71,20 @@ class TestCloudConnector(TestCase):
         # Mock provider
         self.mocker.patch.object(ExampleCloudConnector, "provider", None)
 
+        # Assertions
         with pytest.raises(ValueError, match="The provider must be set."):
-            ExampleCloudConnector(Settings())
+            ExampleCloudConnector(self.settings)
 
     def test_no_api_key_fail(self):
-        self.mocker.patch.object(self.settings, "censys_api_key", None)
+        # Test data
+        test_settings = Settings(censys_api_key=self.data["censys_api_key"])
 
+        # Mock
+        self.mocker.patch.object(test_settings, "censys_api_key", None)
+
+        # Assertions
         with pytest.raises(CensysException, match="No ASM API key configured."):
-            ExampleCloudConnector(self.settings)
+            ExampleCloudConnector(test_settings)
 
     def test_add_seed(self):
         seed = Seed(type="TEST", value="test-value", label="test-label")

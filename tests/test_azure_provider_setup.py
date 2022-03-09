@@ -25,9 +25,11 @@ class TestAzureProviderSetup(TestCase):
         self.shared_datadir = shared_datadir
 
     def setUp(self) -> None:
+        with open(self.shared_datadir / "test_consts.json") as f:
+            self.consts = json.load(f)
         with open(self.shared_datadir / "test_azure_responses.json") as f:
             self.data = json.load(f)
-        self.settings = Settings()
+        self.settings = Settings(censys_api_key=self.consts["censys_api_key"])
         self.setup_cli = __provider_setup__(self.settings)
 
     def test_get_subscriptions_from_cli(self):
