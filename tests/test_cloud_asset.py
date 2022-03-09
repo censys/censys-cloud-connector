@@ -1,8 +1,5 @@
-from unittest import TestCase
-
 import pytest
 from parameterized import parameterized
-from pytest_mock import MockerFixture
 
 from censys.cloud_connectors.common.cloud_asset import (
     AzureContainerAsset,
@@ -11,6 +8,7 @@ from censys.cloud_connectors.common.cloud_asset import (
     ObjectStorageAsset,
 )
 from censys.cloud_connectors.common.enums import ProviderEnum
+from tests.base_case import BaseTestCase
 
 TEST_TYPE = "test_type"
 TEST_VALUE = "test_value"
@@ -18,11 +16,7 @@ TEST_SCAN_DATA = {"test_scan_data": "test_scan_data"}
 TEST_UID = "test_uid"
 
 
-class CloudAssetTest(TestCase):
-    @pytest.fixture(autouse=True)
-    def __inject_fixtures(self, mocker: MockerFixture):
-        self.mocker = mocker
-
+class CloudAssetTest(BaseTestCase):
     def test_cloud_asset_to_dict(self):
         cloud_asset = CloudAsset(
             type=TEST_TYPE,

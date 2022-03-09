@@ -1,7 +1,4 @@
-import json
-from pathlib import Path
 from typing import Any
-from unittest import TestCase
 
 import pytest
 from parameterized import parameterized
@@ -20,7 +17,6 @@ from pydantic import (
     constr,
 )
 from pydantic.fields import ModelField
-from pytest_mock import MockerFixture
 
 from censys.cloud_connectors.common.cli.provider_setup import (
     ProviderSetupCli,
@@ -29,13 +25,10 @@ from censys.cloud_connectors.common.cli.provider_setup import (
     snake_case_to_english,
 )
 from censys.cloud_connectors.common.settings import ProviderSpecificSettings, Settings
+from tests.base_case import BaseTestCase
 
 
-class TestProviderSetup(TestCase):
-    @pytest.fixture(autouse=True)
-    def __inject_fixtures(self, mocker: MockerFixture):
-        self.mocker = mocker
-
+class TestProviderSetup(BaseTestCase):
     @parameterized.expand(
         [
             ("test_variable", "Test Variable"),
@@ -174,15 +167,9 @@ class ExampleProviderSetupCli(ProviderSetupCli):
     provider_specific_settings_class = ExampleProviderSpecificSettings
 
 
-class TestProviderSetupCli(TestCase):
-    @pytest.fixture(autouse=True)
-    def __inject_fixtures(self, mocker: MockerFixture, shared_datadir: Path):
-        self.mocker = mocker
-        self.shared_datadir = shared_datadir
-
+class TestProviderSetupCli(BaseTestCase):
     def setUp(self) -> None:
-        with open(self.shared_datadir / "test_consts.json") as f:
-            self.consts = json.load(f)
+        super().setUp()
         self.settings = Settings(censys_api_key=self.consts["censys_api_key"])
         self.setup_cli = ExampleProviderSetupCli(self.settings)
 
@@ -256,8 +243,9 @@ class TestProviderSetupCli(TestCase):
             "censys.cloud_connectors.common.cli.provider_setup.prompt_for_list",
             side_effect=list(expected_list_fields.values()),
         )
-        mock_prompt = self.mocker.patch(
-            "censys.cloud_connectors.common.cli.provider_setup.prompt",
+        mock_prompt = self.mocker.patch.object(
+            self.setup_cli,
+            "prompt",
             return_value=expected_field_values,
         )
 

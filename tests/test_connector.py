@@ -1,10 +1,6 @@
-import json
-from pathlib import Path
-from unittest import TestCase
 from unittest.mock import mock_open
 
 import pytest
-from pytest_mock import MockerFixture
 
 from censys.common.exceptions import CensysAsmException, CensysException
 
@@ -13,6 +9,7 @@ from censys.cloud_connectors.common.connector import CloudConnector
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.seed import Seed
 from censys.cloud_connectors.common.settings import Settings
+from tests.base_case import BaseTestCase
 
 
 class ExampleCloudConnector(CloudConnector):
@@ -28,21 +25,14 @@ class ExampleCloudConnector(CloudConnector):
         return super().scan_all()
 
 
-class TestCloudConnector(TestCase):
+class TestCloudConnector(BaseTestCase):
     settings: Settings
     connector: CloudConnector
-    mocker: MockerFixture
-
-    @pytest.fixture(autouse=True)
-    def __inject_fixtures(self, mocker: MockerFixture, shared_datadir: Path):
-        self.mocker = mocker
-        self.shared_datadir = shared_datadir
 
     def setUp(self) -> None:
-        with open(self.shared_datadir / "test_consts.json") as f:
-            self.data = json.load(f)
+        super().setUp()
         self.settings = Settings(
-            censys_api_key=self.data["censys_api_key"],
+            censys_api_key=self.consts["censys_api_key"],
             providers_config_file=str(self.shared_datadir / "test_empty_providers.yml"),
         )
         self.connector = ExampleCloudConnector(self.settings)
@@ -60,7 +50,7 @@ class TestCloudConnector(TestCase):
         assert self.connector.settings == self.settings
         assert self.connector.logger is not None
         assert self.connector.seeds_api is not None
-        assert self.connector.seeds_api._api_key == self.data["censys_api_key"]
+        assert self.connector.seeds_api._api_key == self.consts["censys_api_key"]
         assert (
             self.connector._add_cloud_asset_path
             == f"{self.settings.censys_beta_url}/cloudConnector/addCloudAssets"
@@ -78,7 +68,7 @@ class TestCloudConnector(TestCase):
 
     def test_no_api_key_fail(self):
         # Test data (Ensure that the validation is not triggered)
-        test_settings = Settings(censys_api_key=self.data["censys_api_key"])
+        test_settings = Settings(censys_api_key=self.consts["censys_api_key"])
 
         # Mock settings
         self.mocker.patch.object(test_settings, "censys_api_key", None)

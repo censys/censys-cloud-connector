@@ -1,15 +1,13 @@
 import json
-from pathlib import Path
-from unittest import TestCase
 from unittest.mock import MagicMock
 
 import pytest
 from parameterized import parameterized
-from pytest_mock import MockerFixture
 
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.seed import Seed
 from censys.cloud_connectors.common.settings import Settings
+from tests.base_case import BaseTestCase
 
 failed_import = False
 try:
@@ -22,15 +20,9 @@ except ImportError:
 
 
 @pytest.mark.skipif(failed_import, reason="Azure SDK not installed")
-class TestAzureCloudConnector(TestCase):
-    @pytest.fixture(autouse=True)
-    def __inject_fixtures(self, mocker: MockerFixture, shared_datadir: Path):
-        self.mocker = mocker
-        self.shared_datadir = shared_datadir
-
+class TestAzureCloudConnector(BaseTestCase):
     def setUp(self) -> None:
-        with open(self.shared_datadir / "test_consts.json") as f:
-            self.consts = json.load(f)
+        super().setUp()
         with open(self.shared_datadir / "test_azure_responses.json") as f:
             self.data = json.load(f)
         self.settings = Settings(censys_api_key=self.consts["censys_api_key"])

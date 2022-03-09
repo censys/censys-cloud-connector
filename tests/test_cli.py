@@ -1,17 +1,15 @@
-from unittest import TestCase
-
 import pytest
 from parameterized import parameterized
-from pytest_mock import MockerFixture
 
 from censys.cloud_connectors.common.cli import main
 from censys.cloud_connectors.common.cli.commands import config, scan
+from tests.base_case import BaseTestCase
 
 
-class TestCli(TestCase):
+class TestCli(BaseTestCase):
     @pytest.fixture(autouse=True)
-    def __inject_fixtures(self, mocker: MockerFixture, capsys):
-        self.mocker = mocker
+    def __inject_fixtures(self, capsys):
+        super().setUp()
         self.capsys = capsys
 
     @parameterized.expand(
@@ -33,11 +31,7 @@ class TestCli(TestCase):
         assert expected_output in captured.out
 
 
-class TestConfigCli(TestCase):
-    @pytest.fixture(autouse=True)
-    def __inject_fixtures(self, mocker: MockerFixture):
-        self.mocker = mocker
-
+class TestConfigCli(BaseTestCase):
     def test_cli_config(self):
         # Test data
         mock_connectors = [
@@ -80,11 +74,7 @@ class TestConfigCli(TestCase):
         mock_setup_cls.return_value.setup.assert_called_once()
 
 
-class TestScanCli(TestCase):
-    @pytest.fixture(autouse=True)
-    def __inject_fixtures(self, mocker: MockerFixture):
-        self.mocker = mocker
-
+class TestScanCli(BaseTestCase):
     def test_cli_scan(self):
         # Mock
         mock_settings = self.mocker.patch(
