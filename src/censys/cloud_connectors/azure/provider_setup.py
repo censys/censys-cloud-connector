@@ -1,9 +1,6 @@
 """Azure specific setup CLI."""
 import json
-import subprocess
 from typing import Optional
-
-from InquirerPy import prompt
 
 from censys.cloud_connectors.common.cli.provider_setup import ProviderSetupCli
 from censys.cloud_connectors.common.enums import ProviderEnum
@@ -36,9 +33,9 @@ class AzureSetupCli(ProviderSetupCli):
                 ]
                 return subscriptions
             except CredentialUnavailableError:
-                self.logger.info("Unable to get subscriptions from the CLI")
+                self.print_warning("Unable to get subscriptions from the CLI")
         except ImportError:
-            self.logger.info("Please install the Azure SDK for Python")
+            self.print_warning("Please install the Azure SDK for Python")
         return []
 
     def prompt_select_subscriptions(
@@ -51,9 +48,6 @@ class AzureSetupCli(ProviderSetupCli):
 
         Returns:
             List[Dict[str, str]]: List of selected subscriptions.
-
-        Raises:
-            KeyboardInterrupt: If the user cancels the prompt.
         """
         questions = [
             {
@@ -70,9 +64,7 @@ class AzureSetupCli(ProviderSetupCli):
                 ],
             }
         ]
-        answers = prompt(questions)
-        if not answers:  # pragma: no cover
-            raise KeyboardInterrupt
+        answers = self.prompt(questions)
         selected_subscription_ids = answers.get("subscription_ids", [])
         return [
             s
@@ -118,13 +110,10 @@ class AzureSetupCli(ProviderSetupCli):
 
         Returns:
             Optional[dict]: Service principal.
-
-        Raises:
-            KeyboardInterrupt: If the user cancels the prompt.
         """
         command = self.generate_create_command(subscriptions)
-        print("$ " + command)
-        answers = prompt(
+        self.print_bash(command)
+        answers = self.prompt(
             [
                 {
                     "type": "confirm",
@@ -134,27 +123,23 @@ class AzureSetupCli(ProviderSetupCli):
                 }
             ]
         )
-        if not answers:  # pragma: no cover
-            raise KeyboardInterrupt
         if not answers.get("create_service_principal", False):  # pragma: no cover
-            print("Please manually create a service principal with the role 'Reader'")
+            self.print_warning(
+                "Please manually create a service principal with the role 'Reader'"
+            )
             return None
 
-        res = subprocess.run(command, shell=True, capture_output=True)
+        res = self.run_command(command)
         if res.returncode != 0:
             error = res.stderr.decode("utf-8").strip()
-            self.logger.error(f"Error creating service principal: {error}")
+            self.print_error(f"Error creating service principal: {error}")
             return None
-        print("Service principal successfully created!")
+        self.print_info("Service principal successfully created!")
         creds = json.loads(res.stdout)
         return creds
 
     def setup(self):
-        """Setup the Azure provider.
-
-        Raises:
-            KeyboardInterrupt: If the user cancels the prompt.
-        """
+        """Setup the Azure provider."""
         cli_choice = "Generate with CLI"
         input_choice = "Input existing credentials"
         questions = [
@@ -165,27 +150,26 @@ class AzureSetupCli(ProviderSetupCli):
                 "choices": [cli_choice, input_choice],
             }
         ]
-        answers = prompt(questions)
-        if not answers:  # pragma: no cover
-            raise KeyboardInterrupt
+        answers = self.prompt(questions)
 
         get_credentials_from = answers.get("get_credentials_from")
         if get_credentials_from == input_choice:
+            # Prompt for credentials
             super().setup()
         elif get_credentials_from == cli_choice:
             subscriptions = self.get_subscriptions_from_cli()
             if len(subscriptions) == 0:
-                self.logger.error("No subscriptions found")
+                self.print_error("No subscriptions found")
                 exit(1)
 
             selected_subscriptions = self.prompt_select_subscriptions(subscriptions)
             if len(selected_subscriptions) == 0:
-                self.logger.error("No subscriptions selected")
+                self.print_error("No subscriptions selected")
                 exit(1)
 
             service_principal = self.create_service_principal(selected_subscriptions)
             if service_principal is None:
-                self.logger.error(
+                self.print_error(
                     "Service principal not created. Please try again or manually create a service principal"
                 )
                 exit(1)
@@ -201,4 +185,5 @@ class AzureSetupCli(ProviderSetupCli):
                 client_id=service_principal.get("appId"),
                 client_secret=service_principal.get("password"),
             )
-            self.settings.providers[self.provider].append(provider_settings)
+            # TODO: Confirm that another provider is not already configured for the above subscription IDs
+            self.add_provider_specific_settings(provider_settings)

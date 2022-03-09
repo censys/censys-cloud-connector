@@ -74,15 +74,14 @@ class TestAzureProviderSetup(TestCase):
             "azure.mgmt.resource.SubscriptionClient"
         )
         mock_subscription_client.return_value.subscriptions.list.side_effect = exception
-        mock_info_logger = self.mocker.patch.object(self.setup_cli.logger, "info")
+        mock_print_warning = self.mocker.patch.object(self.setup_cli, "print_warning")
 
         # Actual call
         subscriptions = self.setup_cli.get_subscriptions_from_cli()
 
         # Assertions
         assert len(subscriptions) == 0, "No subscriptions should be returned"
-        assert mock_info_logger.call_count == 1
-        assert mock_info_logger.call_args[0][0] == expected_message, "Wrong message"
+        mock_print_warning.assert_called_once_with(expected_message)
 
     def test_prompt_select_subscriptions(self):
         # Test data
@@ -105,9 +104,7 @@ class TestAzureProviderSetup(TestCase):
         )
 
         # Mock prompt
-        mock_prompt = self.mocker.patch(
-            "censys.cloud_connectors.azure.provider_setup.prompt"
-        )
+        mock_prompt = self.mocker.patch.object(self.setup_cli, "prompt")
         mock_selected_ids = ["subscription_0", "subscription_1", "subscription_2"]
         mock_prompt.return_value = {"subscription_ids": mock_selected_ids}
 
@@ -153,13 +150,12 @@ class TestAzureProviderSetup(TestCase):
         test_subscriptions = [{"id": "subscriptions/subscription_0"}]
 
         # Mock prompt
-        mock_prompt = self.mocker.patch(
-            "censys.cloud_connectors.azure.provider_setup.prompt",
+        mock_prompt = self.mocker.patch.object(
+            self.setup_cli,
+            "prompt",
             return_value={"create_service_principal": True},
         )
-        mock_run = self.mocker.patch(
-            "censys.cloud_connectors.azure.provider_setup.subprocess.run"
-        )
+        mock_run = self.mocker.patch.object(self.setup_cli, "run_command")
         mock_run.return_value.returncode = return_code
         mock_creds = {"test_service_principal": "test_secret"}
         mock_run.return_value.stdout = json.dumps(mock_creds)
@@ -177,8 +173,9 @@ class TestAzureProviderSetup(TestCase):
 
     def test_setup_input(self):
         # Mock prompt
-        mock_prompt = self.mocker.patch(
-            "censys.cloud_connectors.azure.provider_setup.prompt",
+        mock_prompt = self.mocker.patch.object(
+            self.setup_cli,
+            "prompt",
             return_value={"get_credentials_from": "Input existing credentials"},
         )
         mock_setup = self.mocker.patch.object(
@@ -198,8 +195,9 @@ class TestAzureProviderSetup(TestCase):
         test_subscription_id = self.data["TEST_CREDS"]["subscription_id"]
         test_subscriptions = [{"id": test_subscription_id}]
         # Mock prompt
-        mock_prompt = self.mocker.patch(
-            "censys.cloud_connectors.azure.provider_setup.prompt",
+        mock_prompt = self.mocker.patch.object(
+            self.setup_cli,
+            "prompt",
             return_value={"get_credentials_from": "Generate with CLI"},
         )
         # Mock get_subscriptions_from_cli

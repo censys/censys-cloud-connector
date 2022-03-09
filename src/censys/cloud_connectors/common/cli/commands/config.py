@@ -21,6 +21,16 @@ def cli_config(_: argparse.Namespace):
         KeyboardInterrupt: If the user cancels the prompt.
     """
     logger = get_logger(log_name="censys_cloud_connectors", level="INFO")
+
+    try:
+        settings = Settings()
+    except ValidationError as e:
+        error_str = str(e)
+        print(error_str)
+        if "censys_api_key" in error_str:
+            print("Please ensure the CENSYS_API_KEY environment variable is set")
+        return
+
     questions = [
         {
             "type": "list",
@@ -43,7 +53,6 @@ def cli_config(_: argparse.Namespace):
         f"censys.cloud_connectors.{provider_name}"
     ).__provider_setup__
 
-    settings = Settings()
     with contextlib.suppress(FileNotFoundError):
         settings.read_providers_config_file()
     try:

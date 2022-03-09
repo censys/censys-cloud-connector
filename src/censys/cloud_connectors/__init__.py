@@ -26,6 +26,8 @@ def get_connectors(ignore_prefix: str = "__") -> list[str]:
         List[str]: A list of connector names.
     """
     excluded_dirs = ["common"]
+    # TODO: Remove this when we have a AWS connector.
+    excluded_dirs.append("aws")
     return [
         os.path.splitext(os.path.basename(x))[0]
         for x in os.listdir(os.path.dirname(__file__))

@@ -279,7 +279,7 @@ python-versions = "*"
 
 [[package]]
 name = "azure-core"
-version = "1.22.1"
+version = "1.23.0"
 description = "Microsoft Azure Core Library for Python"
 category = "main"
 optional = true
@@ -288,6 +288,7 @@ python-versions = ">=3.6"
 [package.dependencies]
 requests = ">=2.18.4"
 six = ">=1.11.0"
+typing-extensions = ">=4.0.1"
 
 [[package]]
 name = "azure-cosmos"
@@ -1239,15 +1240,15 @@ msrest = ">=0.6.21"
 
 [[package]]
 name = "azure-mgmt-sqlvirtualmachine"
-version = "1.0.0b1"
-description = "Microsoft Azure Sqlvirtualmachine Management Client Library for Python"
+version = "1.0.0b2"
+description = "Microsoft Azure Sql Virtual Machine Management Client Library for Python"
 category = "main"
 optional = true
-python-versions = "*"
+python-versions = ">=3.6"
 
 [package.dependencies]
 azure-common = ">=1.1,<2.0"
-azure-mgmt-core = ">=1.2.0,<2.0.0"
+azure-mgmt-core = ">=1.3.0,<2.0.0"
 msrest = ">=0.6.21"
 
 [[package]]
@@ -1480,7 +1481,7 @@ python-versions = "~=3.7"
 
 [[package]]
 name = "censys"
-version = "2.1.2"
+version = "2.1.3"
 description = "An easy-to-use and lightweight API wrapper for Censys APIs (censys.io)."
 category = "main"
 optional = false
@@ -1796,7 +1797,7 @@ flake8 = ">=3.7"
 
 [[package]]
 name = "google-api-core"
-version = "2.6.0"
+version = "2.7.0"
 description = "Google API client core library"
 category = "main"
 optional = true
@@ -1836,16 +1837,16 @@ reauth = ["pyu2f (>=0.1.5)"]
 
 [[package]]
 name = "google-cloud-securitycenter"
-version = "1.9.0"
+version = "1.10.0"
 description = "Cloud Security Command Center API client library"
 category = "main"
 optional = true
 python-versions = ">=3.6"
 
 [package.dependencies]
-google-api-core = {version = ">=1.28.0,<3.0.0dev", extras = ["grpc"]}
+google-api-core = {version = ">=1.31.5,<2.0.0 || >2.3.0,<3.0.0dev", extras = ["grpc"]}
 grpc-google-iam-v1 = ">=0.12.3,<0.13dev"
-proto-plus = ">=1.10.0"
+proto-plus = ">=1.15.0"
 
 [package.extras]
 libcst = ["libcst (>=0.2.5)"]
@@ -1967,7 +1968,7 @@ python-versions = "*"
 
 [[package]]
 name = "ipython"
-version = "8.1.0"
+version = "8.1.1"
 description = "IPython: Productive Interactive Computing"
 category = "dev"
 optional = false
@@ -2970,7 +2971,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [[package]]
 name = "virtualenv"
-version = "20.13.2"
+version = "20.13.3"
 description = "Virtual Python Environment builder"
 category = "dev"
 optional = false
@@ -3028,7 +3029,7 @@ gcp = ["google-auth", "google-cloud-securitycenter"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "8c90b16d5570eb643d6394e8f5652e1da3357e3792f67d14747eda74fc3cc9a5"
+content-hash = "f4350c4fedcd5d15e96adde9f6658dfe432ca9c0447e5f2920536b9802616874"
 
 [metadata.files]
 adal = [
@@ -3091,8 +3092,8 @@ azure-common = [
     {file = "azure_common-1.1.28-py2.py3-none-any.whl", hash = "sha256:5c12d3dcf4ec20599ca6b0d3e09e86e146353d443e7fcc050c9a19c1f9df20ad"},
 ]
 azure-core = [
-    {file = "azure-core-1.22.1.zip", hash = "sha256:4b6e405268a33b873107796495cec3f2f1b1ffe935624ce0fbddff36d38d3a4d"},
-    {file = "azure_core-1.22.1-py3-none-any.whl", hash = "sha256:407381c74e2ccc16adb1f29c4a1b381ebd39e8661bbf60422926d8252d5b757d"},
+    {file = "azure-core-1.23.0.zip", hash = "sha256:a56a6f720d0948d3f3e4a25a5fe46df2f1b7f865c358d74e2ce47dbb49262608"},
+    {file = "azure_core-1.23.0-py3-none-any.whl", hash = "sha256:23c1389a115c328878c4eface3ca3899c2468313ea6f883f2347d6924cd887b2"},
 ]
 azure-cosmos = [
     {file = "azure-cosmos-3.2.0.tar.gz", hash = "sha256:4f77cc558fecffac04377ba758ac4e23f076dc1c54e2cf2515f85bc15cbde5c6"},
@@ -3389,8 +3390,8 @@ azure-mgmt-sql = [
     {file = "azure_mgmt_sql-3.0.1-py2.py3-none-any.whl", hash = "sha256:1d1dd940d4d41be4ee319aad626341251572a5bf4a2addec71779432d9a1381f"},
 ]
 azure-mgmt-sqlvirtualmachine = [
-    {file = "azure-mgmt-sqlvirtualmachine-1.0.0b1.zip", hash = "sha256:4ab153bd4fbaed4dc2a4c2cf64c6b05ee45d4886d3b1f6afda315922c6563e6c"},
-    {file = "azure_mgmt_sqlvirtualmachine-1.0.0b1-py2.py3-none-any.whl", hash = "sha256:33a2337ffb3f6768005bb0c49c2a4cfd02ee49d703902cf3bdb0a6d8fc60fc90"},
+    {file = "azure-mgmt-sqlvirtualmachine-1.0.0b2.zip", hash = "sha256:ceab0bb9f8d498e975671bbc421633b042988284be9bc193a51c9d97b8ef5cc9"},
+    {file = "azure_mgmt_sqlvirtualmachine-1.0.0b2-py3-none-any.whl", hash = "sha256:590205d2387e6b89fe10678ce812289b7bb8a61b988136fa5d6f771503e7e703"},
 ]
 azure-mgmt-storage = [
     {file = "azure-mgmt-storage-19.0.0.zip", hash = "sha256:f05963e5a8696d0fd4dcadda4feecb9b382a380d2e461b3647704ac787d79876"},
@@ -3495,8 +3496,8 @@ cachetools = [
     {file = "cachetools-5.0.0.tar.gz", hash = "sha256:486471dfa8799eb7ec503a8059e263db000cdda20075ce5e48903087f79d5fd6"},
 ]
 censys = [
-    {file = "censys-2.1.2-py3-none-any.whl", hash = "sha256:91d99d890f44feb4e68e84c9b0c32ddb63bb69c124054d2d8a25b4baa6fecd2d"},
-    {file = "censys-2.1.2.tar.gz", hash = "sha256:270cf23bd78414c54ff244d8a3207c332fee6e13f2ab1ed3a3a1f7336eb9b8e9"},
+    {file = "censys-2.1.3-py3-none-any.whl", hash = "sha256:dc2b06f40ca7f5386ba8d361c484be6092c580c06f967a7f858e69fe6519fb50"},
+    {file = "censys-2.1.3.tar.gz", hash = "sha256:50bc63625fc6db0bf94a5fab5280a9d4c48aed3b4eca43b86bdf9668bf3bc980"},
 ]
 certifi = [
     {file = "certifi-2021.10.8-py2.py3-none-any.whl", hash = "sha256:d62a0163eb4c2344ac042ab2bdf75399a71a2d8c7d47eac2e2ee91b9d6339569"},
@@ -3712,16 +3713,16 @@ flake8-simplify = [
     {file = "flake8_simplify-0.18.1.tar.gz", hash = "sha256:8344a6a77b214ad7b3559d06a42c97333b73b11034abb018ea02cebba9fdebf1"},
 ]
 google-api-core = [
-    {file = "google-api-core-2.6.0.tar.gz", hash = "sha256:56551465be3e42966cfcb6f9243caf60aa79d023b763351876cf9702735132f4"},
-    {file = "google_api_core-2.6.0-py2.py3-none-any.whl", hash = "sha256:3c9f0c539281529e26cc5631dba911ded66e27ed91f269b58fc4eb53d4b81ce8"},
+    {file = "google-api-core-2.7.0.tar.gz", hash = "sha256:53fde60b5589420df2c1b4c98674ecbc217226931b713247586f71f5c0458c38"},
+    {file = "google_api_core-2.7.0-py3-none-any.whl", hash = "sha256:4ef13280a8b00772f9effa92c8f798bd2b7d2637ffe7d5bc8d50356448f1840b"},
 ]
 google-auth = [
     {file = "google-auth-2.6.0.tar.gz", hash = "sha256:ad160fc1ea8f19e331a16a14a79f3d643d813a69534ba9611d2c80dc10439dad"},
     {file = "google_auth-2.6.0-py2.py3-none-any.whl", hash = "sha256:218ca03d7744ca0c8b6697b6083334be7df49b7bf76a69d555962fd1a7657b5f"},
 ]
 google-cloud-securitycenter = [
-    {file = "google-cloud-securitycenter-1.9.0.tar.gz", hash = "sha256:aad699b3a9a071878411d7fa28640dc7b73e44ff12a923724c266e853540ab7f"},
-    {file = "google_cloud_securitycenter-1.9.0-py2.py3-none-any.whl", hash = "sha256:3a06fbd733369e80194e733df76f9d46ac316eda42b88da90a0a6c2fa7436664"},
+    {file = "google-cloud-securitycenter-1.10.0.tar.gz", hash = "sha256:55a53a0d192ad69384492392ca74518da963a7af02d57d87f1a9e31de1e8adb2"},
+    {file = "google_cloud_securitycenter-1.10.0-py2.py3-none-any.whl", hash = "sha256:d6e8f6f1c30afacfb270756b7b91e8f49d6d92d58a7a77e88437846bb5b346fa"},
 ]
 googleapis-common-protos = [
     {file = "googleapis-common-protos-1.55.0.tar.gz", hash = "sha256:53eb313064738f45d5ac634155ae208e121c963659627b90dfcb61ef514c03e1"},
@@ -3806,8 +3807,8 @@ invoke = [
     {file = "invoke-1.6.0.tar.gz", hash = "sha256:374d1e2ecf78981da94bfaf95366216aaec27c2d6a7b7d5818d92da55aa258d3"},
 ]
 ipython = [
-    {file = "ipython-8.1.0-py3-none-any.whl", hash = "sha256:7bfeb6f298b2d7f3859c4f3e134082015cf34de90f89f5020e107a5a762ef6db"},
-    {file = "ipython-8.1.0.tar.gz", hash = "sha256:42c23e90b2deaae631266885de1656a517a1673d7e1db57e8eb3a4bb6cd5ce1b"},
+    {file = "ipython-8.1.1-py3-none-any.whl", hash = "sha256:6f56bfaeaa3247aa3b9cd3b8cbab3a9c0abf7428392f97b21902d12b2f42a381"},
+    {file = "ipython-8.1.1.tar.gz", hash = "sha256:8138762243c9b3a3ffcf70b37151a2a35c23d3a29f9743878c33624f4207be3d"},
 ]
 isodate = [
     {file = "isodate-0.6.1-py2.py3-none-any.whl", hash = "sha256:0751eece944162659049d35f4f549ed815792b38793f07cf73381c1c87cbed96"},
@@ -4332,8 +4333,8 @@ urllib3 = [
     {file = "urllib3-1.26.8.tar.gz", hash = "sha256:0e7c33d9a63e7ddfcb86780aac87befc2fbddf46c58dbb487e0855f7ceec283c"},
 ]
 virtualenv = [
-    {file = "virtualenv-20.13.2-py2.py3-none-any.whl", hash = "sha256:e7b34c9474e6476ee208c43a4d9ac1510b041c68347eabfe9a9ea0c86aa0a46b"},
-    {file = "virtualenv-20.13.2.tar.gz", hash = "sha256:01f5f80744d24a3743ce61858123488e91cb2dd1d3bdf92adaf1bba39ffdedf0"},
+    {file = "virtualenv-20.13.3-py2.py3-none-any.whl", hash = "sha256:dd448d1ded9f14d1a4bfa6bfc0c5b96ae3be3f2d6c6c159b23ddcfd701baa021"},
+    {file = "virtualenv-20.13.3.tar.gz", hash = "sha256:e9dd1a1359d70137559034c0f5433b34caf504af2dc756367be86a5a32967134"},
 ]
 wcwidth = [
     {file = "wcwidth-0.2.5-py2.py3-none-any.whl", hash = "sha256:beb4802a9cebb9144e99086eff703a642a13d6a0052920003a230f3294bbe784"},

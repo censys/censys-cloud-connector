@@ -121,6 +121,7 @@ class Settings(BaseSettings):
         """Config for pydantic."""
 
         env_file = ".env"
+        case_sentive = False
 
     def read_providers_config_file(self):
         """Read provider config file.

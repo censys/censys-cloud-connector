@@ -49,7 +49,7 @@ class GcpCloudConnector(CloudConnector):
             # Thrown when the service account does not have permission to
             # access the securitycenter service or the service is disabled.
             self.logger.error(e.message)
-        # TODO: Uncomment this when Gcp cloud assets are implemented.
+        # TODO: Uncomment this when connector is fully tested
         # except Exception as e:
         #     self.logger.error(f"Failed to scan {self.organization_id}: {e}")
 

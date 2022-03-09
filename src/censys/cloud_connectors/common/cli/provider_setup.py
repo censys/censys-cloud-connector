@@ -1,16 +1,18 @@
 """Base for all provider-specific setup cli commands."""
-from logging import Logger
+import subprocess
 from typing import get_origin
 
+import rich
 from InquirerPy import prompt
+from InquirerPy.utils import InquirerPyQuestions
 from InquirerPy.validator import PathValidator
 from prompt_toolkit.validation import Document, ValidationError, Validator
 from pydantic import FilePath
 from pydantic.fields import ModelField
 from pydantic.utils import lenient_issubclass
+from rich.syntax import Syntax
 
 from censys.cloud_connectors.common.enums import ProviderEnum
-from censys.cloud_connectors.common.logger import get_logger
 from censys.cloud_connectors.common.settings import ProviderSpecificSettings, Settings
 
 
@@ -104,7 +106,6 @@ class ProviderSetupCli:
     provider: ProviderEnum
     provider_specific_settings_class: type[ProviderSpecificSettings]
     settings: Settings
-    logger: Logger
 
     def __init__(self, settings: Settings):
         """Initialize the provider setup cli command.
@@ -113,14 +114,84 @@ class ProviderSetupCli:
             settings (Settings): The settings to use.
         """
         self.settings = settings
-        self.logger = get_logger(
-            log_name=f"{self.provider}_setup", level=settings.logging_level
-        )
 
     def setup(self) -> None:
         """Setup the provider."""
         provider_settings = self.prompt_for_settings()
+        self.add_provider_specific_settings(provider_settings)
+
+    def add_provider_specific_settings(
+        self, provider_settings: ProviderSpecificSettings
+    ) -> None:
+        """Add provider-specific settings to the settings.
+
+        Args:
+            provider_settings (ProviderSpecificSettings): The provider-specific settings to add.
+        """
         self.settings.providers[self.provider].append(provider_settings)
+
+    def print(self, *args, **kwargs) -> None:
+        """Print a object.
+
+        This is a wrapper around rich's print function.
+
+        Args:
+            *args: The arguments to print.
+            **kwargs: The keyword arguments to print.
+        """
+        rich.print(*args, **kwargs)
+
+    def print_info(self, message: str) -> None:
+        """Print an info message.
+
+        Args:
+            message (str): The message to print.
+        """
+        self.print("[blue]i[/blue] " + message)
+
+    def print_warning(self, message: str) -> None:
+        """Print a warning message.
+
+        Args:
+            message (str): The message to print.
+        """
+        self.print("[yellow]![/yellow] " + message)
+
+    def print_error(self, message: str) -> None:
+        """Print an error message.
+
+        Args:
+            message (str): Thep message to print.
+        """
+        self.print("[red]x[/red] " + message)
+
+    def print_bash(self, bash: str) -> None:
+        """Print a bash command.
+
+        Args:
+            bash (str): The bash command to print.
+        """
+        self.print(Syntax(bash, "bash", word_wrap=True))
+
+    def prompt(self, questions: InquirerPyQuestions, **kwargs) -> dict:
+        """Prompt the user for answers.
+
+        This is a wrapper around InquirerPy's prompt function.
+
+        Args:
+            questions (InquirerPyQuestions): The question(s) to ask.
+            **kwargs: The keyword arguments to pass to prompt.
+
+        Returns:
+            dict: The answers.
+
+        Raises:
+            KeyboardInterrupt: If the user cancels the prompt.
+        """
+        answers = prompt(questions, **kwargs)
+        if not answers:
+            raise KeyboardInterrupt
+        return answers
 
     def prompt_for_settings(self) -> ProviderSpecificSettings:
         """Prompt for settings.
@@ -167,10 +238,23 @@ class ProviderSetupCli:
                 question["type"] = "filepath"
                 question["validate"] = PathValidator(is_file=True)
             else:  # pragma: no cover
-                self.logger.debug(f"Unsupported field type: {field_type}")
                 raise ValueError(f"Unsupported type for field {field.name}.")
 
-            answers.update(prompt(question))
+            answers.update(self.prompt(question))
         if not answers:  # pragma: no cover
             raise ValueError("No answers provided.")
         return self.provider_specific_settings_class(**answers)
+
+    def run_command(self, command: str, **kwargs) -> subprocess.CompletedProcess:
+        """Run a command.
+
+        Args:
+            command (str): The command to run.
+            **kwargs: The keyword arguments to pass to run_command.
+
+        Returns:
+            subprocess.CompletedProcess: The completed process.
+        """
+        if not kwargs:
+            kwargs = {"shell": True, "capture_output": True}
+        return subprocess.run(command, **kwargs)

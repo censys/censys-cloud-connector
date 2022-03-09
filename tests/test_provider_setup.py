@@ -188,7 +188,6 @@ class TestProviderSetupCli(TestCase):
 
     def test_init(self):
         assert self.setup_cli.settings == self.settings
-        assert self.setup_cli.logger is not None
 
     def test_setup(self):
         # Mock prompt
