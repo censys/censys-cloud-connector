@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 from unittest import TestCase
+from unittest.mock import mock_open
 
 import pytest
 from pytest_mock import MockerFixture
@@ -76,11 +77,18 @@ class TestCloudConnector(TestCase):
             ExampleCloudConnector(self.settings)
 
     def test_no_api_key_fail(self):
-        # Test data
+        # Test data (Ensure that the validation is not triggered)
         test_settings = Settings(censys_api_key=self.data["censys_api_key"])
 
-        # Mock
+        # Mock settings
         self.mocker.patch.object(test_settings, "censys_api_key", None)
+
+        # Mock Censys Config to not grab the API from the config file
+        self.mocker.patch(
+            "builtins.open",
+            new_callable=mock_open,
+            read_data="[DEFAULT]\napi_id =\napi_secret =\nasm_api_key =",
+        )
 
         # Assertions
         with pytest.raises(CensysException, match="No ASM API key configured."):
