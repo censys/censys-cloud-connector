@@ -142,6 +142,7 @@ class AzureSetupCli(ProviderSetupCli):
         """Setup the Azure provider."""
         cli_choice = "Generate with CLI"
         input_choice = "Input existing credentials"
+        # TODO: Add support for InteractiveBrowserCredential
         questions = [
             {
                 "type": "list",
@@ -186,4 +187,5 @@ class AzureSetupCli(ProviderSetupCli):
                 client_secret=service_principal.get("password"),
             )
             # TODO: Confirm that another provider is not already configured for the above subscription IDs
+            # If so, prompt to overwrite/merge
             self.add_provider_specific_settings(provider_settings)
