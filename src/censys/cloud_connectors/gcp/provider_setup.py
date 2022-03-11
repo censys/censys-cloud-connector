@@ -75,7 +75,7 @@ class GcpSetupCli(ProviderSetupCli):
                 service_account_name, list(GcpRoles), organization_id, project_id
             )
         )
-        self.print_bash("\n".join(commands))
+        self.print_command("\n".join(commands))
         answers = self.prompt(
             {
                 "type": "confirm",

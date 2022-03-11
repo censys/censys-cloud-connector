@@ -50,13 +50,23 @@ class BaseCli:
         """
         self.print("[red]![/red] " + message)
 
-    def print_bash(self, bash: str) -> None:
-        """Print a bash command.
+    def print_command(self, command: str) -> None:
+        """Print a command.
 
         Args:
-            bash (str): The bash command to print.
+            command (str): The command to print.
         """
-        self.print(Syntax(bash, "bash", word_wrap=True))
+        self.print(Syntax(command, "bash", word_wrap=True))
+
+    def print_json(self, json_object: dict) -> None:
+        """Print a json object.
+
+        This is a wrapper around print_json's print function.
+
+        Args:
+            json_object (dict): The json object to print.
+        """
+        rich.print_json(data=json_object)
 
     def prompt(self, questions: InquirerPyQuestions, **kwargs) -> dict:
         """Prompt the user for answers.
@@ -75,6 +85,7 @@ class BaseCli:
         """
         answers = prompt(questions, **kwargs)
         if not answers:
+            # If the user cancels the prompt (returns no answers), we raise a KeyboardInterrupt.
             raise KeyboardInterrupt
         return answers
 
