@@ -1,3 +1,5 @@
+from unittest import TestCase
+
 import pytest
 from parameterized import parameterized
 from pydantic import ValidationError
@@ -9,12 +11,11 @@ from censys.cloud_connectors.common.seed import (
     IpSeed,
     Seed,
 )
-from tests.base_case import BaseTestCase
 
 TEST_LABEL = "test_label"
 
 
-class SeedTest(BaseTestCase):
+class SeedTest(TestCase):
     def test_seed_to_dict(self):
         test_type = "test"
         test_value = "test-seed-value"

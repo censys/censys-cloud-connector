@@ -1,13 +1,11 @@
 import json
+from unittest import TestCase
 from unittest.mock import MagicMock
 
 import pytest
 from parameterized import parameterized
 
-from censys.cloud_connectors.common.enums import ProviderEnum
-from censys.cloud_connectors.common.seed import Seed
-from censys.cloud_connectors.common.settings import Settings
-from tests.base_case import BaseTestCase
+from tests.base_connector_case import BaseConnectorCase
 
 failed_import = False
 try:
@@ -20,12 +18,14 @@ except ImportError:
 
 
 @pytest.mark.skipif(failed_import, reason="Azure SDK not installed")
-class TestAzureCloudConnector(BaseTestCase):
+class TestAzureCloudConnector(BaseConnectorCase, TestCase):
+    connector: AzureCloudConnector
+    connector_cls = AzureCloudConnector
+
     def setUp(self) -> None:
         super().setUp()
         with open(self.shared_datadir / "test_azure_responses.json") as f:
             self.data = json.load(f)
-        self.settings = Settings(censys_api_key=self.consts["censys_api_key"])
         self.settings.providers["azure"] = [
             AzureSpecificSettings.from_dict(self.data["TEST_CREDS"])
         ]
@@ -33,13 +33,6 @@ class TestAzureCloudConnector(BaseTestCase):
         # Set subscription_id as its required for certain calls
         self.connector.subscription_id = self.data["TEST_CREDS"]["subscription_id"]
         self.connector.credentials = self.mocker.MagicMock()
-
-    def tearDown(self) -> None:
-        # Reset the deaultdicts as they are immutable
-        for seed_key in list(self.connector.seeds.keys()):
-            del self.connector.seeds[seed_key]
-        for cloud_asset_key in list(self.connector.cloud_assets.keys()):
-            del self.connector.cloud_assets[cloud_asset_key]
 
     def mock_asset(self, data: dict) -> MagicMock:
         asset = self.mocker.MagicMock()
@@ -52,16 +45,6 @@ class TestAzureCloudConnector(BaseTestCase):
         return self.mocker.patch(
             f"censys.cloud_connectors.azure.connector.{client_name}"
         )
-
-    def assert_seeds_with_values(self, seeds: list[Seed], values: list[str]):
-        assert len(seeds) == len(values)
-        for seed in seeds:
-            assert seed.value in values
-
-    def test_init(self):
-        assert self.connector.provider == ProviderEnum.AZURE
-        assert self.connector.label_prefix == "AZURE: "
-        assert self.connector.settings == self.settings
 
     @parameterized.expand([(ClientAuthenticationError,)])
     def test_scan_fail(self, exception):

@@ -1,4 +1,5 @@
 import json
+from unittest import TestCase
 
 import pytest
 from parameterized import parameterized
@@ -9,7 +10,7 @@ from censys.cloud_connectors.common.settings import Settings
 from censys.cloud_connectors.gcp.connector import GcpCloudConnector
 from censys.cloud_connectors.gcp.enums import GcpSecurityCenterResourceTypes
 from censys.cloud_connectors.gcp.settings import GcpSpecificSettings
-from tests.base_case import BaseTestCase
+from tests.base_case import BaseCase
 
 failed_import = False
 try:
@@ -19,7 +20,7 @@ except ImportError:
 
 
 @pytest.mark.skipif(failed_import, reason="Failed to import gcp dependencies")
-class TestGcpConnector(BaseTestCase):
+class TestGcpConnector(BaseCase, TestCase):
     def setUp(self) -> None:
         super().setUp()
         with open(self.shared_datadir / "test_gcp_responses.json") as f:

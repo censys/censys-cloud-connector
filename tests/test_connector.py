@@ -1,4 +1,4 @@
-from unittest.mock import mock_open
+from unittest import TestCase
 
 import pytest
 
@@ -9,7 +9,7 @@ from censys.cloud_connectors.common.connector import CloudConnector
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.seed import Seed
 from censys.cloud_connectors.common.settings import Settings
-from tests.base_case import BaseTestCase
+from tests.base_connector_case import BaseConnectorCase
 
 
 class ExampleCloudConnector(CloudConnector):
@@ -25,38 +25,12 @@ class ExampleCloudConnector(CloudConnector):
         return super().scan_all()
 
 
-class TestCloudConnector(BaseTestCase):
-    settings: Settings
-    connector: CloudConnector
+class TestCloudConnector(BaseConnectorCase, TestCase):
+    connector: ExampleCloudConnector
 
     def setUp(self) -> None:
         super().setUp()
-        self.settings = Settings(
-            censys_api_key=self.consts["censys_api_key"],
-            providers_config_file=str(self.shared_datadir / "test_empty_providers.yml"),
-        )
-        self.connector = ExampleCloudConnector(self.settings)
-
-    def tearDown(self) -> None:
-        # Reset the deaultdicts as they are immutable
-        for seed_key in list(self.connector.seeds.keys()):
-            del self.connector.seeds[seed_key]
-        for cloud_asset_key in list(self.connector.cloud_assets.keys()):
-            del self.connector.cloud_assets[cloud_asset_key]
-
-    def test_init(self):
-        assert self.connector.provider == ProviderEnum.AWS
-        assert self.connector.label_prefix == ProviderEnum.AWS.label() + ": "
-        assert self.connector.settings == self.settings
-        assert self.connector.logger is not None
-        assert self.connector.seeds_api is not None
-        assert self.connector.seeds_api._api_key == self.consts["censys_api_key"]
-        assert (
-            self.connector._add_cloud_asset_path
-            == f"{self.settings.censys_beta_url}/cloudConnector/addCloudAssets"
-        )
-        assert list(self.connector.seeds.keys()) == []
-        assert list(self.connector.cloud_assets.keys()) == []
+        self.setUpConnector(ExampleCloudConnector)
 
     def test_init_fail(self):
         # Mock provider
@@ -75,9 +49,7 @@ class TestCloudConnector(BaseTestCase):
 
         # Mock Censys Config to not grab the API from the config file
         self.mocker.patch(
-            "builtins.open",
-            new_callable=mock_open,
-            read_data="[DEFAULT]\napi_id =\napi_secret =\nasm_api_key =",
+            "censys.common.config.get_config_path", return_value="not_a_file"
         )
 
         # Assertions
@@ -124,12 +96,19 @@ class TestCloudConnector(BaseTestCase):
         logger_mock.assert_called_once()
 
     def test_submit_cloud_assets(self):
+        # Test data
         asset = CloudAsset(
             type="TEST", value="test-value", cspLabel=ProviderEnum.AWS, uid="test-uid"
         )
         self.connector.add_cloud_asset(asset)
+
+        # Mock
         add_cloud_mock = self.mocker.patch.object(self.connector, "_add_cloud_assets")
+
+        # Actual call
         self.connector.submit_cloud_assets()
+
+        # Assertions
         add_cloud_mock.assert_called_once_with(
             {
                 "cloudConnectorUid": self.connector.label_prefix + "test-uid",
@@ -138,14 +117,21 @@ class TestCloudConnector(BaseTestCase):
         )
 
     def test_fail_submit_cloud_assets(self):
+        # Test data
         asset = CloudAsset(
             type="TEST", value="test-value", cspLabel=ProviderEnum.AWS, uid="test-uid"
         )
         self.connector.add_cloud_asset(asset)
+
+        # Mock
         add_cloud_mock = self.mocker.patch.object(self.connector, "_add_cloud_assets")
         add_cloud_mock.side_effect = CensysAsmException(404, "Test Exception")
         logger_mock = self.mocker.patch.object(self.connector.logger, "error")
+
+        # Actual call
         self.connector.submit_cloud_assets()
+
+        # Assertions
         logger_mock.assert_called_once()
 
     def test_add_cloud_assets(self):
@@ -166,23 +152,33 @@ class TestCloudConnector(BaseTestCase):
             self.connector._add_cloud_asset_path, json=test_data
         )
 
-    @pytest.mark.skip("Submission Not Implemented (Purposefully)")
     def test_submit(self):
+        # Mock
         submit_seeds_mock = self.mocker.patch.object(self.connector, "submit_seeds")
         submit_cloud_assets_mock = self.mocker.patch.object(
             self.connector, "submit_cloud_assets"
         )
+        self.mocker.patch.object(self.connector.settings, "dry_run", False)
+
+        # Actual call
         self.connector.submit()
+
+        # Assertions
         submit_seeds_mock.assert_called_once()
         submit_cloud_assets_mock.assert_called_once()
 
     def test_scan(self):
+        # Mock
         get_seeds_mock = self.mocker.patch.object(self.connector, "get_seeds")
         get_cloud_assets_mock = self.mocker.patch.object(
             self.connector, "get_cloud_assets"
         )
         submit_mock = self.mocker.patch.object(self.connector, "submit")
+
+        # Actual call
         self.connector.scan()
+
+        # Assertions
         get_seeds_mock.assert_called_once()
         get_cloud_assets_mock.assert_called_once()
         submit_mock.assert_called_once()

@@ -1,11 +1,12 @@
 import json
+from unittest import TestCase
 
 import pytest
 from parameterized import parameterized
 
 from censys.cloud_connectors.azure import __provider_setup__
 from censys.cloud_connectors.common.settings import Settings
-from tests.base_case import BaseTestCase
+from tests.base_case import BaseCase
 
 failed_import = False
 try:
@@ -16,7 +17,7 @@ except ImportError:
 
 
 @pytest.mark.skipif(failed_import, reason="Azure SDK not installed")
-class TestAzureProviderSetup(BaseTestCase):
+class TestAzureProviderSetup(BaseCase, TestCase):
     def setUp(self) -> None:
         super().setUp()
         with open(self.shared_datadir / "test_azure_responses.json") as f:
