@@ -64,8 +64,7 @@ class CloudConnector(ABC):
         if not seed.label.startswith(self.label_prefix):
             seed.label = self.label_prefix + seed.label
         self.seeds[seed.label].append(seed)
-        if self.settings.dry_run:
-            self.logger.debug(f"Found Seed: {seed.to_dict()}")
+        self.logger.debug(f"Found Seed: {seed.to_dict()}")
 
     def add_cloud_asset(self, cloud_asset: CloudAsset):
         """Add a cloud asset.
@@ -76,21 +75,24 @@ class CloudConnector(ABC):
         if not cloud_asset.uid.startswith(self.label_prefix):
             cloud_asset.uid = self.label_prefix + cloud_asset.uid
         self.cloud_assets[cloud_asset.uid].append(cloud_asset)
-        if self.settings.dry_run:
-            self.logger.debug(f"Found Cloud Asset: {cloud_asset.to_dict()}")
+        self.logger.debug(f"Found Cloud Asset: {cloud_asset.to_dict()}")
 
     def submit_seeds(self):
         """Submit the seeds to the Censys ASM."""
+        submitted_seeds = 0
         for label, seeds in self.seeds.items():
             try:
                 self.seeds_api.replace_seeds_by_label(
                     label, [seed.to_dict() for seed in seeds]
                 )
+                submitted_seeds += len(seeds)
             except CensysAsmException as e:
                 self.logger.error(f"Error submitting seeds for {label}: {e}")
+        self.logger.info(f"Submitted {submitted_seeds} seeds.")
 
     def submit_cloud_assets(self):
         """Submit the cloud assets to the Censys ASM."""
+        submitted_assets = 0
         for uid, cloud_assets in self.cloud_assets.items():
             try:
                 data = {
@@ -98,8 +100,10 @@ class CloudConnector(ABC):
                     "cloudAssets": [asset.to_dict() for asset in cloud_assets],
                 }
                 self._add_cloud_assets(data)
+                submitted_assets += len(cloud_assets)
             except (CensysAsmException, JSONDecodeError) as e:
                 self.logger.error(f"Error submitting cloud assets for {uid}: {e}")
+        self.logger.info(f"Submitted {submitted_assets} cloud assets.")
 
     def _add_cloud_assets(self, data: dict) -> dict:
         """Add cloud assets to the Censys ASM.
@@ -132,7 +136,6 @@ class CloudConnector(ABC):
             self.logger.info("Submitting seeds and assets...")
             self.submit_seeds()
             self.submit_cloud_assets()
-            self.logger.info("Submitted seeds and assets.")
 
     def scan(self):
         """Scan the seeds and cloud assets."""

@@ -3,6 +3,7 @@ import argparse
 
 from pydantic import ValidationError
 
+from censys.cloud_connectors import __version__
 from censys.cloud_connectors.common.logger import get_logger
 from censys.cloud_connectors.common.settings import Settings
 
@@ -14,6 +15,8 @@ def cli_scan(_: argparse.Namespace):
         _ (argparse.Namespace): Namespace.
     """
     logger = get_logger(log_name="censys_cloud_connectors", level="INFO")
+
+    logger.info("Censys Cloud Connectors Version: %s", __version__)
 
     try:
         settings = Settings()
