@@ -1,6 +1,5 @@
 [run]
 include = src/censys/*
-cov
 
 [html]
 show_contexts=true

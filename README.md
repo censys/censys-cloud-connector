@@ -66,7 +66,6 @@ censys-cc scan  # Scan for assets
 ### Useful Commands
 
 ```sh
-poetry run pytest  # Run tests
 poetry run flake8 .  # Run linter
 poetry run black .  # Run formatter
 poetry run isort .  # Run import formatter
