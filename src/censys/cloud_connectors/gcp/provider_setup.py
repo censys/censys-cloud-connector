@@ -75,7 +75,7 @@ class GcpSetupCli(ProviderSetupCli):
                 service_account_name, list(GcpRoles), organization_id, project_id
             )
         )
-        self.print_bash("\n".join(commands))
+        self.print_command("\n".join(commands))
         answers = self.prompt(
             {
                 "type": "confirm",
@@ -136,7 +136,7 @@ class GcpSetupCli(ProviderSetupCli):
             service_account_name (str): Service account name.
             roles (list[GcpRoles]): Roles.
             organization_id (str): Organization ID.
-            project_id (str): Project ID for the serivce account.
+            project_id (str): Project ID for the service account.
 
         Returns:
             list[str]: Role binding command.

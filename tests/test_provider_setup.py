@@ -1,4 +1,5 @@
 from typing import Any
+from unittest import TestCase
 
 import pytest
 from parameterized import parameterized
@@ -25,10 +26,10 @@ from censys.cloud_connectors.common.cli.provider_setup import (
     snake_case_to_english,
 )
 from censys.cloud_connectors.common.settings import ProviderSpecificSettings, Settings
-from tests.base_case import BaseTestCase
+from tests.base_case import BaseCase
 
 
-class TestProviderSetup(BaseTestCase):
+class TestProviderSetup(BaseCase, TestCase):
     @parameterized.expand(
         [
             ("test_variable", "Test Variable"),
@@ -167,7 +168,7 @@ class ExampleProviderSetupCli(ProviderSetupCli):
     provider_specific_settings_class = ExampleProviderSpecificSettings
 
 
-class TestProviderSetupCli(BaseTestCase):
+class TestProviderSetupCli(BaseCase, TestCase):
     def setUp(self) -> None:
         super().setUp()
         self.settings = Settings(censys_api_key=self.consts["censys_api_key"])

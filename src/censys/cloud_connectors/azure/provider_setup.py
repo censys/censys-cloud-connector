@@ -112,7 +112,7 @@ class AzureSetupCli(ProviderSetupCli):
             Optional[dict]: Service principal.
         """
         command = self.generate_create_command(subscriptions)
-        self.print_bash(command)
+        self.print_command(command)
         answers = self.prompt(
             [
                 {

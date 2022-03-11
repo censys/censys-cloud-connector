@@ -1,25 +1,18 @@
 from collections import OrderedDict
 from tempfile import NamedTemporaryFile
+from unittest import TestCase
 
 import pytest
-import yaml
 from parameterized import parameterized
 
 from censys.cloud_connectors import __connectors__
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.settings import ProviderSpecificSettings, Settings
-from tests.base_case import BaseTestCase
+from tests.base_case import BaseCase
+from tests.utils import assert_same_yaml
 
 
-def same_yaml(file_a: str, file_b: str) -> bool:
-    with open(file_a) as f:
-        a = yaml.safe_load(f)
-    with open(file_b) as f:
-        b = yaml.safe_load(f)
-    return a == b
-
-
-class TestSettings(BaseTestCase):
+class TestSettings(BaseCase, TestCase):
     def setUp(self) -> None:
         super().setUp()
         self.settings = Settings(censys_api_key=self.consts["censys_api_key"])
@@ -71,7 +64,7 @@ class TestSettings(BaseTestCase):
         temp_file = NamedTemporaryFile(mode="w+")
         self.settings.providers_config_file = temp_file.name
         self.settings.write_providers_config_file()
-        assert same_yaml(original_file, temp_file.name)
+        assert_same_yaml(original_file, temp_file.name)
 
     @parameterized.expand(__connectors__)
     def test_scan_all(self, provider_name: str):
@@ -96,7 +89,7 @@ class ExampleProviderSettings(ProviderSpecificSettings):
     other: str
 
 
-class TestProviderSpecificSettings(BaseTestCase):
+class TestProviderSpecificSettings(BaseCase):
     def test_as_dict(self):
         provider_settings = ExampleProviderSettings(
             provider="test", advanced=True, other="other variable"

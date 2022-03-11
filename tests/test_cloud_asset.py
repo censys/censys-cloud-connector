@@ -1,3 +1,5 @@
+from unittest import TestCase
+
 import pytest
 from parameterized import parameterized
 
@@ -8,7 +10,7 @@ from censys.cloud_connectors.common.cloud_asset import (
     ObjectStorageAsset,
 )
 from censys.cloud_connectors.common.enums import ProviderEnum
-from tests.base_case import BaseTestCase
+from tests.base_case import BaseCase
 
 TEST_TYPE = "test_type"
 TEST_VALUE = "test_value"
@@ -16,7 +18,7 @@ TEST_SCAN_DATA = {"test_scan_data": "test_scan_data"}
 TEST_UID = "test_uid"
 
 
-class CloudAssetTest(BaseTestCase):
+class CloudAssetTest(BaseCase, TestCase):
     def test_cloud_asset_to_dict(self):
         cloud_asset = CloudAsset(
             type=TEST_TYPE,

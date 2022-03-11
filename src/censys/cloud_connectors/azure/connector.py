@@ -50,7 +50,7 @@ class AzureCloudConnector(CloudConnector):
                 client_secret=provider_setting.client_secret,
             )
             for subscription_id in self.provider_settings.subscription_id:
-                self.logger.debug(f"Scanning Azure Subscription {subscription_id}")
+                self.logger.info(f"Scanning Azure Subscription {subscription_id}")
                 self.subscription_id = subscription_id
                 self.scan()
 

@@ -3,8 +3,9 @@ default:
     - censec
 
 stages:
+  - quality
   - test
-  - lint
+  - security
 
 .poetry:
   image: python:3.9
@@ -25,10 +26,23 @@ stages:
     - apt-get install --assume-yes --no-install-recommends npm
     - pip install --upgrade pip poetry
     - poetry config virtualenvs.in-project true
-    - poetry install -E azure -E gcp
+    - poetry install -E azure -E gcp -vv
     - . .venv/bin/activate
 
-unit-test-job: # This job runs in the test stage.
+check-flake8: # This job also runs in the quality stage.
+  extends: .poetry
+  stage: quality
+  script:
+    - flake8 src/
+
+check-mypy: # This job runs in the quality stage.
+  extends: .poetry
+  stage: quality # It can run at the same time as quality-job: (in parallel).
+  allow_failure: true
+  script:
+    - mypy -p censys.cloud_connectors
+
+.test-template: # This job runs in the test stage.
   extends: .poetry
   stage: test
   script:
@@ -36,29 +50,29 @@ unit-test-job: # This job runs in the test stage.
   variables:
     CENSYS_API_KEY: "ci-censys-api-key-xxxxxxxxxxxxxxxxxx"
 
-lint-job: # This job also runs in the lint stage.
-  extends: .poetry
-  stage: lint
-  script:
-    - flake8 src/
+python3.9:
+  extends: .test-template
+  image: python:3.9
 
-static-type-check-job: # This job runs in the lint stage.
-  extends: .poetry
-  stage: lint # It can run at the same time as lint-job: (in parallel).
-  allow_failure: true
-  script:
-    - mypy -p censys.cloud_connectors
+# python3.10:
+#   extends: .test-template
+#   image: python:3.10
 
 sast:
-  stage: test
+  stage: security
   variables:
     SEARCH_MAX_DEPTH: "10"
 
+kics-iac-sast:
+  stage: security
+
 secret_detection:
+  stage: security
   variables:
     SECRET_DETECTION_HISTORIC_SCAN: "true"
 
 gemnasium-python-dependency_scanning:
+  stage: security
   # Work around https://gitlab.com/gitlab-org/gitlab/-/issues/7006
   before_script:
     - pip install poetry
