@@ -36,12 +36,20 @@ censys-cc scan  # Scan for assets
 ## Development
 
 ```sh
-poetry run pytest  # Run tests
 poetry run flake8 .  # Run linter
 poetry run black .  # Run formatter
 poetry run isort .  # Run import formatter
 poetry run mypy .  # Run type checker
 pre-commit run --all-files  # Run pre-commit hooks (lint, type check, etc.)
+```
+
+### Testing
+
+```sh
+# Run tests
+poetry run pytest
+# With coverage report
+poetry run pytest --cov-report html
 ```
 
 ### VSCode Config
