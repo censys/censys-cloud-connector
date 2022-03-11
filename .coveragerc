@@ -1,5 +1,9 @@
 [run]
 include = src/censys/*
+cov
+
+[html]
+show_contexts=true
 
 [report]
 show_missing = true
