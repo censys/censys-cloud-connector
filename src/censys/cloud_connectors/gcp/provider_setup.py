@@ -2,6 +2,8 @@
 import json
 from typing import Optional
 
+import subprocess
+
 from pydantic import validate_arguments
 
 from censys.cloud_connectors.common.cli.provider_setup import ProviderSetupCli
@@ -30,6 +32,45 @@ class GcpSetupCli(ProviderSetupCli):
     # TODO: Setup steps:
     # - Create a service account with the above roles
     # - Download the JSON key file for the service account
+
+    def check_gcloud_installed(self) -> bool:
+        """Check if user has gcloud installed locally.
+
+        Returns:
+            bool: True if installed, false if not.
+        """
+        gcloud_version = self.run_command("gcloud version")
+        if gcloud_version.returncode != 0:
+            self.print_warning("Please install the [link=https://cloud.google.com/sdk/docs/downloads-interactive]gcloud SDK[\link] before continuing.")
+            return False # TODO: capture stderr/stdout?
+        return True
+
+    def check_gcloud_auth(self) -> Optional[str]:
+        gcloud_auth = self.run_command("gcloud auth list --format=json")
+        if gcloud_auth.returncode != 0:
+            self.print_warning("Unable to get list of authenticated gcloud clients.")
+            return None
+            # TODO: would you like us to run this for you?
+            # TODO: is authentication even the issue here?
+        active_accounts = json.loads(gcloud_auth.stdout)
+        for account in active_accounts:
+            if account.get("status") == "ACTIVE":
+                user_account_name = account.get("account")
+                answers = self.prompt(
+                    {
+                        "type": "confirm",
+                        "name": "use_active_account",
+                        "message": f"The user account {user_account_name} is active. Would you like to use this account?",
+                        "default": True,
+                    }
+                )
+        if answers.get("use_active_account", True):
+            return user_account_name
+        if len(active_accounts['account']) == 0 or answers.get("use_active_account", False):
+            self.print_warning("Please authenticate your gcloud client using 'gcloud auth login'.")
+            return None
+
+
 
     def get_ids_from_cli(self) -> Optional[tuple[str, str]]:
         """Get the organization ID and project ID from the CLI.
@@ -154,9 +195,11 @@ class GcpSetupCli(ProviderSetupCli):
             str: Create service account command.
         """
         return (
-            f"gcloud iam service-accounts create {name} --display-name 'Censys Cloud" #TODO: Should this string be hardcoded?
+            f"gcloud iam service-accounts create {name} --display-name 'Censys Cloud" #TODO: change to default
             " Connector Service Account'"
         )
+        # TODO: add description of what service account is
+        # TODO: shown vs hidden args?
 
     @validate_arguments
     def generate_enable_service_account_command(
@@ -219,6 +262,12 @@ class GcpSetupCli(ProviderSetupCli):
         ]
         answers = self.prompt(questions)
 
+        # Check for gcloud installation
+        self.check_gcloud_installed()
+
+        # Check for gcloud authentication
+        user_account_name = self.check_gcloud_auth()
+
         get_credentials_from = answers.get("get_credentials_from")
         if get_credentials_from == input_choice:
             # Prompt for the credentials
@@ -229,7 +278,7 @@ class GcpSetupCli(ProviderSetupCli):
             )
             questions = [
                 {
-                    "type": "confirm",
+                    "type": "confirm", # TODO: select what method to get project/organization id in
                     "name": "get_from_cli",
                     "message": "Do you want to get the project and organization IDs from the CLI?", # TODO: what is this question for?
                     "default": True,
