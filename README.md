@@ -64,3 +64,41 @@ Features inlcuded in the extensions:
 - View all todos
 - Automatically generate docsstrings
 - Spell check
+
+
+### GCP Config
+
+<!-- TODO: if this is your first time using Censys cloud connectors, follow these directions. Otherwise, skip to... -->
+
+Initial gcloud authentication:
+[Install the gcloud SDK] (https://cloud.google.com/sdk/docs/downloads-interactive)
+<!-- Is this necessary? -->
+<!-- - Install kubectl
+    ```sh
+    gcloud components install kubectl
+    ``` -->
+
+Authenticate your gcloud client
+To activate your user via browser-based SSO, run
+```sh
+$ gcloud auth login
+
+You are now logged in as [your@email.com].
+Your current project is [PROJECT-ID].  You can change this setting by running:
+  $ gcloud config set project PROJECT_ID
+```
+Set your _PROJECT-ID_ to your preferred project.
+
+
+```sh
+$ censys-cc config
+? Select a provider: Gcp
+? Select a method to configure your credentials: Generate with CLI
+i Before you begin you\'ll need to have identified the following:
+  - The Google Cloud organization administrator account which will execute scripts that configure
+the Censys Cloud Connector.
+  - The project that will be used to run the Censys Cloud Connector. Please note that the cloud
+connector will be scoped to the organization.
+? Do you want to get the project and organization IDs from the CLI? Yes
+
+```

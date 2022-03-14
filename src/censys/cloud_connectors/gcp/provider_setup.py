@@ -10,6 +10,8 @@ from censys.cloud_connectors.common.enums import ProviderEnum
 from .enums import GcpRoles
 from .settings import GcpSpecificSettings
 
+# TODO: add gcloud auth to docs
+
 
 class GcpSetupCli(ProviderSetupCli):
     """Gcp provider setup cli command."""
@@ -211,7 +213,7 @@ class GcpSetupCli(ProviderSetupCli):
             {
                 "type": "list",
                 "name": "get_credentials_from",
-                "message": "Select a method to configure your credentials",
+                "message": "Select a method to configure your credentials:",
                 "choices": [cli_choice, input_choice],
             }
         ]
@@ -235,13 +237,13 @@ class GcpSetupCli(ProviderSetupCli):
                 {
                     "type": "input",
                     "name": "project_id",
-                    "message": "Enter the project ID",
+                    "message": "Enter the project ID:",
                     "when": lambda answers: not answers["get_from_cli"],
                 },
                 {
                     "type": "input",
                     "name": "organization_id",
-                    "message": "Enter the organization ID",
+                    "message": "Enter the organization ID:",
                     "when": lambda answers: not answers["get_from_cli"],
                 },
             ]
@@ -272,7 +274,7 @@ class GcpSetupCli(ProviderSetupCli):
                 {
                     "type": "list",
                     "name": "service_account_status",
-                    "message": "Create new or use existing service account",
+                    "message": "Create new or use existing service account:",
                     "choices": [existing_service_account, new_service_account],
                 }
             ]
@@ -286,7 +288,7 @@ class GcpSetupCli(ProviderSetupCli):
                         {
                             "type": "input",
                             "name": "existing_account_name",
-                            "message": "Enter the service account name",
+                            "message": "Enter the service account name:",
                         }
                     ]
                 )
@@ -307,7 +309,7 @@ class GcpSetupCli(ProviderSetupCli):
                         {
                             "type": "input",
                             "name": "new_account_name",
-                            "message": "Enter the service account name",
+                            "message": "Enter the service account name:",
                             "default": "censys-cloud-connector",
                         }
                     ]
