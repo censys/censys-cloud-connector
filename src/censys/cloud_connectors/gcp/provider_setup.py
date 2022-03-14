@@ -93,6 +93,40 @@ class GcpSetupCli(ProviderSetupCli):
         # TODO: Return service account.
         return {}
 
+    def enable_service_account(self, service_account_name: str, organization_id: str, project_id: str
+    ) -> Optional[dict]:
+
+        commands = [self.generate_enable_service_account_command(service_account_name)]
+        # TODO: add role checks here
+        commands.extend(
+            self.generate_role_binding_command(
+                service_account_name, list(GcpRoles), organization_id, project_id
+            )
+        )
+        self.print_command("\n".join(commands))
+
+        answers = self.prompt(
+            {
+                "type": "confirm",
+                "name": "enable_service_account",
+                "message": "Enable service account with the above commands?",
+                "default": True,
+            }
+        )
+        
+        if not self.logged_in_cli or not answers.get("enable_service_account", False):
+            self.print_info(
+                "Please login and try again. Or run the above commands in the Google Cloud Console."
+            )
+            return None
+        # Should return "Enabled service account [...]"
+
+        # TODO: return service account
+        return {}
+
+
+
+
     @validate_arguments
     def generate_set_project_command(self, project_id: str) -> str:
         """Generate set project command.
@@ -107,7 +141,7 @@ class GcpSetupCli(ProviderSetupCli):
 
     @validate_arguments
     def generate_create_service_account_command(
-        self, name: str = "censys-cloud-connector"
+        self, name: str = "censys-cloud-connector" # TODO: should this str be hardcoded?
     ) -> str:
         """Generate create service account command.
 
@@ -118,9 +152,26 @@ class GcpSetupCli(ProviderSetupCli):
             str: Create service account command.
         """
         return (
-            f"gcloud iam service-accounts create {name} --display-name 'Censys Cloud"
+            f"gcloud iam service-accounts create {name} --display-name 'Censys Cloud" #TODO: Should this string be hardcoded?
             " Connector Service Account'"
         )
+
+    @validate_arguments
+    def generate_enable_service_account_command(
+        self, name: str
+    ) -> str:
+        """Generate enable service account command.
+
+        Args:
+            name (str): Service account name.
+
+        Returns:
+            str: Enable service account command.
+        """
+        return (
+            f"gcloud iam service-accounts enable {name}"
+        )
+
 
     @validate_arguments
     def generate_role_binding_command(
@@ -178,7 +229,7 @@ class GcpSetupCli(ProviderSetupCli):
                 {
                     "type": "confirm",
                     "name": "get_from_cli",
-                    "message": "Do you want to get the project and organization IDs from the CLI?",
+                    "message": "Do you want to get the project and organization IDs from the CLI?", # TODO: what is this question for?
                     "default": True,
                 },
                 {
@@ -196,8 +247,7 @@ class GcpSetupCli(ProviderSetupCli):
             ]
             answers = self.prompt(questions)
 
-            project_id = answers.get("project_id")
-            organization_id = answers.get("organization_id")
+            
             if answers.get("get_from_cli"):
                 current_ids = self.get_ids_from_cli()
                 if not current_ids:
@@ -208,28 +258,82 @@ class GcpSetupCli(ProviderSetupCli):
                 organization_id, project_id = current_ids
                 self.logged_in_cli = True
 
+            else:
+                project_id = answers.get("project_id")
+                organization_id = answers.get("organization_id")
+
             self.print_info(f"Using organization ID: {organization_id}.")
             self.print_info(f"Using project ID: '{project_id}'.")
 
-            answers = self.prompt(
-                [
-                    {
-                        "type": "input",
-                        "name": "service_account_name",
-                        "message": "Enter the service account name",
-                        "default": "censys-cloud-connector",
-                    }
-                ]
-            )
-            service_account_name = answers.get("service_account_name")
+            # TODO: allow existing service accounts
+            existing_service_account = "Enable existing IAM service account"
+            new_service_account = "Create new IAM service account"
+            questions = [
+                {
+                    "type": "list",
+                    "name": "service_account_status",
+                    "message": "Create new or use existing service account",
+                    "choices": [existing_service_account, new_service_account],
+                }
+            ]
+            answers = self.prompt(questions)
+            service_account_status = answers.get("service_account_status")
 
-            service_account = self.create_service_account(
-                service_account_name, project_id, organization_id
-            )
-            if service_account is None:
-                self.print_error(
-                    "Service account not created. Please try again or manually create the service account."
+            if service_account_status == existing_service_account:
+                # Enable existing service account
+                answers = self.prompt(
+                    [
+                        {
+                            "type": "input",
+                            "name": "existing_account_name",
+                            "message": "Enter the service account name",
+                        }
+                    ]
                 )
-                exit(1)
+                existing_account_name = answers.get("existing_account_name")
 
-            GcpSpecificSettings.from_dict(service_account)
+                service_account = self.enable_service_account(
+                    existing_account_name, project_id, organization_id
+                )
+                # TODO: some type of error checking. does service_account exist? what message to print if not?
+
+                #GcpSpecificSettings.from_dict(service_account)
+
+                
+            elif service_account_status == new_service_account:
+                # Create new service account
+                answers = self.prompt(
+                    [
+                        {
+                            "type": "input",
+                            "name": "new_account_name",
+                            "message": "Enter the service account name",
+                            "default": "censys-cloud-connector",
+                        }
+                    ]
+                )
+                new_account_name = answers.get("new_account_name")
+
+                service_account = self.create_service_account(
+                    new_account_name, project_id, organization_id
+                )
+                if service_account is None:
+                    self.print_error(
+                        "Service account not created. Please try again or manually create the service account."
+                    )
+                    exit(1)
+
+                GcpSpecificSettings.from_dict(service_account)
+
+            
+# CLI:
+#     Create service account:
+        
+
+#     Existing service account:
+#         Enter name of service account:
+
+#             Download new service account key:
+#                 gcloud iam service-accounts keys create ./key-file.json --iam-account censys-cloud-connector@elevated-oven-341519.iam.gserviceaccount.com
+
+#             Enter path to existing .json key file:

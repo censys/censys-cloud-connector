@@ -1,5 +1,6 @@
 """GCP provider-specific settings."""
 from pathlib import Path
+from typing import Optional
 
 from pydantic import Field, FilePath, validator
 
@@ -15,7 +16,7 @@ class GcpSpecificSettings(ProviderSpecificSettings):
     organization_id: str = Field(
         min_length=1, max_length=64, description="GCP organization ID."
     )
-    service_account_json_file: FilePath = Field(
+    service_account_json_file: FilePath[Optional] = Field(
         description="Path to service account json file."
     )
 
