@@ -70,6 +70,7 @@ types-requests = "^2.27.8"
 
 [tool.poetry.extras]
 azure = [
+    "azure-cli",
     "azure-common",
     "azure-core",
     "azure-identity",
