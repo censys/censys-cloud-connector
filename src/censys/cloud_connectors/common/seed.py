@@ -29,6 +29,8 @@ class AsnSeed(Seed):
 
     type: str = "ASN"
 
+    # TODO: It would be nice to know what format the ASN should be in.
+
 
 class IpSeed(Seed):
     """IP seed."""

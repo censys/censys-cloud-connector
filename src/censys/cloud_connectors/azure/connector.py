@@ -53,6 +53,9 @@ class AzureCloudConnector(CloudConnector):
                 self.logger.info(f"Scanning Azure Subscription {subscription_id}")
                 self.subscription_id = subscription_id
                 self.scan()
+                # TODO: Implement when connector is fully tested
+                # except Exception as e:
+                #     self.logger.error(f"Failed to scan {self.organization_id}: {e}")
 
     def format_label(self, asset: AzureModel) -> str:
         """Format Azure asset label.
