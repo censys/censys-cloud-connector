@@ -13,14 +13,8 @@ class GcpSpecificSettings(ProviderSpecificSettings):
 
     provider: str = ProviderEnum.GCP
 
-    user_account: str = Field(
-        min_length=1, max_length=64, description="GCP user account name."
-    )
     organization_id: str = Field(
         min_length=1, max_length=64, description="GCP organization ID."
-    )
-    project_id: str = Field(
-        min_length=1, max_length=64, description="GCP project ID."
     )
     service_account_json_file: FilePath[Optional] = Field(
         description="Path to service account json file."
