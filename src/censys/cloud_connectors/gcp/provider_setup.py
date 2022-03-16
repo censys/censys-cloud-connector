@@ -72,7 +72,7 @@ class GcpSetupCli(ProviderSetupCli):
             self.print_warning("Please authenticate your gcloud client using 'gcloud auth login'.")
             return None
 
-    def check_correct_permissions(self) -> Optional[str]:
+    def check_correct_permissions(self, organization_id: str, user_account: str) -> Optional[str]:
         """Verify that the user has the correct organization role to continue.
 
         Args:
@@ -80,22 +80,23 @@ class GcpSetupCli(ProviderSetupCli):
         Returns:
             Optional[str]: _description_
         """
-        org_perms_res = self.run_command(f"gcloud organizations get-iam-policy {self.gcp_settings.organization_id} --format=json")
+        org_perms_res = self.run_command(f"gcloud organizations get-iam-policy {organization_id} --format=json")
         if org_perms_res.returncode != 0:
             self.print_warning("Unable to access organization permissions.")
             return None
         org_perms = json.loads(org_perms_res.stdout)
-        for binding in org_perms: # TODO: do I need to include higher up roles?
-            if binding.get("role") == "roles/resourcemanager.organizationAdmin":
-                for member in binding.get("members"):
-                    if member == f"user:{self.gcp_settings.user_account}":
-                        self.correct_user_org_perms = True
-        self.print_warning(
-            f"You do not have the correct organization permissions.\n \
-            Your user account {self.gcp_settings.user_account} must be \
-            granted the role 'roles/resourcemanager.organizationAdmin' \
-            within your organization {self.gcp_settings.organization_id}. You may need to \
-            contact your organization administrator or switch user accounts.")
+        # for binding in org_perms: # TODO: do I need to include higher up roles?
+        #     if binding.get("role") == "roles/resourcemanager.organizationAdmin":
+        #         for member in binding.get("members"):
+        #             if member == f"user:{user_account}":
+        #                 self.correct_user_org_perms = True
+        #                 return None
+        # self.print_warning(
+        #     f"You do not have the correct organization permissions.\n \
+        #     Your user account {user_account} must be \
+        #     granted the role 'roles/resourcemanager.organizationAdmin' \
+        #     within your organization {organization_id}. You may need to \
+        #     contact your organization administrator or switch user accounts.")
 
     # def test_permissions(project_id):
     #     """Tests IAM permissions of the caller"""
@@ -133,9 +134,9 @@ class GcpSetupCli(ProviderSetupCli):
         if project_res.returncode != 0:
             self.print_warning("Unable to get the current project ID from the CLI")
             return None
-        self.gcp_settings.project_id = project_res.stdout.decode("utf-8").strip()
+        project_id = project_res.stdout.decode("utf-8").strip()
         project_ancestors_res = self.run_command(
-            f"gcloud projects get-ancestors {self.gcp_settings.project_id} --format=json"
+            f"gcloud projects get-ancestors {project_id} --format=json"
         )
         if project_ancestors_res.returncode != 0:
             self.print_warning(
@@ -145,12 +146,12 @@ class GcpSetupCli(ProviderSetupCli):
         project_ancestors = json.loads(project_ancestors_res.stdout)
         for ancestor in project_ancestors:
             if ancestor.get("type") == "organization":
-                self.gcp_settings.organization_id = ancestor.get("id")
-                return self.gcp_settings.organization_id, self.gcp_settings.project_id
+                organization_id = ancestor.get("id")
+                return organization_id, project_id
         return None
 
     def create_service_account(
-        self, service_account_name: str
+        self, service_account_name: str, organization_id: str, project_id: str
     ) -> Optional[dict]:
         """Create a service account.
 
@@ -164,7 +165,7 @@ class GcpSetupCli(ProviderSetupCli):
         commands = [self.generate_create_service_account_command(service_account_name)]
         commands.extend(
             self.generate_role_binding_command(
-                service_account_name, list(GcpRoles), self.gcp_settings.organization_id, self.gcp_settings.project_id
+                service_account_name, list(GcpRoles), organization_id, project_id
             )
         )
         self.print_command("\n".join(commands))
@@ -185,14 +186,14 @@ class GcpSetupCli(ProviderSetupCli):
         # TODO: Return service account.
         return {}
 
-    def enable_service_account(self, service_account_name: str
+    def enable_service_account(self, service_account_name: str, organization_id: str, project_id: str
     ) -> Optional[dict]:
 
         commands = [self.generate_enable_service_account_command(service_account_name)]
         # TODO: add role checks here
         commands.extend(
             self.generate_role_binding_command(
-                service_account_name, list(GcpRoles), self.gcp_settings.organization_id, self.gcp_settings.project_id
+                service_account_name, list(GcpRoles), organization_id, project_id
             )
         )
         self.print_command("\n".join(commands))
@@ -220,7 +221,7 @@ class GcpSetupCli(ProviderSetupCli):
 
 
     @validate_arguments
-    def generate_set_project_command(self) -> str:
+    def generate_set_project_command(self, project_id: str) -> str:
         """Generate set project command.
 
         Args:
@@ -228,7 +229,7 @@ class GcpSetupCli(ProviderSetupCli):
         Returns:
             str: Set project command.
         """
-        return f"gcloud config set project {self.gcp_settings.project_id}"
+        return f"gcloud config set project {project_id}"
 
     @validate_arguments
     def generate_create_service_account_command(
@@ -269,6 +270,8 @@ class GcpSetupCli(ProviderSetupCli):
     @validate_arguments
     def generate_role_binding_command(
         self,
+        organization_id: str,
+        project_id: str,
         service_account_name: str,
         roles: list[GcpRoles],
     ) -> list[str]:
@@ -286,8 +289,8 @@ class GcpSetupCli(ProviderSetupCli):
         ]
         for role in roles:
             commands.append(
-                f"gcloud organizations add-iam-policy-binding {self.gcp_settings.organization_id} --member"
-                f" 'serviceAccount:{service_account_name}@{self.gcp_settings.project_id}.iam.gserviceaccount.com'"
+                f"gcloud organizations add-iam-policy-binding {organization_id} --member"
+                f" 'serviceAccount:{service_account_name}@{project_id}.iam.gserviceaccount.com'"
                 f" --role '{role}' --no-user-output-enabled --quiet"
             )
         return commands
@@ -310,7 +313,7 @@ class GcpSetupCli(ProviderSetupCli):
         self.check_gcloud_installed()
 
         # Check for gcloud authentication
-        self.gcp_settings.user_account = self.check_gcloud_auth()
+        user_account = self.check_gcloud_auth()
 
         get_credentials_from = answers.get("get_credentials_from")
         if get_credentials_from == input_choice:
@@ -350,18 +353,18 @@ class GcpSetupCli(ProviderSetupCli):
                         "Unable to get the project and organization IDs from the CLI. Please try again."
                     )
                     return
-                self.gcp_settings.organization_id, self.gcp_settings.project_id = current_ids
+                organization_id, project_id = current_ids
                 self.logged_in_cli = True
 
             else:
-                self.gcp_settings.project_id = answers.get("project_id")
-                self.gcp_settings.organization_id = answers.get("organization_id")
+                project_id = answers.get("project_id")
+                organization_id = answers.get("organization_id")
 
-            self.print_info(f"Using organization ID: {self.gcp_settings.organization_id}.")
-            self.print_info(f"Using project ID: '{self.gcp_settings.project_id}'.")
+            self.print_info(f"Using organization ID: {organization_id}.")
+            self.print_info(f"Using project ID: '{project_id}'.")
 
             # Check user account has correct permissions
-            self.check_correct_permissions()
+            self.check_correct_permissions(organization_id, user_account)
 
             # TODO: allow existing service accounts
             existing_service_account = "Enable existing IAM service account"
@@ -391,7 +394,7 @@ class GcpSetupCli(ProviderSetupCli):
                 existing_account_name = answers.get("existing_account_name")
 
                 service_account = self.enable_service_account(
-                    existing_account_name, self.gcp_settings.project_id, self.gcp_settings.organization_id
+                    existing_account_name, project_id, organization_id
                 )
                 # TODO: some type of error checking. does service_account exist? what message to print if not?
 
@@ -413,7 +416,7 @@ class GcpSetupCli(ProviderSetupCli):
                 new_account_name = answers.get("new_account_name")
 
                 service_account = self.create_service_account(
-                    new_account_name, project_id, self.gcp_settings.organization_id
+                    new_account_name, project_id, organization_id
                 )
                 if service_account is None:
                     self.print_error(
