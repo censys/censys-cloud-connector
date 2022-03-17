@@ -35,7 +35,7 @@ class TestBaseCli(BaseCase, TestCase):
         [
             ("[blue]i[/blue] ", "print_info"),
             ("[yellow]![/yellow] ", "print_warning"),
-            ("[red]![/red] ", "print_error"),
+            ("[red]x[/red] ", "print_error"),
         ]
     )
     def test_print_types(self, prefix: str, method: str):
@@ -105,7 +105,7 @@ class TestBaseCli(BaseCase, TestCase):
 
     @parameterized.expand(
         [
-            ({}, {"shell": True, "capture_output": True}),
+            ({}, {"shell": True, "capture_output": True, "text": True}),
             ({"shell": False}, {"shell": False}),
         ]
     )

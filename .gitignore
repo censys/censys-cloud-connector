@@ -150,3 +150,6 @@ cython_debug/
 
 # Censys Config
 providers.yml
+
+# GCP Config
+*-key.json
