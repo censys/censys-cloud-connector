@@ -1,0 +1,12 @@
+{
+  "TEST_ACCOUNTS": [
+    {
+      "account": "main-gcp-account@censys.io",
+      "status": "ACTIVE"
+    },
+    {
+      "account": "inactive-gcp-account@censys.io",
+      "status": ""
+    }
+  ]
+}

@@ -84,6 +84,8 @@ class BaseCli:
             KeyboardInterrupt: If the user cancels the prompt.
         """
         # Add better instructions
+        if isinstance(questions, dict):
+            questions = [questions]
         for question in questions:
             if question.get("type") == "list":
                 question["instruction"] = "(Use arrow keys)"
