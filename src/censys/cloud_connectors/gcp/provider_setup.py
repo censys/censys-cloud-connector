@@ -209,16 +209,14 @@ class GcpSetupCli(ProviderSetupCli):
     def generate_role_binding_command(
         self,
         organization_id: str,
-        project_id: str,
-        service_account_name: str,
+        service_account_email: str,
         roles: list[GcpRoles],
     ) -> list[str]:
         """Generate role binding commands.
 
         Args:
             organization_id (str): Organization id.
-            project_id (str): Project id.
-            service_account_name (str): Service account name.
+            service_account_email (str): Service account email.
             roles (list[GcpRoles]): Roles.
 
         Returns:
@@ -231,7 +229,7 @@ class GcpSetupCli(ProviderSetupCli):
         for role in roles:
             commands.append(
                 f"gcloud organizations add-iam-policy-binding {organization_id} --member"
-                f" 'serviceAccount:{self.generate_service_account_email(service_account_name, project_id)}'"
+                f" 'serviceAccount:{service_account_email}'"
                 f" --role '{role}' --no-user-output-enabled --quiet"
             )
         return commands
@@ -296,16 +294,15 @@ class GcpSetupCli(ProviderSetupCli):
         """
         # TODO: Ensure that the APIs are enabled.
         commands = [self.generate_create_service_account_command(service_account_name)]
+        service_account_email = self.generate_service_account_email(
+            service_account_name, project_id
+        )
         commands.extend(
             self.generate_role_binding_command(
                 organization_id,
-                project_id,
-                service_account_name,
+                service_account_email,
                 list(GcpRoles),
             )
-        )
-        service_account_email = self.generate_service_account_email(
-            service_account_name, project_id
         )
         commands.extend(
             self.generate_create_key_command(service_account_email, key_file_path)
@@ -412,12 +409,10 @@ class GcpSetupCli(ProviderSetupCli):
             service_account_name, project_id
         )
         commands = [self.generate_enable_service_account_command(service_account_email)]
-        # TODO: add role checks here
         commands.extend(
             self.generate_role_binding_command(
                 organization_id,
-                project_id,
-                service_account_name,
+                service_account_email,
                 list(GcpRoles),
             )
         )
@@ -427,12 +422,14 @@ class GcpSetupCli(ProviderSetupCli):
 
         self.print_command("\n".join(commands))
         answers = self.prompt(
-            {
-                "type": "confirm",
-                "name": "enable_service_account",
-                "message": "Enable service account with the above commands?",
-                "default": True,
-            }
+            [
+                {
+                    "type": "confirm",
+                    "name": "enable_service_account",
+                    "message": "Enable service account with the above commands?",
+                    "default": True,
+                }
+            ]
         )
 
         # TODO: some type of error checking. does service_account exist? what message to print if not?
@@ -444,6 +441,7 @@ class GcpSetupCli(ProviderSetupCli):
             return None
 
         for command in commands:
+            # TODO: add role checks here
             res = self.run_command(command)
             if res.returncode != 0:
                 self.print_error(

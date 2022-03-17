@@ -1,98 +1,106 @@
-# TODO: Remove this qa skip
-# flake8: noqa
 import json
-from enum import Enum
-from typing import Any
+from unittest import TestCase
 
 import pytest
 from parameterized import parameterized
-from prompt_toolkit.validation import Document, ValidationError
-from pydantic import (
-    BaseConfig,
-    Field,
-    FilePath,
-    NegativeFloat,
-    NonNegativeFloat,
-    NonPositiveInt,
-    PositiveInt,
-    confloat,
-    conint,
-    conlist,
-    constr,
-)
-from pydantic.fields import ModelField
 
-from censys.cloud_connectors.common.cli.provider_setup import (
-    ProviderSetupCli,
-    generate_validation,
-    prompt_for_list,
-    snake_case_to_english,
-)
-from censys.cloud_connectors.common.enums import ProviderEnum
-from censys.cloud_connectors.common.seed import Seed
-from censys.cloud_connectors.common.settings import ProviderSpecificSettings, Settings
-from censys.cloud_connectors.gcp.connector import GcpCloudConnector
-from censys.cloud_connectors.gcp.enums import (
-    GcpApiId,
-    GcpRoles,
-    GcpSecurityCenterResourceTypes,
-)
-from censys.cloud_connectors.gcp.settings import GcpSpecificSettings
+from censys.cloud_connectors.common.settings import Settings
+from censys.cloud_connectors.gcp import __provider_setup__
 from tests.base_case import BaseCase
 
 failed_import = False
 try:
-    from google.cloud.securitycenter_v1.types import ListAssetsResponse
+    pass
 except ImportError:
     failed_import = True
 
-## TODO: FIX THIS^
 
+@pytest.mark.skipif(failed_import, reason="Gcloud SDK not installed")
+class TestGcpProviderSetup(BaseCase, TestCase):
+    data: dict
 
-@pytest.mark.skipif(failed_import, reason="Failed to import gcp dependencies")
-class TestGcpConnector(BaseCase):
-    # Test data
-    mock_connectors = [
-        "test_connector_1",
-        "test_connector_2",
-    ]
-
-    def setUp(self) -> None:
+    def setUp(self):
         super().setUp()
-        with open(self.shared_datadir / "test_gcp_responses.json") as f:
+        with open(self.shared_datadir / "test_gcp_cli_responses.json") as f:
             self.data = json.load(f)
         self.settings = Settings(censys_api_key=self.consts["censys_api_key"])
-        test_creds = self.data["TEST_CREDS"]
-        # Ensure the service account json file exists
-        test_creds["service_account_json_file"] = str(
-            self.shared_datadir / test_creds["service_account_json_file"]
-        )
-        self.settings.providers["gcp"] = [GcpSpecificSettings.from_dict(test_creds)]
-        self.connector = GcpCloudConnector(self.settings)
-        self.connector.organization_id = self.data["TEST_CREDS"]["organization_id"]
-        self.connector.credentials = self.mocker.MagicMock()
-        self.connector.provider_settings = GcpSpecificSettings.from_dict(
-            self.data["TEST_CREDS"]
-        )
+        self.setup_cli = __provider_setup__(self.settings)
 
-    def tearDown(self) -> None:
-        # Reset the deaultdicts as they are immutable
-        for seed_key in list(self.connector.seeds.keys()):
-            del self.connector.seeds[seed_key]
-        for cloud_asset_key in list(self.connector.cloud_assets.keys()):
-            del self.connector.cloud_assets[cloud_asset_key]
+    @parameterized.expand(
+        [
+            (0, True),
+            (1, False),
+        ]
+    )
+    def test_is_gcloud_installed(self, returncode: int, expected: bool):
+        # Test data
+        command = "gcloud version"
 
-    @parameterized.expand(["role"])
-    def test_generate_role_binding_command(
-        self,
-        service_account_name: str,
-        roles: list[GcpRoles],
-        organization_id: str,
-        project_id: str,
-    ):
+        # Mock
+        mock_run = self.mocker.patch.object(self.setup_cli, "run_command")
+        mock_run.return_value.returncode = returncode
+
         # Actual call
-        sp_command = self.setup_cli.generate_create_command(subscriptions)
+        actual = self.setup_cli.is_gcloud_installed()
 
         # Assertions
-        assert sp_command.startswith("az ad sp create-for-rbac")
-        assert "--scopes " + partial_command in sp_command
+        assert actual == expected
+        mock_run.assert_called_once_with(command)
+
+    def test_get_accounts_from_cli(self):
+        # Test data
+        expected_accounts = self.data["TEST_ACCOUNTS"]
+        test_cli_response = json.dumps(expected_accounts)
+
+        # Mock
+        mock_run = self.mocker.patch.object(self.setup_cli, "run_command")
+        mock_run.return_value.returncode = 0
+        mock_run.return_value.stdout = test_cli_response
+
+        # Actual call
+        actual = self.setup_cli.get_accounts_from_cli()
+
+        # Assertions
+        assert actual == expected_accounts
+
+    def test_prompt_select_account(self):
+        pass
+
+    def test_get_project_id_from_cli(self):
+        pass
+
+    def test_get_organization_id_from_cli(self):
+        pass
+
+    def test_switch_active_cli_account(self):
+        pass
+
+    def test_get_service_accounts_from_cli(self):
+        pass
+
+    def test_prompt_select_service_account(self):
+        pass
+
+    def test_generate_service_account_email(self):
+        pass
+
+    def test_generate_role_binding_command(self):
+        pass
+
+    def test_generate_create_service_account_command(self):
+        pass
+
+    def test_generate_create_key_command(self):
+        pass
+
+    def test_create_service_account(self):
+        pass
+
+    def test_check_correct_permissions(self):
+        pass
+
+    def test_generate_enable_service_account_command(self):
+        pass
+
+    def test_enable_service_account(self):
+        pass

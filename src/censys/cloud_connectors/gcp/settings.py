@@ -31,8 +31,9 @@ class GcpSpecificSettings(ProviderSpecificSettings):
         """
         path = Path(v)
         if "~" in v:
-            path = path.expanduser().resolve()
-        return path
+            # TODO: Do we need to expand if we are also going to resolve?
+            path = path.expanduser()
+        return path.resolve()
 
     def parent(self) -> str:
         """Name of the organization assets should belong to.
