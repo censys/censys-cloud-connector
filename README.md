@@ -71,6 +71,8 @@ poetry run black .  # Run formatter
 poetry run isort .  # Run import formatter
 poetry run mypy .  # Run type checker
 pre-commit run --all-files  # Run pre-commit hooks (lint, type check, etc.)
+poetry run pytest  # Run tests
+poetry run pytest --cov --cov-report html  # Run tests with coverage report
 ```
 
 ### Managing Multiple GCP accounts

@@ -92,6 +92,7 @@ class BaseCli:
                 question["instruction"] = "(Use arrow keys)"
                 if question.get("multiselect"):
                     question["instruction"] = "(Use ctrl+r to select all)"
+            # TODO: Add additional instructions for other types
 
         answers = prompt(questions, **kwargs)
         if not answers:
