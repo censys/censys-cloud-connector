@@ -3022,13 +3022,13 @@ optional = true
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [extras]
-azure = ["azure-common", "azure-core", "azure-identity", "azure-mgmt-compute", "azure-mgmt-containerinstance", "azure-mgmt-core", "azure-mgmt-dns", "azure-mgmt-network", "azure-mgmt-resource", "azure-mgmt-resource", "azure-mgmt-sql", "azure-mgmt-storage", "azure-storage-blob"]
+azure = ["azure-cli", "azure-common", "azure-core", "azure-identity", "azure-mgmt-compute", "azure-mgmt-containerinstance", "azure-mgmt-core", "azure-mgmt-dns", "azure-mgmt-network", "azure-mgmt-resource", "azure-mgmt-resource", "azure-mgmt-sql", "azure-mgmt-storage", "azure-storage-blob"]
 gcp = ["google-auth", "google-cloud-securitycenter"]
 
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "54126b3561c9b179489beb6f6d10dd354496017f81c5ac48f31e5ea434788eca"
+content-hash = "6e51889eb9f64ad1f1061b456e5e1826b17b282cab5431b6a76b7dfc2d671a36"
 
 [metadata.files]
 adal = [

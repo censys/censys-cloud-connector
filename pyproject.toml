@@ -70,6 +70,7 @@ types-requests = "^2.27.8"
 [tool.poetry.extras]
 # TODO: Replace extras with dependency groups after Poetry 1.2.0 is released
 azure = [
+    "azure-cli",
     "azure-common",
     "azure-core",
     "azure-identity",
