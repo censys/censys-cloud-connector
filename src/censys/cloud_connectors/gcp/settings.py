@@ -1,6 +1,5 @@
 """GCP provider-specific settings."""
 from pathlib import Path
-from typing import Optional
 
 from pydantic import Field, FilePath, validator
 

@@ -1,6 +1,8 @@
-from typing import Any
-from enum import Enums
+# TODO: Remove this qa skip
+# flake8: noqa
 import json
+from enum import Enum
+from typing import Any
 
 import pytest
 from parameterized import parameterized
@@ -26,18 +28,17 @@ from censys.cloud_connectors.common.cli.provider_setup import (
     prompt_for_list,
     snake_case_to_english,
 )
-from censys.cloud_connectors.common.settings import ProviderSpecificSettings, Settings
-from censys.cloud_connectors.gcp.enums import GcpRoles, GcpApiId, GcpSecurityCenterResourceTypes
-from tests.base_case import BaseTestCase
-
-
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.seed import Seed
-from censys.cloud_connectors.common.settings import Settings
+from censys.cloud_connectors.common.settings import ProviderSpecificSettings, Settings
 from censys.cloud_connectors.gcp.connector import GcpCloudConnector
-from censys.cloud_connectors.gcp.enums import GcpSecurityCenterResourceTypes
+from censys.cloud_connectors.gcp.enums import (
+    GcpApiId,
+    GcpRoles,
+    GcpSecurityCenterResourceTypes,
+)
 from censys.cloud_connectors.gcp.settings import GcpSpecificSettings
-from tests.base_case import BaseTestCase
+from tests.base_case import BaseCase
 
 failed_import = False
 try:
@@ -47,13 +48,14 @@ except ImportError:
 
 ## TODO: FIX THIS^
 
+
 @pytest.mark.skipif(failed_import, reason="Failed to import gcp dependencies")
-class TestGcpConnector(BaseTestCase):
+class TestGcpConnector(BaseCase):
     # Test data
-        mock_connectors = [
-            "test_connector_1",
-            "test_connector_2",
-        ]
+    mock_connectors = [
+        "test_connector_1",
+        "test_connector_2",
+    ]
 
     def setUp(self) -> None:
         super().setUp()
@@ -79,11 +81,8 @@ class TestGcpConnector(BaseTestCase):
             del self.connector.seeds[seed_key]
         for cloud_asset_key in list(self.connector.cloud_assets.keys()):
             del self.connector.cloud_assets[cloud_asset_key]
-    @parameterized.expand(
-        [
-            "role"
-        ]
-    )
+
+    @parameterized.expand(["role"])
     def test_generate_role_binding_command(
         self,
         service_account_name: str,

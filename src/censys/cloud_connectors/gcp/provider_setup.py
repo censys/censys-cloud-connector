@@ -47,7 +47,7 @@ class GcpSetupCli(ProviderSetupCli):
         if gcloud_version.returncode != 0:
             self.print_warning(
                 "Please install the [link=https://cloud.google.com/sdk/docs/downloads-interactive]gcloud \
-                SDK[\link] before continuing."
+                SDK[\\link] before continuing."
             )
             return  # TODO: capture stderr/stdout?
 
@@ -93,8 +93,8 @@ class GcpSetupCli(ProviderSetupCli):
             AssertionError: If the user does not have the correct permissions.
         """
         try:
-            from google.cloud import resourcemanager_v3
             from google.api_core import exceptions
+            from google.cloud import resourcemanager_v3
         except ImportError:
             self.print_error("Please install the google-cloud-resourcemanager library.")
             return None
