@@ -1,5 +1,4 @@
 """Azure specific setup CLI."""
-import json
 from typing import Optional
 
 from censys.cloud_connectors.common.cli.provider_setup import ProviderSetupCli
@@ -72,14 +71,21 @@ class AzureSetupCli(ProviderSetupCli):
             if s.get("subscription_id") in selected_subscription_ids
         ]
 
-    def generate_create_command(self, subscriptions: list[dict[str, str]]) -> str:
+    def generate_create_command(
+        self,
+        subscriptions: list[dict[str, str]],
+        service_principal_name: str = "Censys Cloud Connector",
+        only_show_errors: bool = True,
+    ) -> list[str]:
         """Generate the command to create a service principal.
 
         Args:
             subscriptions (List[Dict[str, str]]): List of subscriptions.
+            service_principal_name (str): Optional; Service principal name. Defaults to "Censys Cloud Connector".
+            only_show_errors (bool): Optional; Only show errors. Defaults to True.
 
         Returns:
-            str: Command to create a service principal.
+            list[str]: Command to create a service principal.
         """
         command = [
             "az",
@@ -87,7 +93,7 @@ class AzureSetupCli(ProviderSetupCli):
             "sp",
             "create-for-rbac",
             "--name",
-            '"Censys Cloud Connector"',
+            service_principal_name,
             "--role",
             "Reader",
             "--output",
@@ -97,8 +103,9 @@ class AzureSetupCli(ProviderSetupCli):
         for subscription in subscriptions:
             if subscription_id := subscription.get("id"):
                 command.append(subscription_id)
-        create_command = " ".join(command)
-        return create_command
+        if only_show_errors:
+            command.append("--only-show-errors")
+        return command
 
     def create_service_principal(
         self, subscriptions: list[dict[str, str]]
@@ -111,6 +118,14 @@ class AzureSetupCli(ProviderSetupCli):
         Returns:
             Optional[dict]: Service principal.
         """
+        try:
+            from azure.cli.core import get_default_cli
+
+            azure_cli = get_default_cli()
+        except ImportError:  # pragma: no cover
+            self.print_warning("Please install the Azure CLI")
+            return None
+
         command = self.generate_create_command(subscriptions)
         self.print_command(command)
         answers = self.prompt(
@@ -129,14 +144,18 @@ class AzureSetupCli(ProviderSetupCli):
             )
             return None
 
-        res = self.run_command(command)
-        if res.returncode != 0:
-            error = res.stderr.decode("utf-8").strip()
-            self.print_error(f"Error creating service principal: {error}")
+        if command[0] == "az":
+            command = command[1:]
+        azure_cli.invoke(command)
+        result = azure_cli.result
+        if not result:
+            self.print_warning("Unable to create service principal")
             return None
-        self.print_info("Service principal successfully created!")
-        creds = json.loads(res.stdout)
-        return creds
+        if results := result.result:
+            return results
+        if error := result.error:  # pragma: no cover
+            self.print_error(error)
+        return None
 
     def setup(self):
         """Setup the Azure provider."""

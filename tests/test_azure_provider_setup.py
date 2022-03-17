@@ -114,33 +114,43 @@ class TestAzureProviderSetup(BaseCase, TestCase):
 
     @parameterized.expand(
         [
-            ([{"id": "subscriptions/subscription_0"}], "subscriptions/subscription_0"),
+            (
+                [{"id": "subscriptions/subscription_0"}],
+                ["subscriptions/subscription_0"],
+            ),
             (
                 [
                     {"id": "subscriptions/subscription_0"},
                     {"id": "subscriptions/subscription_1"},
                 ],
-                "subscriptions/subscription_0 subscriptions/subscription_1",
+                ["subscriptions/subscription_0", "subscriptions/subscription_1"],
             ),
         ]
     )
-    def test_generate_create_command(self, subscriptions: list, partial_command: str):
+    def test_generate_create_command(
+        self, subscriptions: list, subscription_ids: list[str]
+    ):
         # Actual call
-        sp_command = self.setup_cli.generate_create_command(subscriptions)
+        sp_command = self.setup_cli.generate_create_command(
+            subscriptions, only_show_errors=False
+        )
 
         # Assertions
-        assert sp_command.startswith("az ad sp create-for-rbac")
-        assert "--scopes " + partial_command in sp_command
+        expected_command_prefix = ["az", "ad", "sp", "create-for-rbac"]
+        assert sp_command[: len(expected_command_prefix)] == expected_command_prefix
+        expected_scope_suffix = ["--scopes"] + subscription_ids
+        assert sp_command[-len(expected_scope_suffix) :] == expected_scope_suffix
 
     @parameterized.expand(
         [
-            (0, True),
-            (1, False),
+            (True,),
+            (False,),
         ]
     )
-    def test_create_service_principal(self, return_code: int, expect_results: bool):
+    def test_create_service_principal(self, expect_results: bool):
         # Test data
         test_subscriptions = [{"id": "subscriptions/subscription_0"}]
+        test_creds = {"test_service_principal": "test_secret"}
 
         # Mock prompt
         mock_prompt = self.mocker.patch.object(
@@ -148,19 +158,22 @@ class TestAzureProviderSetup(BaseCase, TestCase):
             "prompt",
             return_value={"create_service_principal": True},
         )
-        mock_run = self.mocker.patch.object(self.setup_cli, "run_command")
-        mock_run.return_value.returncode = return_code
-        mock_creds = {"test_service_principal": "test_secret"}
-        mock_run.return_value.stdout = json.dumps(mock_creds)
+
+        mock_cli = self.mocker.patch("azure.cli.core.get_default_cli")
+        mock_invoke = mock_cli.return_value.invoke
+        if expect_results:
+            mock_cli.return_value.result.result = test_creds
+        else:
+            mock_cli.return_value.result = None
 
         # Actual call
         creds = self.setup_cli.create_service_principal(test_subscriptions)
 
         # Assertions
         mock_prompt.assert_called_once()
-        mock_run.assert_called_once()
+        mock_invoke.assert_called_once()
         if expect_results:
-            assert creds == mock_creds
+            assert creds == test_creds
         else:
             assert creds is None
 
