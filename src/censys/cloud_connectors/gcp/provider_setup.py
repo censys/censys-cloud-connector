@@ -4,6 +4,7 @@ import os.path
 from typing import Optional
 
 from pydantic import validate_arguments
+from rich.progress import track
 
 from censys.cloud_connectors.common.cli.provider_setup import ProviderSetupCli
 from censys.cloud_connectors.common.enums import ProviderEnum
@@ -323,7 +324,7 @@ class GcpSetupCli(ProviderSetupCli):
             )
             return None
 
-        for command in commands:
+        for command in track(commands, description="Running..."):
             res = self.run_command(command)
             if res.returncode != 0:
                 self.print_error(
@@ -440,7 +441,7 @@ class GcpSetupCli(ProviderSetupCli):
             )
             return None
 
-        for command in commands:
+        for command in track(commands, description="Running..."):
             # TODO: add role checks here
             res = self.run_command(command)
             if res.returncode != 0:
