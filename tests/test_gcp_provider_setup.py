@@ -6,7 +6,6 @@ from parameterized import parameterized
 
 from censys.cloud_connectors.common.settings import Settings
 from censys.cloud_connectors.gcp import __provider_setup__
-from rich import print_json
 from tests.base_case import BaseCase
 
 failed_import = False
@@ -48,8 +47,8 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         assert actual == expected
         mock_run.assert_called_once_with(command)
 
-    @parameterized.expand([(0, "TEST_ACCOUNTS"), (1, "TEST_ACCOUNTS_NONE_ACTIVE")])
-    def test_get_accounts_from_cli(self, returncode: int, test_data_key: str):
+    @parameterized.expand([("TEST_ACCOUNTS"), ("TEST_ACCOUNTS_NONE_ACTIVE")])
+    def test_get_accounts_from_cli(self, test_data_key: str):
         # Test data
         command = "gcloud auth list --format=json"
         expected_accounts: list[dict[str, str]] = self.data[test_data_key]
@@ -57,8 +56,8 @@ class TestGcpProviderSetup(BaseCase, TestCase):
 
         # Mock
         mock_run = self.mocker.patch.object(self.setup_cli, "run_command")
-        mock_run.return_value.returncode = returncode
-        mock_run.return_value = test_cli_response
+        mock_run.return_value.returncode = 0
+        mock_run.return_value.stdout = test_cli_response
 
         # Actual call
         actual = self.setup_cli.get_accounts_from_cli()
@@ -147,7 +146,9 @@ class TestGcpProviderSetup(BaseCase, TestCase):
             (0, "TEST_PROJECTS", "TEST_ORGANIZATIONS"),
         ]
     )
-    def test_get_organization_id_from_cli(self, returncode: int, test_proj_data_key: str, test_org_data_key: str):
+    def test_get_organization_id_from_cli(
+        self, returncode: int, test_proj_data_key: str, test_org_data_key: str
+    ):
         # Test data
         test_proj_id: str = self.data[test_proj_data_key]
         command = f"gcloud projects get-ancestors {test_proj_id} --format=json"
@@ -172,7 +173,9 @@ class TestGcpProviderSetup(BaseCase, TestCase):
             (1, "TEST_PROJECTS", None),
         ]
     )
-    def test_get_organization_id_from_cli_failure(self, returncode: int, test_proj_data_key: str, returnval):
+    def test_get_organization_id_from_cli_failure(
+        self, returncode: int, test_proj_data_key: str, returnval
+    ):
         # Test data
         test_proj_id: str = self.data[test_proj_data_key]
         command = f"gcloud projects get-ancestors {test_proj_id} --format=json"
@@ -190,8 +193,22 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         assert actual == returnval
         mock_run.assert_called_once_with(command)
 
-    def test_switch_active_cli_account(self):
-        pass
+    @parameterized.expand([(0, None), (1, "Unable to switch active account")])
+    def test_switch_active_cli_account(self, returncode: int, returnmessage):
+        # Test data
+        account_name = "censys-test@censys.io"
+        command = f"gcloud config set account {account_name}"
+
+        # Mock
+        mock_run = self.mocker.patch.object(self.setup_cli, "run_command")
+        mock_run.return_value.returncode = returncode
+        mock_run.return_value.stdout = returnmessage
+
+        # Actual call
+        self.setup_cli.switch_active_cli_account(account_name)
+
+        # Assertions
+        mock_run.assert_called_once_with(command)
 
     def test_get_service_accounts_from_cli(self):
         pass
