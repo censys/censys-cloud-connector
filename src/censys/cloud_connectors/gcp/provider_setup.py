@@ -79,13 +79,13 @@ class GcpSetupCli(ProviderSetupCli):
             {
                 "type": "list",
                 "message": "Select a GCP account",
-                "name": "account",
+                "name": "selected_account",
                 "choices": choices,
                 "default": active_account,
             }
         ]
         answers = self.prompt(questions)
-        return answers.get("account")
+        return answers.get("selected_account")
 
     def get_project_id_from_cli(self) -> Optional[str]:
         """Get the project id from the CLI.
