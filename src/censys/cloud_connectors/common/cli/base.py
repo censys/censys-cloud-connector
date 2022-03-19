@@ -1,6 +1,7 @@
 """Base for all cli commands."""
 
 import subprocess
+from typing import Union
 
 import rich
 from InquirerPy import prompt
@@ -50,12 +51,14 @@ class BaseCli:
         """
         self.print("[red]![/red] " + message)
 
-    def print_command(self, command: str) -> None:
+    def print_command(self, command: Union[str, list[str]]) -> None:
         """Print a command.
 
         Args:
-            command (str): The command to print.
+            command (Union[str, list[str]]): The command to print.
         """
+        if isinstance(command, list):
+            command = " ".join(command)
         self.print(Syntax(command, "bash", word_wrap=True))
 
     def print_json(self, json_object: dict) -> None:

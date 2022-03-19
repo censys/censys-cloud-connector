@@ -104,3 +104,19 @@ Features inlcuded in the extensions:
 - View all todos
 - Automatically generate docsstrings
 - Spell check
+
+## Known Issues
+
+### Azure Scan Immediately After Creating a Service Principal
+
+In the case where the user has just run the `censys-cc config` command
+for Azure and then promptly runs the `censys-cc scan` command, the scan may
+fail with a `ClientSecretCredential.get_token failed` exception. This is due
+to the fact that Azure is in the process of creating the service principal.
+Please wait a few minutes and try again.
+
+Example error message:
+
+```error <!-- markdownlint-disable-next-line MD013 -->
+ClientSecretCredential.get_token failed: Authentication failed: AADSTS7000215:Invalid client secret provided. Ensure the secret being sent in the request is the client secret value, not the client secret ID, for a secret added to app 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'.
+```
