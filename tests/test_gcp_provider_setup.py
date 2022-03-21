@@ -1,4 +1,5 @@
 import json
+from typing import Optional
 from unittest import TestCase
 
 import pytest
@@ -210,8 +211,31 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         # Assertions
         mock_run.assert_called_once_with(command)
 
-    def test_get_service_accounts_from_cli(self):
-        pass
+    @parameterized.expand(
+        [
+            ("TEST_PROJECTS", "TEST_SERVICE_ACCOUNTS"),
+            ("TEST_PROJECTS_EMPTY", "TEST_SERVICE_ACCOUNTS"),
+        ]
+    )
+    def test_get_service_accounts_from_cli(
+        self, test_data_key_proj: str, test_data_key_service: str
+    ):
+        # Test data
+        command = "gcloud iam service-accounts list --format json"
+        test_proj_id: Optional[str] = self.data[test_data_key_proj]
+        expected_service_accounts = self.data[test_data_key_service]
+        expected_output = json.dumps(expected_service_accounts)
+
+        # Mock
+        mock_run = self.mocker.patch.object(self.setup_cli, "run_command")
+        mock_run.return_value.stdout = expected_service_accounts
+
+        # Actual call
+        actual = self.setup_cli.get_service_accounts_from_cli(test_proj_id)
+
+        # Assertions
+        assert actual == expected_output
+        mock_run.assert_called_once_with(command)
 
     def test_prompt_select_service_account(self):
         pass

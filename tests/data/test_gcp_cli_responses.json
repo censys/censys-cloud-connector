@@ -48,5 +48,29 @@
       "id": "502839482099",
       "type": "organization"
     }
+  ],
+
+  "TEST_SERVICE_ACCOUNTS": [
+    {
+      "description": "Censys Cloud Connector Service Account",
+      "disabled": false,
+      "displayName": "Censys Cloud Connector",
+      "email": "censys-cloud-connector@censys-example-project.iam.gserviceaccount.com",
+      "etag": "xxxxxxxxxxxx",
+      "name": "projects/censys-example-project/serviceAccounts/censys-cloud-connector@censys-example-project.iam.gserviceaccount.com",
+      "oauth2ClientId": "xxxxxxxxx",
+      "projectId": "censys-example-project",
+      "uniqueId": "xxxxxxxx"
+    },
+    {
+      "disabled": false,
+      "displayName": "Compute Engine default service account",
+      "email": "xxxxx-compute@developer.gserviceaccount.com",
+      "etag": "xxxxxxxxxxxx",
+      "name": "projects/censys-example-project/serviceAccounts/xxxxx-compute@developer.gserviceaccount.com",
+      "oauth2ClientId": "xxxxxxxxx",
+      "projectId": "censys-example-project",
+      "uniqueId": "xxxxxxxx"
+    }
   ]
 }

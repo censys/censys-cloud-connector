@@ -70,11 +70,15 @@ class GcpSetupCli(ProviderSetupCli):
         active_account = None
         choices = []
         for account in accounts:
-            choice = {"name": account.get("account"), "value": account}
+            account_email = account.get("account")
+            choice = {"name": account_email, "value": account}
             if account.get("status") == "ACTIVE":
                 # Only one account can be active at a time.
-                active_account = account.get("account")
-            choices.append(choice)
+                active_account = account
+                choice["name"] += " (Active)"
+                choices.insert(0, choice)
+            else:
+                choices.append(choice)
 
         questions = [
             {
@@ -96,6 +100,9 @@ class GcpSetupCli(ProviderSetupCli):
         """
         res = self.run_command("gcloud config get-value project")
         if res.returncode != 0:
+            self.print_info(
+                "If you are unsure of the project id, go to https://console.cloud.google.com/iam-admin/settings."
+            )
             return None
         return res.stdout.strip()
 
@@ -114,12 +121,12 @@ class GcpSetupCli(ProviderSetupCli):
         )
         if res.returncode != 0:
             self.print_warning("Unable to get organization id from CLI.")
-            return None
+            return ""
         project_ancestors = json.loads(res.stdout.strip())
         for ancestor in project_ancestors:
             if ancestor.get("type") == "organization":
-                return ancestor.get("id")
-        return None
+                return ancestor.get("id", default="")
+        return ""
 
     @validate_arguments
     def switch_active_cli_account(self, account_name: str):
@@ -441,6 +448,7 @@ class GcpSetupCli(ProviderSetupCli):
             )
             return None
 
+        # TODO: Investigate 
         for command in track(commands, description="Running..."):
             # TODO: add role checks here
             res = self.run_command(command)
@@ -494,6 +502,7 @@ class GcpSetupCli(ProviderSetupCli):
 
             selected_account = self.prompt_select_account(accounts)
             if not selected_account:
+                # TODO: Print login instructions
                 self.print_error("No account selected.")
                 exit(1)
 
@@ -513,6 +522,10 @@ class GcpSetupCli(ProviderSetupCli):
                     exit(1)
 
                 self.switch_active_cli_account(account_email)
+
+            # TODO: Get project ids from CLI
+
+            # TODO: Prompt user to select project ID from list
 
             questions = [
                 {
@@ -583,9 +596,10 @@ class GcpSetupCli(ProviderSetupCli):
                         ]
                     )
                     existing_account_name = answers.get("existing_account_name")
-                self.enable_service_account(
+                if not self.enable_service_account(
                     organization_id, project_id, existing_account_name, key_file_path
-                )
+                ):
+                    exit(1)
             else:
                 # Create service account
                 answers = self.prompt(
@@ -599,9 +613,10 @@ class GcpSetupCli(ProviderSetupCli):
                     ]
                 )
                 new_account_name = answers.get("new_account_name")
-                self.create_service_account(
-                    organization_id, project_id, new_account_name, key_file_path
-                )
+                if not self.create_service_account(
+                    organization_id, project_id, new_account_name, 682745741246
+                ):
+                    exit(1)
 
             if not key_file_path:
                 self.print_error(
