@@ -1,4 +1,8 @@
 {
+  "TEST_EMPTY_STR": "",
+
+  "TEST_EMPTY_LIST": [],
+
   "TEST_ACCOUNTS": [
     {
       "account": "main-gcp-account@censys.io",
@@ -21,23 +25,21 @@
     }
   ],
 
-  "TEST_ACCOUNTS_ONE_ACTIVE": [
+  "TEST_ACCOUNTS_ONE_INACTIVE": [
     {
       "account": "inactive-gcp-account@censys.io",
       "status": ""
     }
   ],
 
-  "TEST_ACCOUNTS_ONE_INACTIVE": [
+  "TEST_ACCOUNTS_ONE_ACTIVE": [
     {
       "account": "main-gcp-account@censys.io",
       "status": "ACTIVE"
     }
   ],
 
-  "TEST_PROJECTS": "censys-example-project",
-
-  "TEST_PROJECTS_EMPTY": "",
+  "TEST_PROJECT": "censys-example-project",
 
   "TEST_ORGANIZATIONS": [
     {
@@ -64,13 +66,29 @@
     },
     {
       "disabled": false,
-      "displayName": "Compute Engine default service account",
-      "email": "xxxxx-compute@developer.gserviceaccount.com",
+      "displayName": "Censys Cloud Connector 1",
+      "email": "censys-cloud-connector-1@censys-example-project.iam.gserviceaccount.com",
       "etag": "xxxxxxxxxxxx",
-      "name": "projects/censys-example-project/serviceAccounts/xxxxx-compute@developer.gserviceaccount.com",
+      "name": "projects/censys-example-project/serviceAccounts/censys-cloud-connector-1@censys-example-project.iam.gserviceaccount.com",
       "oauth2ClientId": "xxxxxxxxx",
       "projectId": "censys-example-project",
       "uniqueId": "xxxxxxxx"
     }
-  ]
+  ],
+
+  "TEST_SINGLE_SERVICE_ACCOUNT": [
+    {
+      "description": "Censys Cloud Connector Service Account",
+      "disabled": false,
+      "displayName": "Censys Cloud Connector",
+      "email": "censys-cloud-connector@censys-example-project.iam.gserviceaccount.com",
+      "etag": "xxxxxxxxxxxx",
+      "name": "projects/censys-example-project/serviceAccounts/censys-cloud-connector@censys-example-project.iam.gserviceaccount.com",
+      "oauth2ClientId": "xxxxxxxxx",
+      "projectId": "censys-example-project",
+      "uniqueId": "xxxxxxxx"
+    }
+  ],
+
+  "TEST_SERVICE_ACCOUNT_EMAIL": "service-account-name@censys-example-project.iam.gserviceaccount.com"
 }

@@ -12,8 +12,6 @@ from censys.cloud_connectors.common.enums import ProviderEnum
 from .enums import GcpRoles
 from .settings import GcpSpecificSettings
 
-# TODO: add gcloud auth to docs
-
 
 class GcpSetupCli(ProviderSetupCli):
     """Gcp provider setup cli command."""
@@ -68,14 +66,16 @@ class GcpSetupCli(ProviderSetupCli):
             return accounts[0]
 
         active_account = None
-        choices = []
+        choices: list[dict] = []
         for account in accounts:
             account_email = account.get("account")
+            if not account_email:
+                continue
             choice = {"name": account_email, "value": account}
             if account.get("status") == "ACTIVE":
                 # Only one account can be active at a time.
                 active_account = account
-                choice["name"] += " (Active)"
+                choice["name"] += " (Active)"  # type: ignore
                 choices.insert(0, choice)
             else:
                 choices.append(choice)
@@ -125,7 +125,7 @@ class GcpSetupCli(ProviderSetupCli):
         project_ancestors = json.loads(res.stdout.strip())
         for ancestor in project_ancestors:
             if ancestor.get("type") == "organization":
-                return ancestor.get("id", default="")
+                return ancestor.get("id", "")
         return ""
 
     @validate_arguments
@@ -157,7 +157,13 @@ class GcpSetupCli(ProviderSetupCli):
         if res.returncode != 0:
             self.print_warning("Unable to get service accounts from CLI.")
             return []
-        return json.loads(res.stdout.strip())
+        service_accounts = json.loads(res.stdout.strip())
+        # Filter out the default service accounts
+        return [
+            account
+            for account in service_accounts
+            if "@developer.gserviceaccount.com" not in account.get("email")
+        ]
 
     def prompt_select_service_account(
         self, service_accounts: list[dict]
@@ -448,7 +454,7 @@ class GcpSetupCli(ProviderSetupCli):
             )
             return None
 
-        # TODO: Investigate 
+        # TODO: Investigate
         for command in track(commands, description="Running..."):
             # TODO: add role checks here
             res = self.run_command(command)
@@ -627,16 +633,4 @@ class GcpSetupCli(ProviderSetupCli):
             provider_settings = self.provider_specific_settings_class(
                 organization_id=organization_id, service_account_json_file=key_file_path
             )
-            # TODO: Confirm that another provider is not already configured for the above organization ID
             self.add_provider_specific_settings(provider_settings)
-
-
-# CLI:
-#     Create service account:
-
-#     Existing service account:
-#         Enter name of service account:
-#             Download new service account key:
-#                 gcloud iam service-accounts keys create ./key-file.json --iam-account censys-cloud-connector@elevated-oven-341519.iam.gserviceaccount.com
-
-#             Enter path to existing .json key file:
