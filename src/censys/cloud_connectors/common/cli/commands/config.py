@@ -11,11 +11,11 @@ from censys.cloud_connectors.common.logger import get_logger
 from censys.cloud_connectors.common.settings import Settings
 
 
-def cli_config(_: argparse.Namespace):
+def cli_config(args: argparse.Namespace):
     """Configure Censys Cloud Connectors.
 
     Args:
-        _ (argparse.Namespace): Namespace.
+        args (argparse.Namespace): Namespace.
 
     Raises:
         KeyboardInterrupt: If the user cancels the prompt.
@@ -31,24 +31,27 @@ def cli_config(_: argparse.Namespace):
             print("Please ensure the CENSYS_API_KEY environment variable is set")
         return
 
-    questions = [
-        {
-            "type": "list",
-            "name": "provider",
-            "message": "Select a provider:",
-            "choices": [
-                {
-                    "name": c.capitalize(),
-                    "value": c,
-                }
-                for c in __connectors__
-            ],
-        }
-    ]
-    answers = prompt(questions)
-    if not answers:  # pragma: no cover
-        raise KeyboardInterrupt
-    provider_name = answers["provider"]
+    if not args or not args.provider:
+        questions = [
+            {
+                "type": "list",
+                "name": "provider",
+                "message": "Select a provider:",
+                "choices": [
+                    {
+                        "name": c.capitalize(),
+                        "value": c,
+                    }
+                    for c in __connectors__
+                ],
+            }
+        ]
+        answers = prompt(questions)
+        if not answers:  # pragma: no cover
+            raise KeyboardInterrupt
+        provider_name = answers["provider"]
+    else:
+        provider_name = args.provider
     provider_setup_cls = importlib.import_module(
         f"censys.cloud_connectors.{provider_name}"
     ).__provider_setup__
@@ -86,5 +89,13 @@ def include_cli(parent_parser: argparse._SubParsersAction):
         "config",
         description="Configure Censys Cloud Connectors",
         help="configure censys cloud connectors",
+    )
+    config_parser.add_argument(
+        "-p",
+        "--provider",
+        choices=__connectors__,
+        help=f"specify a cloud service provider: {__connectors__}",
+        metavar="PROVIDER",
+        dest="provider",
     )
     config_parser.set_defaults(func=cli_config)

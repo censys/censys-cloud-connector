@@ -102,6 +102,7 @@ class Settings(BaseSettings):
     )
     logging_level: str = Field(default="INFO", env="LOGGING_LEVEL")
     dry_run: bool = Field(default=False, env="DRY_RUN")
+    # provider_name: str = Field(default=)
 
     # Toggle services
     # TODO: Add toggle services/rework this into providers.yml
