@@ -460,14 +460,14 @@ class GcpSetupCli(ProviderSetupCli):
             res = self.run_command(command)
             if res.returncode != 0:
                 self.print_error(
-                    f"Failed to create service account. Error: {res.stderr.strip()}"
+                    f"Failed to enable service account. {res.stderr.strip()}"
                 )
                 return None
 
         # Check key_file_path exists
         if not os.path.exists(key_file_path):
             self.print_error(
-                f"Failed to create service account. Error: {key_file_path} does not exist"
+                f"Failed to enable service account. Error: {key_file_path} does not exist"
             )
             return None
 
