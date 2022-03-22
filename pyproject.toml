@@ -36,6 +36,7 @@ azure-mgmt-storage = { version = "^19.1.0", optional = true }
 azure-storage-blob = { version = "^12.9.0", optional = true }
 # GCP
 google-auth = { version = "^2.6.0", optional = true }
+google-cloud-resource-manager = {version = "^1.4.1", optional = true}
 google-cloud-securitycenter = { version = "^1.9.0", optional = true }
 
 [tool.poetry.dev-dependencies]
@@ -85,7 +86,10 @@ azure = [
     "azure-mgmt-storage",
     "azure-storage-blob"
 ]
-gcp = ["google-auth", "google-cloud-securitycenter"]
+gcp = [
+    "google-auth",
+    "google-cloud-resource-manager",
+    "google-cloud-securitycenter"]
 
 [tool.black]
 target-version = ["py39"]

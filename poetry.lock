@@ -1836,6 +1836,19 @@ pyopenssl = ["pyopenssl (>=20.0.0)"]
 reauth = ["pyu2f (>=0.1.5)"]
 
 [[package]]
+name = "google-cloud-resource-manager"
+version = "1.4.1"
+description = "Google Cloud Resource Manager API client library"
+category = "main"
+optional = true
+python-versions = ">=3.6"
+
+[package.dependencies]
+google-api-core = {version = ">=1.31.5,<2.0.0 || >2.3.0,<3.0.0dev", extras = ["grpc"]}
+grpc-google-iam-v1 = ">=0.12.3,<0.13dev"
+proto-plus = ">=1.15.0"
+
+[[package]]
 name = "google-cloud-securitycenter"
 version = "1.10.0"
 description = "Cloud Security Command Center API client library"
@@ -3023,12 +3036,12 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [extras]
 azure = ["azure-cli", "azure-common", "azure-core", "azure-identity", "azure-mgmt-compute", "azure-mgmt-containerinstance", "azure-mgmt-core", "azure-mgmt-dns", "azure-mgmt-network", "azure-mgmt-resource", "azure-mgmt-resource", "azure-mgmt-sql", "azure-mgmt-storage", "azure-storage-blob"]
-gcp = ["google-auth", "google-cloud-securitycenter"]
+gcp = ["google-auth", "google-cloud-resource-manager", "google-cloud-securitycenter"]
 
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "6e51889eb9f64ad1f1061b456e5e1826b17b282cab5431b6a76b7dfc2d671a36"
+content-hash = "c0710c18987e05532de4f3744939a12abc0d7defcc3d2afa69732084fb55e640"
 
 [metadata.files]
 adal = [
@@ -3718,6 +3731,10 @@ google-api-core = [
 google-auth = [
     {file = "google-auth-2.6.0.tar.gz", hash = "sha256:ad160fc1ea8f19e331a16a14a79f3d643d813a69534ba9611d2c80dc10439dad"},
     {file = "google_auth-2.6.0-py2.py3-none-any.whl", hash = "sha256:218ca03d7744ca0c8b6697b6083334be7df49b7bf76a69d555962fd1a7657b5f"},
+]
+google-cloud-resource-manager = [
+    {file = "google-cloud-resource-manager-1.4.1.tar.gz", hash = "sha256:354a8592f2307daab3dcc6445282ea3bb845095c15e75db8fa503c2c6cdc725d"},
+    {file = "google_cloud_resource_manager-1.4.1-py2.py3-none-any.whl", hash = "sha256:3cf1e0222f77e05c6cbdb91d0b1ee94f9594086246ebf8919e43356dc513e953"},
 ]
 google-cloud-securitycenter = [
     {file = "google-cloud-securitycenter-1.10.0.tar.gz", hash = "sha256:55a53a0d192ad69384492392ca74518da963a7af02d57d87f1a9e31de1e8adb2"},

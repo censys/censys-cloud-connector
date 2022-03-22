@@ -195,7 +195,8 @@ class GcpCloudConnector(CloudConnector):
                     GcpStorageBucketAsset(
                         value=f"https://storage.googleapis.com/{bucket_name}",
                         uid=self.format_label(list_assets_result),
-                        scan_data={"accountNumber": project_number},
+                        # Cast project_number to int from float
+                        scan_data={"accountNumber": int(project_number)},
                     )
                 )
 

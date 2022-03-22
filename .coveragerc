@@ -1,5 +1,9 @@
 [run]
 include = src/censys/*
+dynamic_context = test_function
+
+[html]
+show_contexts=true
 
 [report]
 show_missing = true

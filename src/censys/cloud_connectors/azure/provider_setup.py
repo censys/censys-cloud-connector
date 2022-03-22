@@ -1,6 +1,8 @@
 """Azure specific setup CLI."""
 from typing import Optional
 
+from pydantic import validate_arguments
+
 from censys.cloud_connectors.common.cli.provider_setup import ProviderSetupCli
 from censys.cloud_connectors.common.enums import ProviderEnum
 
@@ -48,28 +50,37 @@ class AzureSetupCli(ProviderSetupCli):
         Returns:
             List[Dict[str, str]]: List of selected subscriptions.
         """
+        if len(subscriptions) == 1:
+            questions = [
+                {
+                    "type": "confirm",
+                    "name": "use_subscription",
+                    "message": f"Use subscription {subscriptions[0]['id']}?",
+                    "default": True,
+                }
+            ]
+            answers = self.prompt(questions)
+            if not answers.get("use_subscription"):
+                return []
+            return subscriptions
         questions = [
             {
-                "type": "checkbox",
+                "type": "list",
                 "name": "subscription_ids",
                 "message": "Select subscription(s)",
                 "choices": [
                     {
                         "name": s.get("display_name"),
-                        "value": s.get("subscription_id"),
+                        "value": s,
                     }
                     for s in subscriptions
                     if s.get("state") == "Enabled"
                 ],
+                "multiselect": True,
             }
         ]
         answers = self.prompt(questions)
-        selected_subscription_ids = answers.get("subscription_ids", [])
-        return [
-            s
-            for s in subscriptions
-            if s.get("subscription_id") in selected_subscription_ids
-        ]
+        return answers.get("subscription_ids", [])
 
     def generate_create_command(
         self,
@@ -107,13 +118,12 @@ class AzureSetupCli(ProviderSetupCli):
             command.append("--only-show-errors")
         return command
 
-    def create_service_principal(
-        self, subscriptions: list[dict[str, str]]
-    ) -> Optional[dict]:
+    @validate_arguments
+    def create_service_principal(self, subscriptions: list[dict]) -> Optional[dict]:
         """Create a service principal.
 
         Args:
-            subscriptions (List[Dict[str, str]]): List of subscriptions.
+            subscriptions (List[Dict]): List of subscriptions.
 
         Returns:
             Optional[dict]: Service principal.

@@ -35,7 +35,7 @@ def cli_config(_: argparse.Namespace):
         {
             "type": "list",
             "name": "provider",
-            "message": "Select a provider",
+            "message": "Select a provider:",
             "choices": [
                 {
                     "name": c.capitalize(),

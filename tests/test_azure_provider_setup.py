@@ -98,8 +98,8 @@ class TestAzureProviderSetup(BaseCase, TestCase):
 
         # Mock prompt
         mock_prompt = self.mocker.patch.object(self.setup_cli, "prompt")
-        mock_selected_ids = ["subscription_0", "subscription_1", "subscription_2"]
-        mock_prompt.return_value = {"subscription_ids": mock_selected_ids}
+        mock_selected_subscriptions = test_subscriptions[:-1]
+        mock_prompt.return_value = {"subscription_ids": mock_selected_subscriptions}
 
         # Actual call
         selected_subscriptions = self.setup_cli.prompt_select_subscriptions(
@@ -108,9 +108,9 @@ class TestAzureProviderSetup(BaseCase, TestCase):
 
         # Assertions
         assert mock_prompt.call_count == 1
-        assert len(selected_subscriptions) == len(mock_selected_ids)
+        assert len(selected_subscriptions) == len(mock_selected_subscriptions)
         for subscription in selected_subscriptions:
-            assert subscription["subscription_id"] in mock_selected_ids
+            assert subscription in mock_selected_subscriptions
 
     @parameterized.expand(
         [

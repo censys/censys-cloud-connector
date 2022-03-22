@@ -57,7 +57,6 @@ class TestGcpConnector(BaseCase, TestCase):
         Returns:
             ListAssetsResponse.ListAssetsResult: The test ListAssetsResult object.
         """
-        # TODO: Figure out if we can pass in a dict
         return ListAssetsResponse.ListAssetsResult.from_json(json.dumps(data))
 
     def assert_seeds_with_values(self, seeds: list[Seed], values: list[str]):

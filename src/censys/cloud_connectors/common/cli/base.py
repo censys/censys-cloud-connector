@@ -49,7 +49,7 @@ class BaseCli:
         Args:
             message (str): The message to print.
         """
-        self.print("[red]![/red] " + message)
+        self.print("[red]x[/red] " + message)
 
     def print_command(self, command: Union[str, list[str]]) -> None:
         """Print a command.
@@ -86,6 +86,16 @@ class BaseCli:
         Raises:
             KeyboardInterrupt: If the user cancels the prompt.
         """
+        # Add better instructions
+        if isinstance(questions, dict):
+            questions = [questions]
+        for question in questions:
+            if question.get("type") == "list":
+                question["instruction"] = "(Use arrow keys)"
+                if question.get("multiselect"):
+                    question["instruction"] = "(Use ctrl+r to select all)"
+            # TODO: Add additional instructions for other types
+
         answers = prompt(questions, **kwargs)
         if not answers:
             # If the user cancels the prompt (returns no answers), we raise a KeyboardInterrupt.
@@ -103,5 +113,5 @@ class BaseCli:
             subprocess.CompletedProcess: The completed process.
         """
         if not kwargs:
-            kwargs = {"shell": True, "capture_output": True}
+            kwargs = {"shell": True, "capture_output": True, "text": True}
         return subprocess.run(command, **kwargs)

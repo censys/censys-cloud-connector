@@ -126,6 +126,8 @@ class ProviderSetupCli(BaseCli):
         Args:
             provider_settings (ProviderSpecificSettings): The provider-specific settings to add.
         """
+        # TODO: Confirm that another provider is not already configured for the above organization ID
+        # This might be easier to do with a tuple of (organization_ids or subscription_ids)
         self.settings.providers[self.provider].append(provider_settings)
 
     def prompt_for_settings(self) -> ProviderSpecificSettings:

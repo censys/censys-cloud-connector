@@ -33,7 +33,7 @@ class SeedTest(TestCase):
         assert seed.label == TEST_LABEL
 
     def test_asn_seed_validation(self):
-        # TODO: implement validation?
+        # TODO: Implement ASN validation?
         pass
 
     def test_ip_seed(self):
