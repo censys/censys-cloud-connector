@@ -630,6 +630,9 @@ class GcpSetupCli(ProviderSetupCli):
                 )
                 exit(1)
 
+            # TODO: Wait until the service account can get a single `google.cloud.resourcemanager.Organization`
+            # from the security center API.
+
             provider_settings = self.provider_specific_settings_class(
                 organization_id=organization_id, service_account_json_file=key_file_path
             )
