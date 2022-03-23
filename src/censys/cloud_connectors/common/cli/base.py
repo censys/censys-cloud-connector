@@ -71,7 +71,8 @@ class BaseCli:
         """
         rich.print_json(data=json_object)
 
-    def prompt(self, questions: InquirerPyQuestions, **kwargs) -> dict:
+    @staticmethod
+    def prompt(questions: InquirerPyQuestions, **kwargs) -> dict:
         """Prompt the user for answers.
 
         This is a wrapper around InquirerPy's prompt function.

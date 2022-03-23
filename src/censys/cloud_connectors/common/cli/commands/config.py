@@ -23,8 +23,6 @@ def cli_config(args: argparse.Namespace):
     """
     logger = get_logger(log_name="censys_cloud_connectors", level="INFO")
 
-    base_cli = BaseCli()
-
     try:
         settings = Settings()
     except ValidationError as e:
@@ -75,7 +73,7 @@ def cli_config(args: argparse.Namespace):
             "message": "Save settings?",
         }
     ]
-    answers = base_cli.prompt(questions)
+    answers = BaseCli.prompt(questions)
     if not answers:  # pragma: no cover
         raise KeyboardInterrupt
     if answers.get("save", False):
