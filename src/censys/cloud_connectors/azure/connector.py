@@ -1,5 +1,6 @@
 """Azure Cloud Connector."""
 import contextlib
+from typing import Optional
 
 from azure.core.exceptions import (
     ClientAuthenticationError,
@@ -69,12 +70,14 @@ class AzureCloudConnector(CloudConnector):
         Raises:
             ValueError: If asset has no location.
         """
-        if not hasattr(asset, "location"):
+        asset_location: Optional[str] = getattr(asset, "location", None)
+        if not asset_location:
             raise ValueError("Asset has no location.")
-        return f"{self.label_prefix}{self.subscription_id}/{asset.location}"  # type: ignore
+        return f"{self.label_prefix}{self.subscription_id}/{asset_location}"
 
     def get_seeds(self):
         """Get Azure seeds."""
+        # TODO: Make these optional by adding them to settings
         self.get_ip_addresses()
         self.get_clusters()
         self.get_sql_servers()
@@ -95,13 +98,13 @@ class AzureCloudConnector(CloudConnector):
         )
         for asset in container_client.container_groups.list():
             asset_dict = asset.as_dict()
-            if (ip_address := asset_dict.get("ip_address")) and ip_address.get(
-                "type"
-            ) == "Public":
-                self.add_seed(
-                    IpSeed(value=ip_address.get("ip"), label=self.format_label(asset))
-                )
-                if domain := ip_address.get("fqdn"):
+            if (
+                (ip_address_dict := asset_dict.get("ip_address"))
+                and (ip_address_dict.get("type") == "Public")
+                and (ip_address := ip_address_dict.get("ip"))
+            ):
+                self.add_seed(IpSeed(value=ip_address, label=self.format_label(asset)))
+                if domain := ip_address_dict.get("fqdn"):
                     self.add_seed(
                         DomainSeed(value=domain, label=self.format_label(asset))
                     )
