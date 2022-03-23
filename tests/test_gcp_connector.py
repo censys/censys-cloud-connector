@@ -109,9 +109,7 @@ class TestGcpConnector(BaseCase, TestCase):
         # Test data
         test_creds = self.data["TEST_CREDS"].copy()
         second_test_creds = test_creds.copy()
-        second_test_creds["organization_id"] = test_creds["organization_id"].replace(
-            "x", "y"
-        )
+        second_test_creds["organization_id"] = 9876543210
         provider_settings = [
             GcpSpecificSettings.from_dict(test_creds),
             GcpSpecificSettings.from_dict(second_test_creds),

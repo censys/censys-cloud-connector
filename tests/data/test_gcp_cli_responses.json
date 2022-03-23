@@ -41,7 +41,7 @@
 
   "TEST_PROJECT": "censys-example-project",
 
-  "TEST_ORGANIZATIONS": [
+  "TEST_ORGANIZATION": [
     {
       "id": "censys-example-project",
       "type": "project"

@@ -12,8 +12,10 @@ class GcpSpecificSettings(ProviderSpecificSettings):
 
     provider: str = ProviderEnum.GCP
 
-    organization_id: str = Field(
-        min_length=1, max_length=64, description="GCP organization ID."
+    organization_id: int = Field(
+        gt=1,
+        lt=1000000000000000,
+        description="GCP organization ID.",  # TODO: is there a different way to check this?
     )
     service_account_json_file: FilePath = Field(
         description="Path to service account json file."

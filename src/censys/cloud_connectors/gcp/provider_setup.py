@@ -107,26 +107,26 @@ class GcpSetupCli(ProviderSetupCli):
         return res.stdout.strip()
 
     @validate_arguments
-    def get_organization_id_from_cli(self, project_id: str) -> Optional[str]:
+    def get_organization_id_from_cli(self, project_id: str) -> Optional[int]:
         """Get the organization id from the CLI.
 
         Args:
             project_id (str): Project id.
 
         Returns:
-            str: Organization id.
+            int: Organization id.
         """
         res = self.run_command(
             f"gcloud projects get-ancestors {project_id} --format=json"
         )
         if res.returncode != 0:
             self.print_warning("Unable to get organization id from CLI.")
-            return ""
+            return 0
         project_ancestors = json.loads(res.stdout.strip())
         for ancestor in project_ancestors:
             if ancestor.get("type") == "organization":
-                return ancestor.get("id", "")
-        return ""
+                return int(ancestor.get("id", 0))
+        return 0
 
     @validate_arguments
     def switch_active_cli_account(self, account_name: str):
@@ -222,14 +222,14 @@ class GcpSetupCli(ProviderSetupCli):
     @validate_arguments
     def generate_role_binding_command(
         self,
-        organization_id: str,
+        organization_id: int,
         service_account_email: str,
         roles: list[GcpRoles],
     ) -> list[str]:
         """Generate role binding commands.
 
         Args:
-            organization_id (str): Organization id.
+            organization_id (int): Organization id.
             service_account_email (str): Service account email.
             roles (list[GcpRoles]): Roles.
 
@@ -290,7 +290,7 @@ class GcpSetupCli(ProviderSetupCli):
     @validate_arguments
     def create_service_account(
         self,
-        organization_id: str,
+        organization_id: int,
         project_id: str,
         service_account_name: str,
         key_file_path: str,
@@ -298,7 +298,7 @@ class GcpSetupCli(ProviderSetupCli):
         """Create a service account.
 
         Args:
-            organization_id (str): Organization id.
+            organization_id (int): Organization id.
             project_id (str): Project id.
             service_account_name (str): The service account name.
             key_file_path (str): The place to store the key file.
@@ -403,7 +403,7 @@ class GcpSetupCli(ProviderSetupCli):
     @validate_arguments
     def enable_service_account(
         self,
-        organization_id: str,
+        organization_id: int,
         project_id: str,
         service_account_name: str,
         key_file_path: str,
@@ -411,7 +411,7 @@ class GcpSetupCli(ProviderSetupCli):
         """Enable a service account.
 
         Args:
-            organization_id (str): Organization id.
+            organization_id (int): Organization id.
             project_id (str): Project id.
             service_account_name: The service account name.
             key_file_path: The place to store the key file.
@@ -549,7 +549,7 @@ class GcpSetupCli(ProviderSetupCli):
 
             questions = [
                 {
-                    "type": "input",
+                    "type": "number",
                     "name": "organization_id",
                     "message": "Enter the organization ID:",
                     "default": self.get_organization_id_from_cli(project_id),
@@ -572,7 +572,7 @@ class GcpSetupCli(ProviderSetupCli):
                     "type": "input",
                     "name": "key_file_output_path",
                     "message": "Enter the path to where the key file should be saved:",
-                    "default": f"{project_id}-key.json",
+                    "default": f".secrets/{project_id}-key.json",
                 },
             ]
             answers = self.prompt(questions)
@@ -620,7 +620,7 @@ class GcpSetupCli(ProviderSetupCli):
                 )
                 new_account_name = answers.get("new_account_name")
                 if not self.create_service_account(
-                    organization_id, project_id, new_account_name, 682745741246
+                    organization_id, project_id, new_account_name, key_file_path
                 ):
                     exit(1)
 

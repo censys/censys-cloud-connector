@@ -25,7 +25,7 @@ class GcpCloudConnector(CloudConnector):
     """Gcp Cloud Connector."""
 
     provider = ProviderEnum.GCP
-    organization_id: str
+    organization_id: int
     credentials: service_account.Credentials
     provider_settings: GcpSpecificSettings
 

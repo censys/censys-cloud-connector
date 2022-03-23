@@ -95,6 +95,8 @@ class BaseCli:
                 question["instruction"] = "(Use arrow keys)"
                 if question.get("multiselect"):
                     question["instruction"] = "(Use ctrl+r to select all)"
+            elif question.get("type") == "filepath":
+                question["instruction"] = "(Tab completion is enabled)"
             # TODO: Add additional instructions for other types
 
         answers = prompt(questions, **kwargs)
