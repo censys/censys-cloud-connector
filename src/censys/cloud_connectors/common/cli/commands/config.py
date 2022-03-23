@@ -5,6 +5,7 @@ import importlib
 
 from InquirerPy import prompt
 from pydantic import ValidationError
+from rich import print
 
 from censys.cloud_connectors import __connectors__
 from censys.cloud_connectors.common.logger import get_logger
@@ -31,7 +32,7 @@ def cli_config(args: argparse.Namespace):
             print("Please ensure the CENSYS_API_KEY environment variable is set")
         return
 
-    if not args or not args.provider:
+    if args.provider is None:
         questions = [
             {
                 "type": "list",
@@ -52,6 +53,7 @@ def cli_config(args: argparse.Namespace):
         provider_name = answers["provider"]
     else:
         provider_name = args.provider
+        print(f"Provider: {provider_name}")
     provider_setup_cls = importlib.import_module(
         f"censys.cloud_connectors.{provider_name}"
     ).__provider_setup__
@@ -97,5 +99,6 @@ def include_cli(parent_parser: argparse._SubParsersAction):
         help=f"specify a cloud service provider: {__connectors__}",
         metavar="PROVIDER",
         dest="provider",
+        default=None,
     )
     config_parser.set_defaults(func=cli_config)

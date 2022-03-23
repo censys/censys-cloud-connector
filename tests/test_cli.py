@@ -1,4 +1,3 @@
-import argparse
 from unittest import TestCase
 
 import pytest
@@ -54,6 +53,9 @@ class TestConfigCli(BaseCase, TestCase):
             ],
         )
 
+        mock_args = self.mocker.MagicMock()
+        mock_args.provider = None
+
         mock_importlib = self.mocker.patch(
             "censys.cloud_connectors.common.cli.commands.config.importlib.import_module"
         )
@@ -66,7 +68,7 @@ class TestConfigCli(BaseCase, TestCase):
         mock_settings.return_value.read_providers_config_file = self.mocker.Mock()
 
         # Actual call
-        config.cli_config(None)
+        config.cli_config(mock_args)
 
         # Assertions
         assert mock_prompt.call_count == 2
@@ -93,7 +95,8 @@ class TestConfigCli(BaseCase, TestCase):
             ],
         )
 
-        test_args: argparse.Namespace = argparse.Namespace(provider=mock_connectors[1])
+        mock_args = self.mocker.MagicMock()
+        mock_args.provider = mock_connectors[1]
 
         mock_importlib = self.mocker.patch(
             "censys.cloud_connectors.common.cli.commands.config.importlib.import_module"
@@ -107,7 +110,7 @@ class TestConfigCli(BaseCase, TestCase):
         mock_settings.return_value.read_providers_config_file = self.mocker.Mock()
 
         # Actual call
-        config.cli_config(test_args)
+        config.cli_config(mock_args)
 
         # Assertions
         assert mock_prompt.call_count == 1
