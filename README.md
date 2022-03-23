@@ -1,4 +1,11 @@
-# Cloud Connectors Unified
+# Censys Unified Cloud Connector
+
+The Censys Unified Cloud Connector is a standalone connector that gathers
+assets from various cloud providers and stores them in Censys ASM. This
+allows Censys to have a wider view of the cloud assets that are public
+facing. This connector currently supports the following cloud providers:
+Azure and GCP. Support for AWS and other cloud providers will be added in
+the future.
 
 ## Supported Platforms and Services
 
@@ -63,35 +70,80 @@ censys-cc scan  # Scan for assets
 
 ## Development
 
-### Useful Commands
-
 ```sh
 poetry run flake8 .  # Run linter
 poetry run black .  # Run formatter
 poetry run isort .  # Run import formatter
-poetry run mypy .  # Run type checker
+poetry run mypy -p censys.cloud_connectors  # Run type checker
 pre-commit run --all-files  # Run pre-commit hooks (lint, type check, etc.)
 poetry run pytest  # Run tests
 poetry run pytest --cov --cov-report html  # Run tests with coverage report
 ```
 
-### Managing Multiple GCP accounts
+## Committing
 
-When testing the GCP setup cli command, you may need to specify the account
-and project to use. Eventually this will be managed by the CLI.
+This repository currently uses the `rebase` workflow for Merge Requests. This means
+that merge messages are _not_ created when requests are merged.
 
-<!-- TODO: This should not be a problem in the future -->
+Every commit in the merge request **must** be treated as a stand-alone, autonomous
+change. If this is not the case, consider using the squash feature before
+merging.
 
-```sh
-# Ensure gcloud is authenticated
-gcloud auth list
-# If you have multiple accounts, you can specify the account to use
-gcloud config set account <account>
-# Check the current project
-gcloud config get-value project
-# If you have multiple projects, you can specify the project to use
-gcloud config set project <projectId>
-```
+### Commit Messages
+
+Search is now using
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
+to structure its commit messages, in the event we want to automatically
+generate changelogs in the future.
+
+Commit messages should always be written as if to complete the follow sentence:
+
+> If applied, this commit will... < Insert Commit Message Here >
+
+#### Type
+
+- `fix`: A bug fix.
+- `feat`: A new feature or component.
+- `improve`: A code code that is neither a new feature nor a bug fix but improves
+  functionality.
+- `refactor`: A code change that is niether a new feature nor
+  a bug fix but does not change the current functionality of the code.
+- `chore`: A repeatable action such as static code generation.
+- `docs`: Changes to documentation.
+- `style`: Changes that do not change the meaning of the code such as black or isort.
+- `test`: Changes to tests.
+
+> type: \<commit message>
+
+Finally, there is a `build` type which has its own set of scopes. See below.
+
+#### Scope
+
+The scope should be the name of an area of Search. While this is certainly not
+an exhaustive list, please consider using an existing scope before adding a
+new one.
+
+Scopes are not required, but they help keep commits succinct and autonomous.
+
+- `cc`: Changes to the Cloud Connectors.
+  - `cc-azure`: Changes to the Azure Cloud Connectors.
+  - `cc-gcp`: Changes to the GCP Cloud Connectors.
+- `cli`: Changes to the CLI.
+  - `cli-setup`: Changes to the CLI setup.
+  - `cli-scan`: Changes to the CLI scan.
+- `docs`: Changes to the documentation.
+
+> type(scope): \<commit message>
+
+#### Build Type and Scopes
+
+The `build` type is used to represent changes to the build system or repository itself.
+The following scopes are recommended for use with the build commit type:
+
+- `ci`
+- `chart`
+- `container`
+- `deps`
 
 ### VSCode Config
 
@@ -110,6 +162,8 @@ Features inlcuded in the extensions:
 
 ### Azure Scan Immediately After Creating a Service Principal
 
+<!-- TODO: Remove once this feature has been added to the setup cli -->
+
 In the case where the user has just run the `censys-cc config` command
 for Azure and then promptly runs the `censys-cc scan` command, the scan may
 fail with a `ClientSecretCredential.get_token failed` exception. This is due
@@ -120,4 +174,25 @@ Example error message:
 
 ```error <!-- markdownlint-disable-next-line MD013 -->
 ClientSecretCredential.get_token failed: Authentication failed: AADSTS7000215:Invalid client secret provided. Ensure the secret being sent in the request is the client secret value, not the client secret ID, for a secret added to app 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'.
+```
+
+## FAQs
+
+### My Python Version is Not Compatible
+
+It is highly recommended that a Python version shim like
+[pyenv](https://github.com/pyenv/pyenv) is used.
+Once installed, Poetry will make a virtualenv using the
+correct version of Python automatically.
+
+### Rebasing merge conflicts when there was a new package added to poetry
+
+Incase of `poetry.lock` merge conflicts
+
+1. Accept all incoming changes (to maintain toml validity)
+
+2. Rewrite the lockfile from `pyproject.toml`
+
+```sh
+poetry lock --no-update
 ```
