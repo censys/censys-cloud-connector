@@ -194,7 +194,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
 
         # Assertions
         mock_run.assert_called_once_with(command)
-        assert actual == 0, "Should return 0 if no organization id found."
+        assert actual is None, "Should return None if no organization id found."
 
     @parameterized.expand([(0, None), (1, "Unable to switch active account")])
     def test_switch_active_cli_account(self, returncode: int, returnmessage):
@@ -440,3 +440,6 @@ class TestGcpProviderSetup(BaseCase, TestCase):
             assert actual_return == test_key_file_path
         else:
             assert actual_return is None
+
+    def test_setup(self):
+        pass

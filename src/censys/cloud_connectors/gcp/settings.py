@@ -14,7 +14,6 @@ class GcpSpecificSettings(ProviderSpecificSettings):
 
     organization_id: int = Field(
         gt=1,
-        lt=1000000000000000,
         description="GCP organization ID.",  # TODO: is there a different way to check this?
     )
     service_account_json_file: FilePath = Field(

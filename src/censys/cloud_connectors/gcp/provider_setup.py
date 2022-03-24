@@ -121,14 +121,14 @@ class GcpSetupCli(ProviderSetupCli):
         )
         if res.returncode != 0:
             self.print_warning("Unable to get organization id from CLI.")
-            return 0
+            return None
         project_ancestors = json.loads(res.stdout.strip())
         for ancestor in project_ancestors:
             if ancestor.get("type") == "organization":
                 if organization_id := ancestor.get("id"):
                     return int(organization_id)
                 return None
-        return 0
+        return None
 
     @validate_arguments
     def switch_active_cli_account(self, account_name: str):
