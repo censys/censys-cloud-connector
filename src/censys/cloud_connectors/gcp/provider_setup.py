@@ -572,7 +572,7 @@ class GcpSetupCli(ProviderSetupCli):
                     "type": "input",
                     "name": "key_file_output_path",
                     "message": "Enter the path to where the key file should be saved:",
-                    "default": f".secrets/{project_id}-key.json",
+                    "default": f"./secrets/{project_id}-key.json",
                 },
             ]
             answers = self.prompt(questions)
