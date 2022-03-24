@@ -310,7 +310,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
             assert current_command.startswith(
                 "gcloud organizations add-iam-policy-binding "
             )
-            assert f"{test_organization_id}" in current_command
+            assert str(test_organization_id) in current_command
             assert f"'serviceAccount:{test_service_account_email}'" in current_command
             assert f"--role '{role}'" in current_command
 
