@@ -26,7 +26,6 @@ class GcpSetupCli(ProviderSetupCli):
             bool: True if installed, false if not.
         """
         gcloud_version = self.run_command("gcloud version")
-        # TODO: Capture version stdout and stderr?
         return gcloud_version.returncode == 0
 
     def get_accounts_from_cli(self) -> list[dict[str, str]]:
@@ -308,7 +307,6 @@ class GcpSetupCli(ProviderSetupCli):
         Returns:
             Optional[str]: The service account key file.
         """
-        # TODO: Ensure that the APIs are enabled.
         commands = [self.generate_create_service_account_command(service_account_name)]
         service_account_email = self.generate_service_account_email(
             service_account_name, project_id
@@ -456,9 +454,8 @@ class GcpSetupCli(ProviderSetupCli):
             )
             return None
 
-        # TODO: Investigate
+        # TODO: Investigate progress bar
         for command in track(commands, description="Running..."):
-            # TODO: add role checks here
             res = self.run_command(command)
             if res.returncode != 0:
                 self.print_error(
