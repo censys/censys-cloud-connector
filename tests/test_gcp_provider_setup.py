@@ -54,7 +54,6 @@ class TestGcpProviderSetup(BaseCase, TestCase):
     @parameterized.expand([("TEST_ACCOUNTS"), ("TEST_EMPTY_LIST", 1)])
     def test_get_accounts_from_cli(self, test_data_key: str, returncode: int = 0):
         # Test data
-        command = "gcloud auth list --format=json"
         expected_accounts: list[dict[str, str]] = self.data[test_data_key]
 
         # Mock
@@ -67,7 +66,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
 
         # Assertions
         assert actual == expected_accounts
-        mock_run.assert_called_once_with(command)
+        mock_run.assert_called_once_with("gcloud auth list --format=json")
 
     @parameterized.expand(
         [
@@ -78,21 +77,17 @@ class TestGcpProviderSetup(BaseCase, TestCase):
     def test_prompt_select_account_from_multiple(self, test_data_key: str):
         # Test data
         test_accounts: list[dict[str, str]] = self.data[test_data_key]
-        test_selected_account = {
-            "account": test_accounts[0]["account"],
-            "status": test_accounts[0]["status"],
-        }
 
         # Mock
-        mock_prompt = self.mocker.patch.object(self.setup_cli, "prompt")
-        mock_prompt.return_value = {"selected_account": test_selected_account}
+        mock_prompt = self.mocker.patch.object(self.setup_cli, "prompt_select_one")
+        mock_prompt.return_value = test_accounts[0]
 
         # Actual call
         selected_account = self.setup_cli.prompt_select_account(test_accounts)
 
         # Assertions
         mock_prompt.assert_called_once()
-        assert selected_account == test_selected_account
+        assert selected_account == mock_prompt.return_value
 
     @parameterized.expand(
         [
@@ -103,21 +98,17 @@ class TestGcpProviderSetup(BaseCase, TestCase):
     def test_prompt_select_account_from_one(self, test_data_key: str):
         # Test data
         test_accounts: list[dict[str, str]] = self.data[test_data_key]
-        test_selected_account = {
-            "account": test_accounts[0]["account"],
-            "status": test_accounts[0]["status"],
-        }
 
         # Mock
-        mock_prompt = self.mocker.patch.object(self.setup_cli, "prompt")
-        mock_prompt.return_value = {"use_account": test_selected_account}
+        mock_prompt = self.mocker.patch.object(self.setup_cli, "prompt_select_one")
+        mock_prompt.return_value = test_accounts[0]
 
         # Actual call
         selected_account = self.setup_cli.prompt_select_account(test_accounts)
 
         # Assertions
         mock_prompt.assert_called_once()
-        assert selected_account == test_selected_account
+        assert selected_account == mock_prompt.return_value
 
     @parameterized.expand(
         [
@@ -129,7 +120,6 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         self, returncode: int, project_name, test_data_key: str
     ):
         # Test data
-        command = "gcloud config get-value project"
         expected_proj_id: str = self.data[test_data_key]
 
         # Mock
@@ -141,7 +131,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         actual = self.setup_cli.get_project_id_from_cli()
 
         # Assertions
-        mock_run.assert_called_once_with(command)
+        mock_run.assert_called_once_with("gcloud config get-value project")
         assert actual == project_name
 
     @parameterized.expand(
@@ -154,7 +144,6 @@ class TestGcpProviderSetup(BaseCase, TestCase):
     ):
         # Test data
         test_proj_id: str = self.data[test_proj_data_key]
-        command = f"gcloud projects get-ancestors {test_proj_id} --format=json"
         expected_org_info: list[dict[str, str]] = self.data[test_org_data_key]
         expected_org_info_json = json.dumps(expected_org_info)
         expected_org = 502839482099
@@ -168,7 +157,9 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         actual = self.setup_cli.get_organization_id_from_cli(test_proj_id)
 
         # Assertions
-        mock_run.assert_called_once_with(command)
+        mock_run.assert_called_once_with(
+            f"gcloud projects get-ancestors {test_proj_id} --format=json"
+        )
         assert actual == expected_org
 
     @parameterized.expand(
@@ -182,7 +173,6 @@ class TestGcpProviderSetup(BaseCase, TestCase):
     ):
         # Test data
         test_proj_id: str = self.data[test_proj_data_key]
-        command = f"gcloud projects get-ancestors {test_proj_id} --format=json"
 
         # Mock
         mock_run = self.mocker.patch.object(self.setup_cli, "run_command")
@@ -193,14 +183,15 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         actual = self.setup_cli.get_organization_id_from_cli(test_proj_id)
 
         # Assertions
-        mock_run.assert_called_once_with(command)
+        mock_run.assert_called_once_with(
+            f"gcloud projects get-ancestors {test_proj_id} --format=json"
+        )
         assert actual is None, "Should return None if no organization id found."
 
     @parameterized.expand([(0, None), (1, "Unable to switch active account")])
     def test_switch_active_cli_account(self, returncode: int, returnmessage):
         # Test data
         account_name = "censys-test@censys.io"
-        command = f"gcloud config set account {account_name}"
 
         # Mock
         mock_run = self.mocker.patch.object(self.setup_cli, "run_command")
@@ -211,7 +202,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         self.setup_cli.switch_active_cli_account(account_name)
 
         # Assertions
-        mock_run.assert_called_once_with(command)
+        mock_run.assert_called_once_with(f"gcloud config set account {account_name}")
 
     @parameterized.expand(
         [
@@ -242,43 +233,22 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         mock_run.assert_called_once_with(test_command)
         assert actual == expected_service_accounts
 
-    @parameterized.expand(
-        [
-            ("TEST_SINGLE_SERVICE_ACCOUNT", {"use_service_account": True}),
-            ("TEST_SINGLE_SERVICE_ACCOUNT", {"use_service_account": False}, False),
-            (
-                "TEST_SERVICE_ACCOUNTS",
-                {
-                    "service_account": {
-                        "email": "test-email@censys-example-project.iam.gserviceaccount.com"
-                    }
-                },
-            ),
-        ]
-    )
-    def test_prompt_select_service_account(
-        self,
-        test_data_key: str,
-        test_answers: dict,
-        expect_service_account: bool = True,
-    ):
+    def test_prompt_select_service_account(self):
         # Test data
-        test_service_accounts = self.data[test_data_key]
+        test_service_accounts = self.data["TEST_SERVICE_ACCOUNTS"]
 
         # Mock
-        mock_prompt = self.mocker.patch.object(self.setup_cli, "prompt")
-        mock_prompt.return_value = test_answers
+        mock_prompt = self.mocker.patch.object(self.setup_cli, "prompt_select_one")
+        mock_prompt.return_value = test_service_accounts[0]
 
         # Actual call
         actual = self.setup_cli.prompt_select_service_account(test_service_accounts)
 
         # Assertions
-        mock_prompt.assert_called_once()
-        if expect_service_account:
-            assert actual, "Should return service account if selected."
-            assert isinstance(actual, dict), "Should return service account dict."
-        else:
-            assert actual is None
+        mock_prompt.assert_called_once_with(
+            "Select a service account:", test_service_accounts, "email"
+        )
+        assert actual == mock_prompt.return_value
 
     def test_generate_service_account_email(self):
         # Test data

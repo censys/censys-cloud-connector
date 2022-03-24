@@ -1,7 +1,7 @@
 """Base for all cli commands."""
 
 import subprocess
-from typing import Union
+from typing import Optional, Union
 
 import rich
 from InquirerPy import prompt
@@ -87,23 +87,79 @@ class BaseCli:
         Raises:
             KeyboardInterrupt: If the user cancels the prompt.
         """
-        # Add better instructions
         if isinstance(questions, dict):
             questions = [questions]
         for question in questions:
+            # Add better instructions
             if question.get("type") == "list":
                 question["instruction"] = "(Use arrow keys)"
                 if question.get("multiselect"):
                     question["instruction"] = "(Use ctrl+r to select all)"
             elif question.get("type") == "filepath":
                 question["instruction"] = "(Tab completion is enabled)"
-            # TODO: Add additional instructions for other types
 
         answers = prompt(questions, **kwargs)
         if not answers:
             # If the user cancels the prompt (returns no answers), we raise a KeyboardInterrupt.
             raise KeyboardInterrupt
         return answers
+
+    def prompt_select_one(
+        self,
+        message: str,
+        choices: list[dict],
+        name_key: str = "name",
+        default: Optional[str] = None,
+        **question_kwargs,
+    ) -> Optional[dict]:
+        """Prompt the user for a list of choices.
+
+        This method will ask the users to confirm if there is only one choice
+        otherwise it will ask the user to pick one of the choices.
+
+        Args:
+            message (str): The message to print.
+            choices (list[dict]): The choices to pick from.
+            name_key (str): The key to use for the name of the choice.
+            default (Optional[str]): The default choice.
+            **question_kwargs: The keyword arguments to pass to prompt.
+
+        Returns:
+            dict: The choice.
+        """
+        if len(choices) == 1:
+            first_choice = choices[0]
+            if first_choice_value := first_choice.get(name_key):
+                answers = self.prompt(
+                    {
+                        "type": "confirm",
+                        "name": "use_only_choice",
+                        "message": f"Use {first_choice_value}?",
+                        "default": True,
+                    }
+                )
+                if not answers.get("use_only_choice"):
+                    return None
+                return first_choice
+
+        if name_key != "name":
+            # Ensure that we have proper names for the choices
+            new_choices = []
+            for choice in choices:
+                new_choices.append({"name": choice[name_key], "value": choice})
+            choices = new_choices
+
+        question = {
+            "type": "list",
+            "name": "choice",
+            "message": message,
+            "choices": choices,
+            **question_kwargs,
+        }
+        if default:
+            question["default"] = default
+        answers = self.prompt(question)
+        return answers.get("choice")
 
     def run_command(self, command: str, **kwargs) -> subprocess.CompletedProcess:
         """Run a command.

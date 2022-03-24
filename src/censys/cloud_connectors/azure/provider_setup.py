@@ -67,7 +67,7 @@ class AzureSetupCli(ProviderSetupCli):
             {
                 "type": "list",
                 "name": "subscription_ids",
-                "message": "Select subscription(s)",
+                "message": "Select subscription(s):",
                 "choices": [
                     {
                         "name": s.get("display_name"),
@@ -176,7 +176,7 @@ class AzureSetupCli(ProviderSetupCli):
             {
                 "type": "list",
                 "name": "get_credentials_from",
-                "message": "Select a method to configure your credentials",
+                "message": "Select a method to configure your credentials:",
                 "choices": [cli_choice, input_choice],
             }
         ]

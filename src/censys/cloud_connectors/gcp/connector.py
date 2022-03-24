@@ -88,12 +88,12 @@ class GcpCloudConnector(CloudConnector):
         Returns:
             ListAssetsPager: Gcp assets.
         """
-        kwargs = {
+        request = {
             "parent": self.provider_settings.parent(),
         }
         if filter:
-            kwargs["filter"] = filter
-        return self.security_center_client.list_assets(request=kwargs)
+            request["filter"] = filter
+        return self.security_center_client.list_assets(request=request)
 
     def get_compute_addresses(self):
         """Get Gcp ip address assets."""
