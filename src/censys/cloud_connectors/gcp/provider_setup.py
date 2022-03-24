@@ -125,7 +125,9 @@ class GcpSetupCli(ProviderSetupCli):
         project_ancestors = json.loads(res.stdout.strip())
         for ancestor in project_ancestors:
             if ancestor.get("type") == "organization":
-                return int(ancestor.get("id", 0))
+                if organization_id := ancestor.get("id"):
+                    return int(organization_id)
+                return None
         return 0
 
     @validate_arguments
