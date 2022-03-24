@@ -1773,6 +1773,17 @@ optional = false
 python-versions = ">=3.6,<4.0"
 
 [[package]]
+name = "flake8-polyfill"
+version = "1.0.2"
+description = "Polyfill package for Flake8 plugins"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+flake8 = "*"
+
+[[package]]
 name = "flake8-pytest-style"
 version = "1.6.0"
 description = "A flake8 plugin checking common style issues or inconsistencies with pytest-based tests."
@@ -2290,6 +2301,18 @@ description = "Utility library for gitignore style pattern matching of file path
 category = "dev"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
+
+[[package]]
+name = "pep8-naming"
+version = "0.12.1"
+description = "Check PEP-8 naming conventions, plugin for flake8"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+flake8 = ">=3.9.1"
+flake8-polyfill = ">=1.0.2,<2"
 
 [[package]]
 name = "pexpect"
@@ -3041,7 +3064,7 @@ gcp = ["google-auth", "google-cloud-resource-manager", "google-cloud-securitycen
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "c0710c18987e05532de4f3744939a12abc0d7defcc3d2afa69732084fb55e640"
+content-hash = "5c6f910b5956742ca56ac04e93dfb321b8b61d6752d06b22e4c71fa226d16d4c"
 
 [metadata.files]
 adal = [
@@ -3716,6 +3739,10 @@ flake8-plugin-utils = [
     {file = "flake8-plugin-utils-1.3.2.tar.gz", hash = "sha256:20fa2a8ca2decac50116edb42e6af0a1253ef639ad79941249b840531889c65a"},
     {file = "flake8_plugin_utils-1.3.2-py3-none-any.whl", hash = "sha256:1fe43e3e9acf3a7c0f6b88f5338cad37044d2f156c43cb6b080b5f9da8a76f06"},
 ]
+flake8-polyfill = [
+    {file = "flake8-polyfill-1.0.2.tar.gz", hash = "sha256:e44b087597f6da52ec6393a709e7108b2905317d0c0b744cdca6208e670d8eda"},
+    {file = "flake8_polyfill-1.0.2-py2.py3-none-any.whl", hash = "sha256:12be6a34ee3ab795b19ca73505e7b55826d5f6ad7230d31b18e106400169b9e9"},
+]
 flake8-pytest-style = [
     {file = "flake8-pytest-style-1.6.0.tar.gz", hash = "sha256:c1175713e9e11b78cd1a035ed0bca0d1e41d09c4af329a952750b61d4194ddac"},
     {file = "flake8_pytest_style-1.6.0-py3-none-any.whl", hash = "sha256:5fedb371a950e9fe0e0e6bfc854be7d99151271208f34cd2cc517681ece27780"},
@@ -3934,6 +3961,10 @@ pathlib2 = [
 pathspec = [
     {file = "pathspec-0.9.0-py2.py3-none-any.whl", hash = "sha256:7d15c4ddb0b5c802d161efc417ec1a2558ea2653c2e8ad9c19098201dc1c993a"},
     {file = "pathspec-0.9.0.tar.gz", hash = "sha256:e564499435a2673d586f6b2130bb5b95f04a3ba06f81b8f895b651a3c76aabb1"},
+]
+pep8-naming = [
+    {file = "pep8-naming-0.12.1.tar.gz", hash = "sha256:bb2455947757d162aa4cad55dba4ce029005cd1692f2899a21d51d8630ca7841"},
+    {file = "pep8_naming-0.12.1-py2.py3-none-any.whl", hash = "sha256:4a8daeaeb33cfcde779309fc0c9c0a68a3bbe2ad8a8308b763c5068f86eb9f37"},
 ]
 pexpect = [
     {file = "pexpect-4.8.0-py2.py3-none-any.whl", hash = "sha256:0b48a55dcb3c05f3329815901ea4fc1537514d6ba867a152b581d69ae3710937"},

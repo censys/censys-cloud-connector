@@ -11,7 +11,7 @@ class CloudAsset(BaseModel):
 
     type: str
     value: str
-    cspLabel: ProviderEnum
+    csp_label: ProviderEnum
     scan_data: dict = {}
     uid: str  # Used as cloudConnectorUid
 
@@ -24,7 +24,7 @@ class CloudAsset(BaseModel):
         return {
             "type": self.type,
             "value": self.value,
-            "cspLabel": self.cspLabel.label(),
+            "cspLabel": self.csp_label.label(),
             "scanData": json.dumps(self.scan_data),
         }
 
@@ -38,7 +38,7 @@ class ObjectStorageAsset(CloudAsset):
 class GcpStorageBucketAsset(ObjectStorageAsset):
     """GCP Cloud Storage asset."""
 
-    cspLabel = ProviderEnum.GCP
+    csp_label = ProviderEnum.GCP
 
     @validator("value")
     def value_is_valid_bucket_name(cls, v: str) -> str:
@@ -63,7 +63,7 @@ class GcpStorageBucketAsset(ObjectStorageAsset):
 class AzureContainerAsset(ObjectStorageAsset):
     """Azure Container asset."""
 
-    cspLabel = ProviderEnum.AZURE
+    csp_label = ProviderEnum.AZURE
 
     @validator("value")
     def value_is_valid_container_url(cls, v: str) -> str:
