@@ -440,6 +440,3 @@ class TestGcpProviderSetup(BaseCase, TestCase):
             assert actual_return == test_key_file_path
         else:
             assert actual_return is None
-
-    def test_setup(self):
-        pass
