@@ -44,7 +44,7 @@ class TestConfigCli(BaseCase, TestCase):
         # Mock
         self.mocker.patch("censys.cloud_connectors.__connectors__", mock_connectors)
         mock_prompt = self.mocker.patch(
-            "censys.cloud_connectors.common.cli.commands.config.prompt",
+            "censys.cloud_connectors.common.cli.commands.config.BaseCli.prompt",
             side_effect=[
                 {
                     "provider": "test_connector_1",
@@ -89,7 +89,7 @@ class TestConfigCli(BaseCase, TestCase):
         # Mock
         self.mocker.patch("censys.cloud_connectors.__connectors__", mock_connectors)
         mock_prompt = self.mocker.patch(
-            "censys.cloud_connectors.common.cli.commands.config.prompt",
+            "censys.cloud_connectors.common.cli.commands.config.BaseCli.prompt",
             side_effect=[
                 {"save": True},
             ],

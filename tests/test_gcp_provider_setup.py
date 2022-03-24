@@ -146,7 +146,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
 
     @parameterized.expand(
         [
-            ("TEST_PROJECT", "TEST_ORGANIZATIONS"),
+            ("TEST_PROJECT", "TEST_ORGANIZATION"),
         ]
     )
     def test_get_organization_id_from_cli(
@@ -157,7 +157,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         command = f"gcloud projects get-ancestors {test_proj_id} --format=json"
         expected_org_info: list[dict[str, str]] = self.data[test_org_data_key]
         expected_org_info_json = json.dumps(expected_org_info)
-        expected_org = "502839482099"
+        expected_org = 502839482099
 
         # Mock
         mock_run = self.mocker.patch.object(self.setup_cli, "run_command")
@@ -194,7 +194,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
 
         # Assertions
         mock_run.assert_called_once_with(command)
-        assert actual == "", "Should return empty string if no organization id found."
+        assert actual is None, "Should return None if no organization id found."
 
     @parameterized.expand([(0, None), (1, "Unable to switch active account")])
     def test_switch_active_cli_account(self, returncode: int, returnmessage):
@@ -294,7 +294,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
 
     def test_generate_role_binding_command(self):
         # Test data
-        test_organization_id = "test-org-id"
+        test_organization_id = 6543219870
         test_service_account_email = self.data["TEST_SERVICE_ACCOUNT_EMAIL"]
         test_roles = list(GcpRoles)
 
@@ -310,7 +310,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
             assert current_command.startswith(
                 "gcloud organizations add-iam-policy-binding "
             )
-            assert test_organization_id in current_command
+            assert str(test_organization_id) in current_command
             assert f"'serviceAccount:{test_service_account_email}'" in current_command
             assert f"--role '{role}'" in current_command
 
@@ -345,7 +345,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         expected_return: bool = False,
     ):
         # Test data
-        test_organization_id = "test-org-id"
+        test_organization_id = 6549873210
         test_project_id = "test-project-id"
         test_service_account_name = "test-service-account"
         test_key_file = NamedTemporaryFile()
@@ -405,7 +405,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         returncode: int = 0,
     ):
         # Test data
-        test_organization_id = "test-org-id"
+        test_organization_id = 6543219870
         test_project_id = "test-project-id"
         test_service_account_name = "test-service-account"
         test_key_file = NamedTemporaryFile()

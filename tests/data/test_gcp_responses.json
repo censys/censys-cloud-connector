@@ -1,6 +1,6 @@
 {
   "TEST_CREDS": {
-    "organization_id": "xxxxxxxxxxxx",
+    "organization_id": "6543219870",
     "service_account_json_file": "test_gcp_service_account.json"
   },
   "TEST_COMPUTE_ADDRESS": {

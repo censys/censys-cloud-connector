@@ -3,11 +3,11 @@ import argparse
 import contextlib
 import importlib
 
-from InquirerPy import prompt
 from pydantic import ValidationError
 from rich import print
 
 from censys.cloud_connectors import __connectors__
+from censys.cloud_connectors.common.cli.base import BaseCli
 from censys.cloud_connectors.common.logger import get_logger
 from censys.cloud_connectors.common.settings import Settings
 
@@ -47,7 +47,7 @@ def cli_config(args: argparse.Namespace):
                 ],
             }
         ]
-        answers = prompt(questions)
+        answers = BaseCli.prompt(questions)
         if not answers:  # pragma: no cover
             raise KeyboardInterrupt
         provider_name = answers["provider"]
@@ -73,7 +73,7 @@ def cli_config(args: argparse.Namespace):
             "message": "Save settings?",
         }
     ]
-    answers = prompt(questions)
+    answers = BaseCli.prompt(questions)
     if not answers:  # pragma: no cover
         raise KeyboardInterrupt
     if answers.get("save", False):
