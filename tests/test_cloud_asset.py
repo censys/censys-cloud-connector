@@ -23,7 +23,7 @@ class CloudAssetTest(BaseCase, TestCase):
         cloud_asset = CloudAsset(
             type=TEST_TYPE,
             value=TEST_VALUE,
-            cspLabel=ProviderEnum.AWS,
+            csp_label=ProviderEnum.AWS,
             scan_data=TEST_SCAN_DATA,
             uid=TEST_UID,
         )
@@ -37,7 +37,7 @@ class CloudAssetTest(BaseCase, TestCase):
 
     def test_object_storage_asset(self):
         cloud_asset = ObjectStorageAsset(
-            value=TEST_VALUE, cspLabel=ProviderEnum.AWS, uid=TEST_UID
+            value=TEST_VALUE, csp_label=ProviderEnum.AWS, uid=TEST_UID
         )
         assert cloud_asset.type == "OBJECT_STORAGE"
 
@@ -47,7 +47,7 @@ class CloudAssetTest(BaseCase, TestCase):
         cloud_asset = GcpStorageBucketAsset(value=test_value, uid=test_object_name)
         assert cloud_asset.type == "OBJECT_STORAGE"
         assert cloud_asset.value == test_value
-        assert cloud_asset.cspLabel == ProviderEnum.GCP
+        assert cloud_asset.csp_label == ProviderEnum.GCP
         assert cloud_asset.scan_data == {}
         assert cloud_asset.uid == "test-bucket"
 
@@ -69,7 +69,7 @@ class CloudAssetTest(BaseCase, TestCase):
         cloud_asset = AzureContainerAsset(value=test_value, uid=test_object_name)
         assert cloud_asset.type == "OBJECT_STORAGE"
         assert cloud_asset.value == test_value
-        assert cloud_asset.cspLabel == ProviderEnum.AZURE
+        assert cloud_asset.csp_label == ProviderEnum.AZURE
         assert cloud_asset.scan_data == {}
         assert cloud_asset.uid == "test-container"
 

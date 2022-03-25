@@ -17,3 +17,11 @@ per-file-ignores =
 docstring-convention = google
 # darglint
 docstring_style = google
+# pep8-naming
+ignore-names =
+    setUp,
+    setUpConnector,
+    tearDown
+classmethod-decorators =
+    classmethod,
+    validator

@@ -76,7 +76,7 @@ def prompt_for_list(field: ModelField) -> list[str]:
         {
             "type": "input",
             "name": field.name,
-            "message": f"Enter a {field_name}",
+            "message": f"Enter a {field_name}:",
             "validate": generate_validation(field),
         },
         {

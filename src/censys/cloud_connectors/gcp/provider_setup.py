@@ -49,22 +49,7 @@ class GcpSetupCli(ProviderSetupCli):
         Returns:
             dict: Selected account.
         """
-        if len(accounts) == 1:
-            account_email = accounts[0].get("account")
-            questions = [
-                {
-                    "type": "confirm",
-                    "name": "use_account",
-                    "message": f"Use {account_email}?",
-                    "default": True,
-                }
-            ]
-            answers = self.prompt(questions)
-            if not answers.get("use_account"):
-                return None
-            return accounts[0]
-
-        active_account = None
+        active_account: Optional[dict] = None
         choices: list[dict] = []
         for account in accounts:
             account_email = account.get("account")
@@ -79,17 +64,10 @@ class GcpSetupCli(ProviderSetupCli):
             else:
                 choices.append(choice)
 
-        questions = [
-            {
-                "type": "list",
-                "message": "Select a GCP account",
-                "name": "selected_account",
-                "choices": choices,
-                "default": active_account,
-            }
-        ]
-        answers = self.prompt(questions)
-        return answers.get("selected_account")
+        kwargs = {}
+        if active_account and (active_email := active_account.get("account")):
+            kwargs["default"] = active_email
+        return self.prompt_select_one("Select a GCP account:", choices, **kwargs)
 
     def get_project_id_from_cli(self) -> Optional[str]:
         """Get the project id from the CLI.
@@ -177,33 +155,9 @@ class GcpSetupCli(ProviderSetupCli):
         Returns:
             dict: Selected service account.
         """
-        if len(service_accounts) == 1:
-            service_account_email = service_accounts[0].get("email")
-            questions = [
-                {
-                    "type": "confirm",
-                    "name": "use_service_account",
-                    "message": f"Use {service_account_email}?",
-                    "default": True,
-                }
-            ]
-            answers = self.prompt(questions)
-            if not answers.get("use_service_account"):
-                return None
-            return service_accounts[0]
-        questions = [
-            {
-                "type": "list",
-                "message": "Select a service account",
-                "name": "service_account",
-                "choices": [
-                    {"name": service_account.get("email"), "value": service_account}
-                    for service_account in service_accounts
-                ],
-            }
-        ]
-        answers = self.prompt(questions)
-        return answers.get("service_account")
+        return self.prompt_select_one(
+            "Select a service account:", service_accounts, "email"
+        )
 
     @staticmethod
     def generate_service_account_email(
@@ -562,16 +516,16 @@ class GcpSetupCli(ProviderSetupCli):
 
             questions = [
                 {
+                    "type": "input",
+                    "name": "key_file_output_path",
+                    "message": "Edit or confirm key file path:",
+                    "default": f"./secrets/{project_id}-key.json",
+                },
+                {
                     "type": "confirm",
                     "name": "use_existing_service_account",
                     "message": "Use existing service account?",
                     "default": False,
-                },
-                {
-                    "type": "input",
-                    "name": "key_file_output_path",
-                    "message": "Enter the path to where the key file should be saved:",
-                    "default": f"./secrets/{project_id}-key.json",
                 },
             ]
             answers = self.prompt(questions)
