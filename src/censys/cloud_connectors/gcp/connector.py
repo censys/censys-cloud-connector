@@ -72,7 +72,7 @@ class GcpCloudConnector(CloudConnector):
         Returns:
             str: Formatted asset label.
         """
-        # print(list_assets_result.__class__.to_json(list_assets_result))
+        # print(result.__class__.to_json(result))
         # TODO: Include location in label
         asset_project_display_name = (
             result.asset.security_center_properties.resource_project_display_name
@@ -186,17 +186,25 @@ class GcpCloudConnector(CloudConnector):
         )
         for list_assets_result in list_assets_results:
             resource_properties = list_assets_result.asset.resource_properties
-            # TODO: Should we be using the 'selfLink'?
-            # self_link := resource_properties.get("selfLink")
             if (bucket_name := resource_properties.get("id")) and (
                 project_number := resource_properties.get("projectNumber")
             ):
+                scan_data = {"accountNumber": int(project_number)}
+                if (
+                    project_name := list_assets_result.asset.security_center_properties.resource_project_display_name
+                ):
+                    scan_data["projectName"] = project_name
+                if location := resource_properties.get("location"):
+                    scan_data["location"] = location
+                if self_link := resource_properties.get("selfLink"):
+                    scan_data["selfLink"] = self_link
                 self.add_cloud_asset(
                     GcpStorageBucketAsset(
+                        # TODO: Update when API can accept other urls
                         value=f"https://storage.googleapis.com/{bucket_name}",
                         uid=self.format_label(list_assets_result),
                         # Cast project_number to int from float
-                        scan_data={"accountNumber": int(project_number)},
+                        scan_data=scan_data,
                     )
                 )
 

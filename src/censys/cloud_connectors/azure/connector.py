@@ -192,6 +192,7 @@ class AzureCloudConnector(CloudConnector):
                             scan_data={
                                 "accountNumber": self.subscription_id,
                                 "publicAccess": container.public_access,
+                                "location": account.location,
                             },
                         )
                     )
