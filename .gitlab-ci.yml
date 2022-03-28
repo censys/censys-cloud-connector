@@ -1,14 +1,14 @@
-default:
-  tags:
-    - censec
-
 stages:
-  - quality
   - test
-  - security
+
+variables:
+  PIP_REQUIREMENTS_FILE: "requirements-converted.txt"
 
 .poetry:
   image: python:3.9
+
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
   cache:
     key:
@@ -18,69 +18,71 @@ stages:
       - .venv
       - .cache/pip
 
-  variables:
-    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-
   before_script:
-    - apt-get update
-    - apt-get install --assume-yes --no-install-recommends npm
     - pip install --upgrade pip poetry
     - poetry config virtualenvs.in-project true
     - poetry install -E azure -E gcp -vv
     - . .venv/bin/activate
 
-check-flake8: # This job also runs in the quality stage.
-  extends: .poetry
-  stage: quality
-  script:
-    - flake8 src/
-
-check-mypy: # This job runs in the quality stage.
-  extends: .poetry
-  stage: quality # It can run at the same time as quality-job: (in parallel).
-  allow_failure: true
-  script:
-    - mypy -p censys.cloud_connectors
-
-.test-template: # This job runs in the test stage.
+lint:
   extends: .poetry
   stage: test
   script:
-    - pytest
-  variables:
-    CENSYS_API_KEY: "ci-censys-api-key-xxxxxxxxxxxxxxxxxx"
+    - flake8 src/
+    - mypy -p censys.cloud_connectors
 
-python3.9:
+.test-template:
+  extends: .poetry
+  stage: test
+  script: pytest
+
+unit tests:
   extends: .test-template
   image: python:3.9
+  script: pytest --cov --cov-report xml
+  artifacts:
+    reports:
+      cobertura: coverage.xml
 
-# python3.10:
-#   extends: .test-template
-#   image: python:3.10
+scan helm chart - CVE:
+  stage: test
+  image: gcr.io/censys-internal/censys.io/helm3-ci:2022-01-24_03-21-30
+  needs: []
+  script:
+    - cd kubernetes
+    - helm template censys-cloud-connectors ./censys-cloud-connectors --dry-run |  kubescape scan framework nsa -
 
-sast:
-  stage: security
-  variables:
-    SEARCH_MAX_DEPTH: "10"
-
-kics-iac-sast:
-  stage: security
-
-secret_detection:
-  stage: security
-  variables:
-    SECRET_DETECTION_HISTORIC_SCAN: "true"
-
-gemnasium-python-dependency_scanning:
-  stage: security
-  # Work around https://gitlab.com/gitlab-org/gitlab/-/issues/7006
-  before_script:
-    - pip install poetry
-    - poetry export --format=requirements.txt --output=requirements.txt
-    - rm poetry.lock pyproject.toml
+scan helm chart - Deprecation:
+  stage: test
+  image: gcr.io/censys-internal/censys.io/helm3-ci:2022-01-24_03-21-30
+  needs: []
+  script:
+    - cd kubernetes
+    - helm template censys-cloud-connectors ./censys-cloud-connectors --dry-run | kubent --helm2=false --helm3=false --cluster=false -f -
 
 include:
   - template: Security/Dependency-Scanning.gitlab-ci.yml
   - template: Security/SAST-IaC.latest.gitlab-ci.yml
   - template: Security/SAST.gitlab-ci.yml
   - template: Security/Secret-Detection.gitlab-ci.yml
+
+sast:
+  stage: test
+  variables:
+    SEARCH_MAX_DEPTH: "10"
+
+kics-iac-sast:
+  stage: test
+
+secret_detection:
+  stage: test
+  variables:
+    SECRET_DETECTION_HISTORIC_SCAN: "true"
+
+gemnasium-python-dependency_scanning:
+  stage: test
+  before_script:
+    - pip install poetry
+    - poetry export --output="$PIP_REQUIREMENTS_FILE"
+    - rm poetry.lock pyproject.toml
+  # Triggers artifacts download, until https://gitlab.com/gitlab-org/gitlab/-/issues/249569 is implemented

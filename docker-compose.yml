@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  censys_cloud_connector:
+    image: censys-cloud-connector
+    build: .
+    volumes:
+      - ./providers.yml:/app/providers.yml
+      - ./secrets:/app/secrets
+    env_file:
+      - ./.env

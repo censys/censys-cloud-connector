@@ -2,15 +2,15 @@
 
 The Censys Unified Cloud Connector is a standalone connector that gathers
 assets from various cloud providers and stores them in Censys ASM. This
-allows Censys to have a wider view of the cloud assets that are public
-facing. This connector currently supports the following cloud providers:
-Azure and GCP. Support for AWS and other cloud providers will be added in
-the future.
+Connector offers users the ability to supercharge our ASM Platform with total
+cloud visibility. This connector currently supports the following cloud
+providers: Azure and GCP. Support for AWS and other cloud providers will be
+added in the future.
 
 ## Supported Platforms and Services
 
 The following platforms and services are supported and will be used to import
-Seeds (IP Addresses, Domains, and Subnets) as well as Cloud Assets
+Seeds (IP Addresses, Domain Names, CIDRs, and ASNs) as well as Cloud Assets
 (Object Storage Buckets) into the Censys ASM platform.
 
 ### Google Cloud Platform
@@ -39,34 +39,159 @@ Seeds (IP Addresses, Domains, and Subnets) as well as Cloud Assets
 
 ## Getting Started
 
-### Prerequisites
+It is important to note that this connector is a Python package. This allows
+you to run the connector from the command line as well as enables you to run
+the connector in as many different environments as you wish. We have provided
+a variety of deployment types and configuration options. We recommend that you
+install the package locally to take advantage of the configuration command line
+interface. After you have configured the connector, you can deploy it to your
+environment. In the following sections, we will provide a brief overview of
+how to deploy the connector to your environment.
+
+## Deployment Methods
+
+- [Local Deployment](#local-deployment)
+- [Docker Standalone](#docker-standalone)
+- [Docker Compose](#docker-compose)
+- [Kubernetes](#kubernetes)
+- [Helm](#helm)
+<!-- Coming Soon
+- [Terraform](#terraform)
+- [Ansible](#ansible) -->
+
+### Local Installation
+
+#### Prerequisites
 
 - [Python 3.9+](https://www.python.org/downloads/)
 - [Poetry](https://python-poetry.org/docs/)
 
-### Installation
+#### Installation
 
 ```sh
 # Clone the repository
 git clone git@gitlab.com:censys/integrations/cloud-connectors-unified.git
 cd cloud-connectors-unified
 
+# Ensure you have poetry installed
+pip install --upgrade poetry
+
 # Install dependencies
-poetry install  # Only core dependencies
+poetry install -E azure -E gcp  # All dependencies (This is recommended)
 poetry install -E azure  # Only Azure dependencies
 poetry install -E gcp  # Only GCP dependencies
-poetry install -E azure -E gcp  # All dependencies
-
-# Setup your .env file
-cp .env.sample .env
+poetry install  # Only core dependencies
 ```
 
-### Commands
+#### Configuration
+
+To configure the connector, you can use the command line interface. The base
+command is `censys-cc`. The following commands are available:
 
 ```sh
 censys-cc config  # Configure supported providers
 censys-cc scan  # Scan for assets
 ```
+
+- The `censys-cc config` command will guide you through the configuration of
+  supported cloud providers. This command will assist you in generating a
+  `providers.yml` file. This file can contain multiple provider configurations.
+- The `censys-cc scan` command runs the connector.
+
+#### Environment Variables
+
+The following environment variables are available for use in the connector:
+
+- `CENSYS_API_KEY` - Your Censys ASM API key found in the
+  [ASM Integrations Page](https://app.censys.io/integrations).
+- `PROVIDERS_CONFIG_FILE` - The path to the `providers.yml` file.
+- `LOGGING_LEVEL` - The logging level. Valid values are `DEBUG`, `INFO`,
+  `WARN`, `ERROR`, and `CRITICAL`.
+- `DRY_RUN` - If set to `true`, the connector will not write any data to the
+- ASM platform. This is useful for testing.
+
+### Docker Standalone
+
+This method assumes you have Docker installed and running on your server.
+
+1. Pull the Docker image
+
+```sh
+docker pull gcr.io/censys-io/cloud-connector:latest
+```
+
+- If your environment does not allow you to pull the Docker image, you can
+  build it from the Dockerfile using the following command. You can then
+  push the image to a Docker registry.
+
+  ```sh
+  docker build -t gcr.io/censys-io/cloud-connector:latest .
+  ```
+
+2. Configure the Docker image <!-- markdownlint-disable -->
+
+- If you have not already done so, create the providers.yml file
+
+  > This is due to the way docker handles volumes.
+
+  ```sh
+  touch providers.yml
+  ```
+
+```sh
+docker run --rm -it \
+  -e "CENSYS_API_KEY=$CENSYS_API_KEY" \
+  -e "PROVIDERS_CONFIG_FILE=/app/config/providers.yml" \
+  -v $(pwd)/providers.yml:/app/config/providers.yml \
+  -v $(pwd)/secrets:/app/secrets \
+  gcr.io/censys-io/cloud-connector:latest \
+  config
+```
+
+3. Run the Docker container <!-- markdownlint-disable -->
+
+The following command will run the Docker container. You can specify the
+environment variables you want to pass to the container using the `-e` flag.
+The container also requires the `providers.yml` file. The `-v` flag will
+mount the `providers.yml` file as a volume. If your `providers.yml` references
+additional secret files, you can mount it as a volume as well. We also include
+the `--rm` flag to ensure the container is removed after it has finished.
+
+```sh
+# Mount the providers.yml file as a volume
+docker run --rm \
+  -e "CENSYS_API_KEY=$CENSYS_API_KEY" \
+  -v $(pwd)/providers.yml:/app/providers.yml \
+  gcr.io/censys-io/cloud-connector:latest
+
+# Mount the providers.yml and secrets files as volumes
+docker run --rm \
+  -e "CENSYS_API_KEY=$CENSYS_API_KEY" \
+  -v $(pwd)/providers.yml:/app/providers.yml \
+  -v $(pwd)/secrets:/app/secrets \
+  gcr.io/censys-io/cloud-connector:latest
+```
+
+It is important to note that the container runs once by default.
+
+<!-- TODO: Add cron instructions -->
+
+### Docker Compose
+
+This method assumes you have Docker and Docker Compose installed and running on
+your server.
+
+<!-- TODO: Add steps -->
+
+### Kubernetes
+
+<!-- TODO: Add steps -->
+
+### Helm
+
+This method assumes you have Helm installed locally.
+
+<!-- TODO: Add steps -->
 
 ## Development
 
@@ -153,10 +278,11 @@ files in the `.vscode` directory.
 Features inlcuded in the extensions:
 
 - Use pytest as a test runner
-- View `.toml`, `.env` files
+- `.toml`, `.yaml`, `.env` file extension support
 - View all todos
 - Automatically generate docsstrings
 - Spell check
+- Docker and Kubernetes support
 
 ## Known Issues
 
