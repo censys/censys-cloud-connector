@@ -1,0 +1,34 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "censys-cloud-connectors.fullname" . }}
+  labels:
+    {{- include "censys-cloud-connectors.labels" . | nindent 4 }}
+spec:
+  schedule: "{{ .Values.cronjob.schedule }}"
+  concurrencyPolicy: "{{ .Values.cronjob.concurrencyPolicy }}"
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          volumes:
+            - name: config
+              configMap:
+                name: {{ include "censys-cloud-connectors.fullname" . }}
+          containers:
+            - name: {{ .Chart.Name }}
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default "latest" }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              volumeMounts:
+                - name: config
+                  mountPath: /config
+                  readOnly: true
+              env:
+                - name: PROVIDERS_CONFIG_FILE
+                  value: /config/providers.yml
+              envFrom:
+                - secretRef:
+                    name: {{ include "censys-cloud-connectors.fullname" . }}

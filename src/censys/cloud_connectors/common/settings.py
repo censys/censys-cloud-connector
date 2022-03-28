@@ -132,16 +132,16 @@ class Settings(BaseSettings):
         """
         try:
             with open(self.providers_config_file) as f:
-                provider_config = yaml.safe_load(f)
+                providers_config = yaml.safe_load(f)
         except FileNotFoundError as e:
             raise FileNotFoundError(
                 f"Provider config file not found: {self.providers_config_file}"
             ) from e
 
-        if not provider_config:
+        if not providers_config:
             return
 
-        for provider_config in provider_config:
+        for provider_config in providers_config:
             provider_name = provider_config.get("provider")
             if not provider_name:
                 raise ValueError("Provider name is required")
@@ -164,10 +164,19 @@ class Settings(BaseSettings):
             yaml.safe_dump(all_providers, f, default_flow_style=False, sort_keys=False)
 
     def scan_all(self):
-        """Scan all providers."""
+        """Scan all providers.
+
+        Raises:
+            ModuleNotFoundError: If the module does not exist.
+        """
         for provider in self.providers.keys():
-            connector_cls = importlib.import_module(
-                provider.module_path()
-            ).__connector__
+            try:
+                connector_cls = importlib.import_module(
+                    provider.module_path()
+                ).__connector__
+            except ModuleNotFoundError as e:
+                raise ModuleNotFoundError(
+                    f"Connector module not found for provider: {provider}"
+                ) from e
             connector = connector_cls(self)
             connector.scan_all()
