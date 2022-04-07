@@ -204,7 +204,9 @@ class TestAzureProviderSetup(BaseCase, TestCase):
         mock_prompt = self.mocker.patch.object(
             self.setup_cli,
             "prompt",
-            return_value={"get_credentials_from": "Generate with CLI"},
+            return_value={
+                "get_credentials_from": "Generate with Azure CLI (Recommended)"
+            },
         )
         # Mock get_subscriptions_from_cli
         mock_get_subscriptions = self.mocker.patch.object(

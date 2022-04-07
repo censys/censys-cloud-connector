@@ -114,8 +114,22 @@ class ProviderSetupCli(BaseCli):
         self.settings = settings
 
     def setup(self) -> None:
-        """Setup the provider."""
+        """Setup the provider.
+
+        Raises:
+            KeyboardInterrupt: If the user cancels the setup.
+        """
         provider_settings = self.prompt_for_settings()
+        answers = prompt(
+            {
+                "type": "confirm",
+                "name": "save",
+                "message": f"Save to {self.settings.providers_config_file}?",
+                "default": True,
+            }
+        )
+        if not answers.get("save"):  # pragma: no cover
+            raise KeyboardInterrupt
         self.add_provider_specific_settings(provider_settings)
 
     def add_provider_specific_settings(

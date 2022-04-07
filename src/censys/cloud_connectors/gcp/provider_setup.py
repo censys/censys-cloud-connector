@@ -1,8 +1,10 @@
 """Gcp specific setup CLI."""
 import json
 import os.path
+import re
 from typing import Optional
 
+from InquirerPy.separator import Separator
 from pydantic import validate_arguments
 from rich.progress import track
 
@@ -28,7 +30,7 @@ class GcpSetupCli(ProviderSetupCli):
         gcloud_version = self.run_command("gcloud version")
         return gcloud_version.returncode == 0
 
-    def get_accounts_from_cli(self) -> list[dict[str, str]]:
+    def get_accounts_from_cli(self) -> Optional[list[dict[str, str]]]:
         """Get the credentialed accounts from the CLI.
 
         Returns:
@@ -36,11 +38,12 @@ class GcpSetupCli(ProviderSetupCli):
         """
         res = self.run_command("gcloud auth list --format=json")
         if res.returncode != 0:
-            self.print_warning("Unable to get list of Credentialed GCP Accounts.")
-            return []
+            return None
         return json.loads(res.stdout)
 
-    def prompt_select_account(self, accounts: list[dict[str, str]]) -> Optional[dict]:
+    def prompt_select_account(
+        self, accounts: list[dict[str, str]]
+    ) -> Optional[dict[str, str]]:
         """Prompt the user to select an account.
 
         Args:
@@ -69,7 +72,18 @@ class GcpSetupCli(ProviderSetupCli):
             kwargs["default"] = active_email
         return self.prompt_select_one("Select a GCP account:", choices, **kwargs)
 
-    def get_project_id_from_cli(self) -> Optional[str]:
+    def get_project_ids_from_cli(self) -> Optional[list[dict]]:
+        """Get list of active projects which the user has access to from the CLI.
+
+        Returns:
+            list[dict]: List of projects.
+        """
+        res = self.run_command("gcloud projects list --format=json")
+        if res.returncode != 0:
+            return None
+        return json.loads(res.stdout.strip())
+
+    def get_default_project_id_from_cli(self) -> Optional[str]:
         """Get the project id from the CLI.
 
         Returns:
@@ -82,6 +96,37 @@ class GcpSetupCli(ProviderSetupCli):
             )
             return None
         return res.stdout.strip()
+
+    def prompt_select_project(
+        self, projects: list[dict[str, str]], default_project_id: Optional[str]
+    ) -> Optional[dict]:
+        """Prompt the user to select a project.
+
+        Args:
+            projects (list[dict]): List of projects.
+            default_project_id (Optional[str]): Current project.
+
+        Returns:
+            Optional[dict]: Selected project.
+        """
+        default_project: Optional[dict] = None
+        kwargs = {}
+        choices: list[dict] = []
+        for project in projects:
+            project_id = project.get("projectId")
+            if not project_id:
+                continue
+            choice = {"name": project_id, "value": project}
+            if project.get("projectId") == default_project_id:
+                default_project = project
+                choices.insert(0, choice)
+            else:
+                choices.append(choice)
+
+        if default_project and (default_project_id := default_project.get("projectId")):
+            kwargs["default"] = default_project_id
+
+        return self.prompt_select_one("Select a project:", choices, **kwargs)
 
     @validate_arguments
     def get_organization_id_from_cli(self, project_id: str) -> Optional[int]:
@@ -97,7 +142,7 @@ class GcpSetupCli(ProviderSetupCli):
             f"gcloud projects get-ancestors {project_id} --format=json"
         )
         if res.returncode != 0:
-            self.print_warning("Unable to get organization id from CLI.")
+            self.print_error(res.stderr.strip())
             return None
         project_ancestors = json.loads(res.stdout.strip())
         for ancestor in project_ancestors:
@@ -108,19 +153,23 @@ class GcpSetupCli(ProviderSetupCli):
         return None
 
     @validate_arguments
-    def switch_active_cli_account(self, account_name: str):
+    def switch_active_cli_account(self, account_name: str) -> bool:
         """Switch the active account.
 
         Args:
             account_name (str): The account name.
+
+        Returns:
+            bool: Success.
         """
         res = self.run_command(f"gcloud config set account {account_name}")
         if res.returncode != 0:
-            self.print_warning("Unable to switch active account.")
+            return False
+        return True
 
     def get_service_accounts_from_cli(
         self, project_id: Optional[str] = None
-    ) -> list[dict]:
+    ) -> Optional[list[dict]]:
         """Get the service accounts from the CLI.
 
         Args:
@@ -134,8 +183,7 @@ class GcpSetupCli(ProviderSetupCli):
             command += f" --project {project_id}"
         res = self.run_command(command)
         if res.returncode != 0:
-            self.print_warning("Unable to get service accounts from CLI.")
-            return []
+            return None
         service_accounts = json.loads(res.stdout.strip())
         # Filter out the default service accounts
         return [
@@ -159,9 +207,8 @@ class GcpSetupCli(ProviderSetupCli):
             "Select a service account:", service_accounts, "email"
         )
 
-    @staticmethod
     def generate_service_account_email(
-        service_account_name: str, project_id: str
+        self, service_account_name: str, project_id: str
     ) -> str:
         """Generate the service account email.
 
@@ -208,21 +255,25 @@ class GcpSetupCli(ProviderSetupCli):
         self,
         name: str = "censys-cloud-connector",
         display_name: str = "Censys Cloud Connector Service Account",
+        project_id: Optional[str] = None,
     ) -> str:
         """Generate create service account command.
 
         Args:
             name (str): Service account name.
             display_name (str): Service account display name.
+            project_id (str): Project ID.
 
         Returns:
             str: Create service account command.
         """
         # TODO: Add service account description (--description flag)
-        # TODO: Might be worthwhile to add a --project flag to the command
-        return (
+        command = (
             f"gcloud iam service-accounts create {name} --display-name '{display_name}'"
         )
+        if project_id:
+            command += f" --project {project_id}"
+        return command
 
     @validate_arguments
     def generate_create_key_command(
@@ -261,7 +312,11 @@ class GcpSetupCli(ProviderSetupCli):
         Returns:
             Optional[str]: The service account key file.
         """
-        commands = [self.generate_create_service_account_command(service_account_name)]
+        commands = [
+            self.generate_create_service_account_command(
+                service_account_name, project_id=project_id
+            )
+        ]
         service_account_email = self.generate_service_account_email(
             service_account_name, project_id
         )
@@ -291,11 +346,11 @@ class GcpSetupCli(ProviderSetupCli):
             )
             return None
 
-        for command in track(commands, description="Running..."):
+        for command in track(commands, description="Running...", transient=True):
             res = self.run_command(command)
             if res.returncode != 0:
                 self.print_error(
-                    f"Failed to create service account. Error: {res.stderr.strip()}"
+                    f"Failed to create service account. {res.stderr.strip()}"
                 )
                 return None
 
@@ -400,8 +455,6 @@ class GcpSetupCli(ProviderSetupCli):
             ]
         )
 
-        # TODO: some type of error checking. does service_account exist? what message to print if not?
-
         if not answers.get("enable_service_account", False):
             self.print_info(
                 "Please login and try again. Or run the above commands in the Google Cloud Console."
@@ -409,7 +462,7 @@ class GcpSetupCli(ProviderSetupCli):
             return None
 
         # TODO: Investigate progress bar
-        for command in track(commands, description="Running..."):
+        for command in track(commands, description="Running...", transient=True):
             res = self.run_command(command)
             if res.returncode != 0:
                 self.print_error(
@@ -421,172 +474,223 @@ class GcpSetupCli(ProviderSetupCli):
         if not os.path.exists(key_file_path):
             self.print_error(
                 f"Failed to enable service account. Error: {key_file_path} does not exist"
+                # TODO: is this the correct error?
             )
             return None
 
         return key_file_path
 
+    def prompt_to_create_service_account(
+        self, organization_id: int, project_id: str, key_file_path: str
+    ) -> None:
+        """Prompt to create a service account.
+
+        Args:
+            organization_id (int): Organization id.
+            project_id (str): Project id.
+            key_file_path: The place to store the key file.
+        """
+
+        def validate_service_account_name(service_account_name: str) -> bool:
+            """Validate service account name.
+
+            Service account name must be between 6 and 30 characters (inclusive), must begin with a
+            lowercase letter, and consist of lowercase alphanumeric characters that can be separated by hyphens.
+
+            Args:
+                service_account_name (str): Service account name.
+
+            Returns:
+                bool: True if valid, False otherwise.
+            """
+            return bool(re.match(r"^[a-z][a-z0-9-]{5,29}$", service_account_name))
+
+        answers = self.prompt(
+            [
+                {
+                    "type": "input",
+                    "name": "new_account_name",
+                    "message": "Confirm or name service account:",
+                    "default": "censys-cloud-connector",
+                    "validate": validate_service_account_name,
+                    "invalid_message": "Service account name must be between 6 and 30 characters.",
+                    "transformer": lambda name: self.generate_service_account_email(
+                        name, project_id
+                    ),
+                }
+            ]
+        )
+        new_account_name = answers.get("new_account_name")
+        if not new_account_name:
+            self.print_error("Service account name is required.")
+            exit(1)
+        if not self.create_service_account(
+            organization_id, project_id, new_account_name, key_file_path
+        ):
+            self.print_error(
+                "Failed to create service account key file. Please try again."
+                # TODO: "service account key file" or "service account"?
+            )
+            exit(1)
+
+    def setup_with_cli(self) -> None:
+        """Setup with gcloud CLI."""
+        self.print_info(
+            "Before you begin you'll need to have identified the following:\n  [info]-[/info] The Google Cloud organization administrator account which will execute scripts that configure the Censys Cloud Connector.\n  [info]-[/info] The project that will be used to run the Censys Cloud Connector. Please note that the cloud connector will be scoped to the organization."
+        )
+        if not self.is_gcloud_installed():
+            self.print_warning(
+                r"Please install the [link=https://cloud.google.com/sdk/docs/downloads-interactive]gcloud SDK[\link] before continuing."
+            )
+            exit(1)
+
+        accounts = self.get_accounts_from_cli()
+        if accounts is None:
+            self.print_error("Unable to get list of Credentialed GCP Accounts.")
+            exit(1)
+        if not accounts:
+            self.print_error("No Credentialed GCP Accounts found.")
+            exit(1)
+
+        selected_account = self.prompt_select_account(accounts)
+        if selected_account is None:
+            # TODO: Print login instructions
+            self.print_error("No GCP Account selected.")
+            exit(1)
+
+        account_email = selected_account["account"]
+        if selected_account.get("status") != "ACTIVE":
+            questions = [
+                {
+                    "type": "confirm",
+                    "name": "switch_account",
+                    "message": f"Switch to {account_email}?",
+                    "default": True,
+                }
+            ]
+            answers = self.prompt(questions)
+            if not answers.get("switch_account", False):
+                self.print_error("No GCP Account selected.")
+                exit(1)
+
+            success = self.switch_active_cli_account(account_email)
+            if not success:
+                self.print_error("Unable to switch active GCP Account.")
+                exit(1)
+
+        projects = self.get_project_ids_from_cli()
+        if projects is None:
+            self.print_error("Unable to get projects from gcloud CLI.")
+            # TODO: print gcloud CLI error message
+            exit(1)
+        if not projects:
+            self.print_error(f"No projects found under GCP Account {account_email}.")
+            # self.print("Please ensure your account has the correct permissions (resourcemanager.projects.list) to access projects under your organization \
+            #             Or create a new project using gcloud projects create")
+            # TODO: tell them how to create a project
+            exit(1)
+        default_project_id: Optional[str] = self.get_default_project_id_from_cli()
+        selected_project = self.prompt_select_project(projects, default_project_id)
+        if selected_project is None or "projectId" not in selected_project:
+            self.print_error("No project selected.")
+            exit(1)
+        project_id: str = selected_project["projectId"]
+
+        organization_id = self.get_organization_id_from_cli(project_id)
+        if not organization_id:
+            self.print_error("Unable to get Organization ID from gcloud CLI.")
+            exit(1)
+        questions = [
+            {
+                "type": "input",
+                "name": "organization_id",
+                "message": "Confirm your organization ID:",
+                "default": str(organization_id),
+            }
+        ]
+        answers = self.prompt(questions)
+        if not answers.get("organization_id"):
+            self.print_error("No Organization ID selected.")
+            exit(1)
+
+        answers = self.prompt(
+            {
+                "type": "input",
+                "name": "key_file_output_path",
+                "message": "Confirm or edit key file path:",
+                "default": f"./secrets/{project_id}-key.json",
+            }
+        )
+        key_file_path = answers.get("key_file_output_path")
+        if not key_file_path:
+            exit(1)
+
+        service_accounts = self.get_service_accounts_from_cli(project_id)
+        if service_accounts is None:
+            self.print_error(
+                f"Unable to get service accounts for project {project_id} from CLI."
+            )
+            # TODO: tell user to check permissions
+            exit(1)
+        if len(service_accounts) == 0:
+            self.prompt_to_create_service_account(
+                organization_id, project_id, key_file_path
+            )
+        else:
+            create_new_service_account = "Create new service account"
+            service_account_choices = [acct.get("email") for acct in service_accounts]
+            answers = self.prompt(
+                {
+                    "type": "list",
+                    "name": "service_account_action",
+                    "message": "Select service account:",
+                    "choices": [
+                        create_new_service_account,
+                        Separator("--- Existing service accounts ---"),
+                        *service_account_choices,
+                    ],
+                },
+            )
+
+        service_account_action: Optional[str] = answers.get("service_account_action")
+        if service_account_action is None:
+            self.print_error("No service account selected.")
+            exit(1)
+        if service_account_action == create_new_service_account:
+            self.prompt_to_create_service_account(
+                organization_id, project_id, key_file_path
+            )
+        else:
+            existing_account_name = service_account_action.split("@")[0]
+            if not self.enable_service_account(
+                organization_id, project_id, existing_account_name, key_file_path
+            ):
+                self.print_error("Failed to enable service account.")
+                exit(1)
+
+        # TODO: Wait until the service account can get a single `google.cloud.resourcemanager.Organization`
+        # from the security center API.
+
+        provider_settings = self.provider_specific_settings_class(
+            organization_id=organization_id, service_account_json_file=key_file_path
+        )
+        self.add_provider_specific_settings(provider_settings)
+
     def setup(self):
         """Setup the GCP provider."""
-        cli_choice = "Generate with CLI"
-        input_choice = "Input existing credentials"
-        questions = [
+        choices = {
+            "Generate with gcloud CLI (Recommended)": self.setup_with_cli,
+            "Input existing credentials": super().setup,
+        }
+        answers = self.prompt(
             {
                 "type": "list",
                 "name": "get_credentials_from",
                 "message": "Select a method to configure your credentials:",
-                "choices": [cli_choice, input_choice],
+                "choices": list(choices.keys()),
             }
-        ]
-        answers = self.prompt(questions)
+        )
 
         get_credentials_from = answers.get("get_credentials_from")
-        if get_credentials_from == input_choice:
-            # Prompt for the credentials
-            super().setup()
-        elif get_credentials_from == cli_choice:
-            self.print_info(
-                "Before you begin you'll need to have identified the following:\n  [blue]-[/blue] The Google Cloud organization administrator account which will execute scripts that configure the Censys Cloud Connector.\n  [blue]-[/blue] The project that will be used to run the Censys Cloud Connector. Please note that the cloud connector will be scoped to the organization."
-            )
-            if not self.is_gcloud_installed():
-                self.print_warning(
-                    r"Please install the [link=https://cloud.google.com/sdk/docs/downloads-interactive]gcloud SDK[\link] before continuing."
-                )
-                exit(1)
-
-            accounts = self.get_accounts_from_cli()
-            if not accounts:
-                self.print_error("No accounts found.")
-                exit(1)
-
-            selected_account = self.prompt_select_account(accounts)
-            if not selected_account:
-                # TODO: Print login instructions
-                self.print_error("No account selected.")
-                exit(1)
-
-            account_email = selected_account.get("account")
-            if selected_account.get("status") != "ACTIVE":
-                questions = [
-                    {
-                        "type": "confirm",
-                        "name": "switch_account",
-                        "message": f"Switch to {account_email}?",
-                        "default": True,
-                    }
-                ]
-                answers = self.prompt(questions)
-                if not answers.get("switch_account", False):
-                    self.print_error("No account selected.")
-                    exit(1)
-
-                self.switch_active_cli_account(account_email)
-
-            # TODO: Get project ids from CLI
-
-            # TODO: Prompt user to select project ID from list
-
-            questions = [
-                {
-                    "type": "input",
-                    "name": "project_id",
-                    "message": "Enter the project ID:",
-                    "default": self.get_project_id_from_cli(),
-                }
-            ]
-            answers = self.prompt(questions)
-            project_id = answers.get("project_id")
-            if not project_id:
-                self.print_error("No project ID entered.")
-                exit(1)
-
-            questions = [
-                {
-                    "type": "number",
-                    "name": "organization_id",
-                    "message": "Enter the organization ID:",
-                    "default": self.get_organization_id_from_cli(project_id),
-                }
-            ]
-            answers = self.prompt(questions)
-            organization_id = answers.get("organization_id")
-            if not organization_id:
-                self.print_error("No organization ID entered.")
-                exit(1)
-
-            questions = [
-                {
-                    "type": "input",
-                    "name": "key_file_output_path",
-                    "message": "Edit or confirm key file path:",
-                    "default": f"./secrets/{project_id}-key.json",
-                },
-                {
-                    "type": "confirm",
-                    "name": "use_existing_service_account",
-                    "message": "Use existing service account?",
-                    "default": False,
-                },
-            ]
-            answers = self.prompt(questions)
-            key_file_path = answers.get("key_file_output_path")
-            if not key_file_path:
-                self.print_error("No key file path entered.")
-                exit(1)
-
-            if answers.get("use_existing_service_account", False):
-                service_accounts = self.get_service_accounts_from_cli(project_id)
-                if service_accounts:
-                    service_account = self.prompt_select_service_account(
-                        service_accounts
-                    )
-                    existing_account_email = service_account.get("email")
-                    # Only the email is returned in this payload
-                    existing_account_name = existing_account_email.split("@")[0]
-                else:
-                    # Enable existing service account
-                    answers = self.prompt(
-                        [
-                            {
-                                "type": "input",
-                                "name": "existing_account_name",
-                                "message": "Enter the service account name:",
-                            }
-                        ]
-                    )
-                    existing_account_name = answers.get("existing_account_name")
-                if not self.enable_service_account(
-                    organization_id, project_id, existing_account_name, key_file_path
-                ):
-                    exit(1)
-            else:
-                # Create service account
-                answers = self.prompt(
-                    [
-                        {
-                            "type": "input",
-                            "name": "new_account_name",
-                            "message": "Enter the service account name:",
-                            "default": "censys-cloud-connector",
-                        }
-                    ]
-                )
-                new_account_name = answers.get("new_account_name")
-                if not self.create_service_account(
-                    organization_id, project_id, new_account_name, key_file_path
-                ):
-                    exit(1)
-
-            if not key_file_path:
-                self.print_error(
-                    "Failed to create service account key file. Please try again."
-                )
-                exit(1)
-
-            # TODO: Wait until the service account can get a single `google.cloud.resourcemanager.Organization`
-            # from the security center API.
-
-            provider_settings = self.provider_specific_settings_class(
-                organization_id=organization_id, service_account_json_file=key_file_path
-            )
-            self.add_provider_specific_settings(provider_settings)
+        if func := choices.get(get_credentials_from):
+            func()

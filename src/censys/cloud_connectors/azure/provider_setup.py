@@ -55,7 +55,7 @@ class AzureSetupCli(ProviderSetupCli):
                 {
                     "type": "confirm",
                     "name": "use_subscription",
-                    "message": f"Use subscription {subscriptions[0]['id']}?",
+                    "message": f"Confirm subscription {subscriptions[0]['display_name']}:",
                     "default": True,
                 }
             ]
@@ -108,7 +108,7 @@ class AzureSetupCli(ProviderSetupCli):
             "--role",
             "Reader",
             "--output",
-            "json",
+            "jsonc",
             "--scopes",
         ]
         for subscription in subscriptions:
@@ -143,7 +143,7 @@ class AzureSetupCli(ProviderSetupCli):
                 {
                     "type": "confirm",
                     "name": "create_service_principal",
-                    "message": "Create service principal with above command?",
+                    "message": "Confirm creation of service principal with above command:",
                     "default": True,
                 }
             ]
@@ -159,7 +159,6 @@ class AzureSetupCli(ProviderSetupCli):
         azure_cli.invoke(command)
         result = azure_cli.result
         if not result:
-            self.print_warning("Unable to create service principal")
             return None
         if results := result.result:
             return results
@@ -167,54 +166,57 @@ class AzureSetupCli(ProviderSetupCli):
             self.print_error(error)
         return None
 
+    def setup_with_cli(self) -> None:
+        """Setup with the Azure CLI."""
+        subscriptions = self.get_subscriptions_from_cli()
+        if len(subscriptions) == 0:
+            self.print_error("No subscriptions found")
+            exit(1)
+
+        selected_subscriptions = self.prompt_select_subscriptions(subscriptions)
+        if len(selected_subscriptions) == 0:
+            self.print_error("No subscriptions selected")
+            exit(1)
+
+        service_principal = self.create_service_principal(selected_subscriptions)
+        if service_principal is None:
+            self.print_error(
+                "Service principal not created. Please try again or manually create a service principal"
+            )
+            exit(1)
+        self.print_success("Service principal was successfully created.")
+
+        # Save the service principal
+        provider_settings = self.provider_specific_settings_class(
+            subscription_id=[
+                subscription_id
+                for s in selected_subscriptions
+                if s and (subscription_id := s.get("subscription_id"))
+            ],
+            tenant_id=service_principal.get("tenant"),
+            client_id=service_principal.get("appId"),
+            client_secret=service_principal.get("password"),
+        )
+        # TODO: Confirm that another provider is not already configured for the above subscription IDs
+        # If so, prompt to overwrite/merge
+        self.add_provider_specific_settings(provider_settings)
+
     def setup(self):
         """Setup the Azure provider."""
-        cli_choice = "Generate with CLI"
-        input_choice = "Input existing credentials"
-        # TODO: Add support for InteractiveBrowserCredential
-        questions = [
+        choices = {
+            "Generate with Azure CLI (Recommended)": self.setup_with_cli,
+            "Input existing credentials": super().setup
+            # TODO: Add support for InteractiveBrowserCredential
+        }
+        answers = self.prompt(
             {
                 "type": "list",
                 "name": "get_credentials_from",
                 "message": "Select a method to configure your credentials:",
-                "choices": [cli_choice, input_choice],
+                "choices": list(choices.keys()),
             }
-        ]
-        answers = self.prompt(questions)
+        )
 
         get_credentials_from = answers.get("get_credentials_from")
-        if get_credentials_from == input_choice:
-            # Prompt for credentials
-            super().setup()
-        elif get_credentials_from == cli_choice:
-            subscriptions = self.get_subscriptions_from_cli()
-            if len(subscriptions) == 0:
-                self.print_error("No subscriptions found")
-                exit(1)
-
-            selected_subscriptions = self.prompt_select_subscriptions(subscriptions)
-            if len(selected_subscriptions) == 0:
-                self.print_error("No subscriptions selected")
-                exit(1)
-
-            service_principal = self.create_service_principal(selected_subscriptions)
-            if service_principal is None:
-                self.print_error(
-                    "Service principal not created. Please try again or manually create a service principal"
-                )
-                exit(1)
-
-            # Save the service principal
-            provider_settings = self.provider_specific_settings_class(
-                subscription_id=[
-                    subscription_id
-                    for s in selected_subscriptions
-                    if s and (subscription_id := s.get("subscription_id"))
-                ],
-                tenant_id=service_principal.get("tenant"),
-                client_id=service_principal.get("appId"),
-                client_secret=service_principal.get("password"),
-            )
-            # TODO: Confirm that another provider is not already configured for the above subscription IDs
-            # If so, prompt to overwrite/merge
-            self.add_provider_specific_settings(provider_settings)
+        if func := choices.get(get_credentials_from):
+            func()
