@@ -37,20 +37,15 @@ class TestConfigCli(BaseCase, TestCase):
     def test_cli_config(self):
         # Test data
         mock_connectors = [
-            "test_connector_1",
+            "azure",
             "test_connector_2",
         ]
 
         # Mock
         self.mocker.patch("censys.cloud_connectors.__connectors__", mock_connectors)
         mock_prompt = self.mocker.patch(
-            "censys.cloud_connectors.common.cli.commands.config.BaseCli.prompt",
-            side_effect=[
-                {
-                    "provider": "test_connector_1",
-                },
-                {"save": True},
-            ],
+            "censys.cloud_connectors.common.cli.commands.config.prompt",
+            return_value={"provider": "azure"},
         )
 
         mock_args = self.mocker.MagicMock()
@@ -71,10 +66,8 @@ class TestConfigCli(BaseCase, TestCase):
         config.cli_config(mock_args)
 
         # Assertions
-        assert mock_prompt.call_count == 2
-        mock_importlib.assert_called_once_with(
-            "censys.cloud_connectors.test_connector_1"
-        )
+        assert mock_prompt.call_count == 1
+        mock_importlib.assert_called_once_with("censys.cloud_connectors.azure")
         mock_settings.return_value.read_providers_config_file.assert_called_once_with()
         mock_setup_cls.assert_called_once()
         mock_setup_cls.return_value.setup.assert_called_once()
@@ -83,17 +76,11 @@ class TestConfigCli(BaseCase, TestCase):
         # Test data
         mock_connectors = [
             "test_connector_1",
-            "test_connector_2",
+            "azure",
         ]
 
         # Mock
         self.mocker.patch("censys.cloud_connectors.__connectors__", mock_connectors)
-        mock_prompt = self.mocker.patch(
-            "censys.cloud_connectors.common.cli.commands.config.BaseCli.prompt",
-            side_effect=[
-                {"save": True},
-            ],
-        )
 
         mock_args = self.mocker.MagicMock()
         mock_args.provider = mock_connectors[1]
@@ -113,10 +100,7 @@ class TestConfigCli(BaseCase, TestCase):
         config.cli_config(mock_args)
 
         # Assertions
-        assert mock_prompt.call_count == 1
-        mock_importlib.assert_called_once_with(
-            "censys.cloud_connectors.test_connector_2"
-        )
+        mock_importlib.assert_called_once_with("censys.cloud_connectors.azure")
         mock_settings.return_value.read_providers_config_file.assert_called_once_with()
         mock_setup_cls.assert_called_once()
         mock_setup_cls.return_value.setup.assert_called_once()

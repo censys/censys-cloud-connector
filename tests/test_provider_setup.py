@@ -179,18 +179,26 @@ class TestProviderSetupCli(BaseCase, TestCase):
 
     def test_setup(self):
         # Mock prompt
-        mock_prompt = self.mocker.patch.object(self.setup_cli, "prompt_for_settings")
-        mock_prompt.return_value = self.mocker.MagicMock()
+        mock_prompt_for_settings = self.mocker.patch.object(
+            self.setup_cli, "prompt_for_settings"
+        )
+        mock_prompt_for_settings.return_value = self.mocker.MagicMock()
         test_provider = ExampleProviderSetupCli.provider
         assert self.setup_cli.settings.providers[test_provider] == []
+
+        mock_prompt_save = self.mocker.patch(
+            "censys.cloud_connectors.common.cli.provider_setup.prompt",
+            return_value={"save": True},
+        )
 
         # Actual call
         self.setup_cli.setup()
 
         # Assertions
-        mock_prompt.assert_called_once()
+        mock_prompt_for_settings.assert_called_once()
+        mock_prompt_save.assert_called_once()
         assert self.setup_cli.settings.providers[test_provider] == [
-            mock_prompt.return_value
+            mock_prompt_for_settings.return_value
         ]
 
     def test_prompt_for_settings(self):

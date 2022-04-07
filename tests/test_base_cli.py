@@ -15,32 +15,18 @@ class TestBaseCli(BaseCase, TestCase):
         super().setUp()
         self.base_cli = BaseCli()
 
-    def test_print(self):
-        # Test data
-        test_args = ["test", "args"]
-        test_kwargs = {"test": "kwargs"}
-
-        # Mock
-        mock_print = self.mocker.patch(
-            "censys.cloud_connectors.common.cli.base.rich.print"
-        )
-
-        # Actual call
-        self.base_cli.print(*test_args, **test_kwargs)
-
-        # Assertions
-        mock_print.assert_called_once_with(*test_args, **test_kwargs)
-
     @parameterized.expand(
         [
-            ("[blue]i[/blue] ", "print_info"),
+            ("[info]i[/info] ", "print_info"),
             ("[yellow]![/yellow] ", "print_warning"),
-            ("[red]x[/red] ", "print_error"),
+            ("[red]✘[/red] ", "print_error"),
+            ("[green]✔[/green] ", "print_success"),
+            ("[questionmark]?[/questionmark] ", "print_question"),
         ]
     )
     def test_print_types(self, prefix: str, method: str):
         # Mock
-        mock_print = self.mocker.patch.object(self.base_cli, "print")
+        mock_print = self.mocker.patch("censys.cloud_connectors.common.cli.base.print")
 
         # Actual call
         print_func = getattr(self.base_cli, method)
@@ -51,7 +37,7 @@ class TestBaseCli(BaseCase, TestCase):
 
     def test_print_command(self):
         # Mock
-        mock_print = self.mocker.patch.object(self.base_cli, "print")
+        mock_print = self.mocker.patch("censys.cloud_connectors.common.cli.base.print")
         mock_syntax = self.mocker.patch(
             "censys.cloud_connectors.common.cli.base.Syntax"
         )
@@ -61,7 +47,13 @@ class TestBaseCli(BaseCase, TestCase):
 
         # Assertions
         mock_syntax.assert_called_once_with("test command", "bash", word_wrap=True)
-        mock_print.assert_called_once_with(mock_syntax.return_value)
+        # mock_print.assert_called_once_with(mock_syntax.return_value)
+        calls = [
+            self.mocker.call(),
+            self.mocker.call(mock_syntax.return_value),
+            self.mocker.call(),
+        ]
+        mock_print.assert_has_calls(calls)
 
     def test_print_json(self):
         # Test data
@@ -84,7 +76,8 @@ class TestBaseCli(BaseCase, TestCase):
 
         # Mock
         self.mocker.patch(
-            "censys.cloud_connectors.common.cli.base.prompt", return_value=test_answers
+            "censys.cloud_connectors.common.cli.base.inquirer_prompt",
+            return_value=test_answers,
         )
 
         # Actual call
@@ -96,7 +89,7 @@ class TestBaseCli(BaseCase, TestCase):
     def test_prompt_no_answers(self):
         # Mock
         self.mocker.patch(
-            "censys.cloud_connectors.common.cli.base.prompt", return_value={}
+            "censys.cloud_connectors.common.cli.base.inquirer_prompt", return_value={}
         )
 
         # Actual call

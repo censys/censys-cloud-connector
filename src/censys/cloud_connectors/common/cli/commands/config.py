@@ -2,12 +2,13 @@
 import argparse
 import contextlib
 import importlib
+from typing import Any
 
 from pydantic import ValidationError
-from rich import print
 
 from censys.cloud_connectors import __connectors__
-from censys.cloud_connectors.common.cli.base import BaseCli
+from censys.cloud_connectors.common.cli.base import print, print_question, prompt
+from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.logger import get_logger
 from censys.cloud_connectors.common.settings import Settings
 
@@ -33,7 +34,7 @@ def cli_config(args: argparse.Namespace):
         return
 
     if args.provider is None:
-        questions = [
+        questions: list[dict[str, Any]] = [
             {
                 "type": "list",
                 "name": "provider",
@@ -47,13 +48,13 @@ def cli_config(args: argparse.Namespace):
                 ],
             }
         ]
-        answers = BaseCli.prompt(questions)
+        answers = prompt(questions)
         if not answers:  # pragma: no cover
             raise KeyboardInterrupt
         provider_name = answers["provider"]
     else:
         provider_name = args.provider
-        print(f"Provider: {provider_name}")
+        print_question(f"Provider: [info]{ProviderEnum[provider_name.upper()]}[/info]")
     provider_setup_cls = importlib.import_module(
         f"censys.cloud_connectors.{provider_name}"
     ).__provider_setup__
@@ -66,19 +67,8 @@ def cli_config(args: argparse.Namespace):
     except ValidationError as e:  # pragma: no cover
         logger.error(e)
         return
-    questions = [
-        {
-            "type": "confirm",
-            "name": "save",
-            "message": "Save settings?",
-        }
-    ]
-    answers = BaseCli.prompt(questions)
-    if not answers:  # pragma: no cover
-        raise KeyboardInterrupt
-    if answers.get("save", False):
-        settings.write_providers_config_file()
-        print(f"Successfully saved settings to {settings.providers_config_file}")
+    settings.write_providers_config_file()
+    print(f"Successfully saved settings to {settings.providers_config_file}")
 
 
 def include_cli(parent_parser: argparse._SubParsersAction):

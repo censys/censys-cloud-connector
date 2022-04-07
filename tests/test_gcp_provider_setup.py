@@ -51,10 +51,27 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         assert actual == expected
         mock_run.assert_called_once_with(command)
 
-    @parameterized.expand([("TEST_ACCOUNTS"), ("TEST_EMPTY_LIST", 1)])
+    @parameterized.expand([("TEST_ACCOUNTS"), ("TEST_EMPTY_LIST")])
     def test_get_accounts_from_cli(self, test_data_key: str, returncode: int = 0):
         # Test data
         expected_accounts: list[dict[str, str]] = self.data[test_data_key]
+
+        # Mock
+        mock_run = self.mocker.patch.object(self.setup_cli, "run_command")
+        mock_run.return_value.returncode = returncode
+        mock_run.return_value.stdout = json.dumps(expected_accounts)
+
+        # Actual call
+        actual = self.setup_cli.get_accounts_from_cli()
+
+        # Assertions
+        assert actual == expected_accounts
+        mock_run.assert_called_once_with("gcloud auth list --format=json")
+
+    def test_get_accounts_from_cli_failure(self):
+        # Test data
+        expected_accounts = None
+        returncode = 1
 
         # Mock
         mock_run = self.mocker.patch.object(self.setup_cli, "run_command")
@@ -128,7 +145,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         mock_run.return_value.stdout = expected_proj_id
 
         # Actual call
-        actual = self.setup_cli.get_project_id_from_cli()
+        actual = self.setup_cli.get_default_project_id_from_cli()
 
         # Assertions
         mock_run.assert_called_once_with("gcloud config get-value project")
@@ -208,7 +225,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         [
             ("TEST_PROJECT", "TEST_SERVICE_ACCOUNTS"),
             ("TEST_EMPTY_STR", "TEST_SERVICE_ACCOUNTS"),
-            ("TEST_EMPTY_STR", "TEST_EMPTY_LIST", 1),
+            ("TEST_EMPTY_STR", "TEST_EMPTY_LIST"),
         ]
     )
     def test_get_service_accounts_from_cli(
@@ -228,6 +245,24 @@ class TestGcpProviderSetup(BaseCase, TestCase):
 
         # Actual call
         actual = self.setup_cli.get_service_accounts_from_cli(test_proj_id)
+
+        # Assertions
+        mock_run.assert_called_once_with(test_command)
+        assert actual == expected_service_accounts
+
+    def test_get_service_accounts_from_cli_failure(self):
+        # Test data
+        test_command = "gcloud iam service-accounts list --format json"
+        expected_service_accounts = None
+        returncode = 1
+
+        # Mock
+        mock_run = self.mocker.patch.object(self.setup_cli, "run_command")
+        mock_run.return_value.returncode = returncode
+        mock_run.return_value.stdout = expected_service_accounts
+
+        # Actual call
+        actual = self.setup_cli.get_service_accounts_from_cli()
 
         # Assertions
         mock_run.assert_called_once_with(test_command)
