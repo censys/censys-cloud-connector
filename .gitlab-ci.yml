@@ -1,3 +1,7 @@
+default:
+  tags:
+    - search
+
 stages:
   - test
 
@@ -15,14 +19,13 @@ variables:
       files:
         - poetry.lock
     paths:
-      - .venv
       - .cache/pip
 
   before_script:
-    - pip install --upgrade pip poetry
+    - pip install poetry
     - poetry config virtualenvs.in-project true
-    - poetry install -E azure -E gcp -vv
-    - . .venv/bin/activate
+    - poetry install -E azure -E gcp --no-ansi --no-interaction -vv
+    - source `poetry env info --path`/bin/activate
 
 lint:
   extends: .poetry
@@ -62,6 +65,7 @@ scan helm chart - Deprecation:
 
 include:
   - template: Security/Dependency-Scanning.gitlab-ci.yml
+  - template: Security/License-Scanning.gitlab-ci.yml
   - template: Security/SAST-IaC.latest.gitlab-ci.yml
   - template: Security/SAST.gitlab-ci.yml
   - template: Security/Secret-Detection.gitlab-ci.yml
@@ -78,6 +82,9 @@ secret_detection:
   stage: test
   variables:
     SECRET_DETECTION_HISTORIC_SCAN: "true"
+
+license_scanning:
+  stage: test
 
 gemnasium-python-dependency_scanning:
   stage: test
