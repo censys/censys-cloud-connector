@@ -3,10 +3,11 @@ default:
     - search
 
 stages:
+  - require
   - test
 
 variables:
-  PIP_REQUIREMENTS_FILE: "requirements-converted.txt"
+  PIP_REQUIREMENTS_FILE: "requirements.txt"
 
 .poetry:
   image: python:3.9
@@ -26,6 +27,16 @@ variables:
     - poetry config virtualenvs.in-project true
     - poetry install -E azure -E gcp --no-ansi --no-interaction -vv
     - source `poetry env info --path`/bin/activate
+
+make_requirements_txt:
+  extends: .poetry
+  stage: require
+  script:
+    - pip install poetry
+    - poetry export -o "$PIP_REQUIREMENTS_FILE" -E azure -E gcp
+  artifacts:
+    paths:
+      - "$PIP_REQUIREMENTS_FILE"
 
 lint:
   extends: .poetry
@@ -85,11 +96,11 @@ secret_detection:
 
 license_scanning:
   stage: test
+  dependencies: ["make_requirements_txt"]
 
 gemnasium-python-dependency_scanning:
   stage: test
+  dependencies: ["make_requirements_txt"]
   before_script:
-    - pip install poetry
-    - poetry export --output="$PIP_REQUIREMENTS_FILE"
     - rm poetry.lock pyproject.toml
   # Triggers artifacts download, until https://gitlab.com/gitlab-org/gitlab/-/issues/249569 is implemented
