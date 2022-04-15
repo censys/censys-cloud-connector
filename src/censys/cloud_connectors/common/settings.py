@@ -2,10 +2,10 @@
 import collections
 import importlib
 import pathlib
-from typing import DefaultDict, OrderedDict, Union
+from typing import DefaultDict, Optional, OrderedDict, Union
 
 import yaml
-from pydantic import BaseSettings, Field, HttpUrl
+from pydantic import BaseSettings, Field, HttpUrl, validate_arguments
 
 from .enums import ProviderEnum
 
@@ -123,8 +123,14 @@ class Settings(BaseSettings):
         env_file = ".env"
         case_sensitive = False
 
-    def read_providers_config_file(self):
+    @validate_arguments
+    def read_providers_config_file(
+        self, selected_providers: Optional[list[ProviderEnum]] = None
+    ):
         """Read provider config file.
+
+        Args:
+            selected_providers (Optional[list[ProviderEnum]]): The providers to read.
 
         Raises:
             FileNotFoundError: If the file does not exist.
@@ -146,9 +152,11 @@ class Settings(BaseSettings):
             if not provider_name:
                 raise ValueError("Provider name is required")
             try:
-                provider = ProviderEnum[provider_name.upper()]
+                provider = ProviderEnum[provider_name]
             except KeyError as e:
                 raise ValueError(f"Provider name is not valid: {provider_name}") from e
+            if selected_providers and provider not in selected_providers:
+                continue
             provider_settings_cls = importlib.import_module(
                 provider.module_path()
             ).__settings__

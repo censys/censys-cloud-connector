@@ -32,7 +32,20 @@ class TestSettings(BaseCase, TestCase):
     )
     def test_read_providers_config_file(self, provider, file_name, expected_count):
         self.settings.providers_config_file = self.shared_datadir / file_name
-        self.settings.read_providers_config_file()
+        self.settings.read_providers_config_file([provider])
+        assert len(self.settings.providers[provider]) == expected_count
+
+    @parameterized.expand(
+        [
+            (ProviderEnum.AZURE, "test_all_providers.yml", 2),
+            (ProviderEnum.GCP, "test_all_providers.yml", 1),
+        ]
+    )
+    def test_read_providers_config_file_provider_option(
+        self, provider, file_name, expected_count
+    ):
+        self.settings.providers_config_file = self.shared_datadir / file_name
+        self.settings.read_providers_config_file([provider])
         assert len(self.settings.providers[provider]) == expected_count
 
     @parameterized.expand(
@@ -68,7 +81,7 @@ class TestSettings(BaseCase, TestCase):
 
     @parameterized.expand(__connectors__)
     def test_scan_all(self, provider_name: str):
-        provider = ProviderEnum[provider_name.upper()]
+        provider = ProviderEnum[provider_name]
         self.settings.providers[provider] = []
         mock_connector = self.mocker.MagicMock()
         mock_connector().scan_all.return_value = []

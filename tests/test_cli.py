@@ -109,6 +109,9 @@ class TestConfigCli(BaseCase, TestCase):
 class TestScanCli(BaseCase, TestCase):
     def test_cli_scan(self):
         # Mock
+        mock_args = self.mocker.MagicMock()
+        mock_args.provider = None
+
         mock_settings = self.mocker.patch(
             "censys.cloud_connectors.common.cli.commands.scan.Settings"
         )
@@ -116,8 +119,38 @@ class TestScanCli(BaseCase, TestCase):
         mock_settings.return_value.scan_all = self.mocker.Mock()
 
         # Actual call
-        scan.cli_scan(None)
+        scan.cli_scan(mock_args)
 
         # Assertions
-        mock_settings.return_value.read_providers_config_file.assert_called_once_with()
+        mock_settings.return_value.read_providers_config_file.assert_called_once_with(
+            mock_args.provider
+        )
+        mock_settings.return_value.scan_all.assert_called_once_with()
+
+    def test_cli_scan_provider_option(self):
+        # Test data
+        mock_connectors = [
+            "test_connector_1",
+            "azure",
+        ]
+
+        # Mock
+        self.mocker.patch("censys.cloud_connectors.__connectors__", mock_connectors)
+
+        mock_args = self.mocker.MagicMock()
+        mock_args.provider = [mock_connectors[1]]
+
+        mock_settings = self.mocker.patch(
+            "censys.cloud_connectors.common.cli.commands.scan.Settings"
+        )
+        mock_settings.return_value.read_providers_config_file = self.mocker.Mock()
+        mock_settings.return_value.scan_all = self.mocker.Mock()
+
+        # Actual call
+        scan.cli_scan(mock_args)
+
+        # Assertions
+        mock_settings.return_value.read_providers_config_file.assert_called_once_with(
+            mock_args.provider
+        )
         mock_settings.return_value.scan_all.assert_called_once_with()

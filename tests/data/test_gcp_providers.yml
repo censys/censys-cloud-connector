@@ -1,0 +1,6 @@
+- provider: gcp
+  organization_id: 111111111111
+  service_account_json_file: tests/data/test_gcp_service_account.json
+- provider: gcp
+  organization_id: 222222222222
+  service_account_json_file: tests/data/test_gcp_service_account.json
