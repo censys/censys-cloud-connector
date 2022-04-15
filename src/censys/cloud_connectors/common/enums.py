@@ -1,8 +1,25 @@
 """Enums for Cloud Connectors."""
-from enum import Enum
+from enum import Enum, EnumMeta
 
 
-class ProviderEnum(str, Enum):
+class CaseInsensitiveEnumMeta(EnumMeta):
+    """Case insensitive enum metaclass."""
+
+    def __getitem__(self, item):
+        """Get enum by name.
+
+        Args:
+            item: Enum name.
+
+        Returns:
+            Enum value.
+        """
+        if isinstance(item, str):
+            item = item.upper()
+        return super().__getitem__(item)
+
+
+class ProviderEnum(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     """Providers supported by Censys."""
 
     AWS = "AWS"

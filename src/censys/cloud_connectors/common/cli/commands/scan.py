@@ -3,16 +3,17 @@ import argparse
 
 from pydantic import ValidationError
 
-from censys.cloud_connectors import __version__
+from censys.cloud_connectors import __connectors__, __version__
 from censys.cloud_connectors.common.logger import get_logger
 from censys.cloud_connectors.common.settings import Settings
 
 
-def cli_scan(_: argparse.Namespace):
+def cli_scan(args: argparse.Namespace):
     """Scan with Censys Cloud Connectors.
 
     Args:
-        _ (argparse.Namespace): Namespace.
+        args (argparse.Namespace): Namespace.
+
     """
     logger = get_logger(log_name="censys_cloud_connectors", level="INFO")
 
@@ -20,7 +21,12 @@ def cli_scan(_: argparse.Namespace):
 
     try:
         settings = Settings()
-        settings.read_providers_config_file()
+    except ValidationError as e:  # pragma: no cover
+        logger.error(e)
+        return
+
+    try:
+        settings.read_providers_config_file(args.provider)
     except ValidationError as e:  # pragma: no cover
         logger.error(e)
         return
@@ -38,5 +44,16 @@ def include_cli(parent_parser: argparse._SubParsersAction):
         "scan",
         description="Scan with Censys Cloud Connectors",
         help="scan with censys cloud connectors",
+    )
+    config_parser.add_argument(
+        "-p",
+        "--provider",
+        choices=__connectors__,
+        help=f"specify one or more cloud service provider(s): {__connectors__}",
+        metavar="PROVIDER",
+        dest="provider",
+        action="extend",
+        nargs="+",
+        default=None,
     )
     config_parser.set_defaults(func=cli_scan)

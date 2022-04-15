@@ -41,7 +41,7 @@ def cli_config(args: argparse.Namespace):
                 "message": "Select a provider:",
                 "choices": [
                     {
-                        "name": c.capitalize(),
+                        "name": ProviderEnum[c],
                         "value": c,
                     }
                     for c in __connectors__
@@ -54,7 +54,7 @@ def cli_config(args: argparse.Namespace):
         provider_name = answers["provider"]
     else:
         provider_name = args.provider
-        print_question(f"Provider: [info]{ProviderEnum[provider_name.upper()]}[/info]")
+        print_question(f"Provider: [info]{ProviderEnum[provider_name]}[/info]")
     provider_setup_cls = importlib.import_module(
         f"censys.cloud_connectors.{provider_name}"
     ).__provider_setup__
