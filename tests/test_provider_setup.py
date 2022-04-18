@@ -162,6 +162,9 @@ class ExampleProviderSpecificSettings(ProviderSpecificSettings):
     # Other
     file_path: FilePath
 
+    def get_provider_key(self) -> tuple[str, str]:
+        return "test", "key"
+
 
 class ExampleProviderSetupCli(ProviderSetupCli):
     provider = "test_provider"  # type: ignore
@@ -178,14 +181,16 @@ class TestProviderSetupCli(BaseCase, TestCase):
         assert self.setup_cli.settings == self.settings
 
     def test_setup(self):
+        # Test data
+        test_provider = ExampleProviderSetupCli.provider
+        assert self.setup_cli.settings.providers[test_provider] == {}
+
         # Mock prompt
         mock_prompt_for_settings = self.mocker.patch.object(
             self.setup_cli, "prompt_for_settings"
         )
-        mock_prompt_for_settings.return_value = self.mocker.MagicMock()
-        test_provider = ExampleProviderSetupCli.provider
-        assert self.setup_cli.settings.providers[test_provider] == []
-
+        mock_provider_key = mock_prompt_for_settings.return_value.get_provider_key
+        mock_provider_key.return_value = ("test", "key")
         mock_prompt_save = self.mocker.patch(
             "censys.cloud_connectors.common.cli.provider_setup.prompt",
             return_value={"save": True},
@@ -197,9 +202,9 @@ class TestProviderSetupCli(BaseCase, TestCase):
         # Assertions
         mock_prompt_for_settings.assert_called_once()
         mock_prompt_save.assert_called_once()
-        assert self.setup_cli.settings.providers[test_provider] == [
-            mock_prompt_for_settings.return_value
-        ]
+        assert self.setup_cli.settings.providers[test_provider] == {
+            mock_provider_key.return_value: mock_prompt_for_settings.return_value
+        }
 
     def test_prompt_for_settings(self):
         # Test data

@@ -39,10 +39,10 @@ class AzureCloudConnector(CloudConnector):
 
     def scan_all(self):
         """Scan all Azure Subscriptions."""
-        provider_settings: list[AzureSpecificSettings] = self.settings.providers.get(
-            self.provider, []
-        )
-        for provider_setting in provider_settings:
+        provider_settings: dict[
+            tuple, AzureSpecificSettings
+        ] = self.settings.providers.get(self.provider, {})
+        for provider_setting in provider_settings.values():
             # TODO: Add support for disabling specific services
             self.provider_settings = provider_setting
             self.credentials = ClientSecretCredential(

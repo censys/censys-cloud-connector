@@ -235,7 +235,7 @@ class TestAzureProviderSetup(BaseCase, TestCase):
             self.setup_cli.setup()
         mock_create_service_principal.return_value = self.data["TEST_SERVICE_PRINCIPAL"]
         # Assert no provider settings are created
-        assert self.setup_cli.settings.providers[self.setup_cli.provider] == []
+        assert self.setup_cli.settings.providers[self.setup_cli.provider] == {}
 
         # Actual call
         self.setup_cli.setup()

@@ -37,3 +37,11 @@ class AzureSpecificSettings(ProviderSpecificSettings):
         if not isinstance(v, list):
             return [v]
         return v
+
+    def get_provider_key(self) -> tuple[str, str]:
+        """Get the provider key.
+
+        Returns:
+            tuple[str, str]: The provider key.
+        """
+        return self.tenant_id, self.client_id

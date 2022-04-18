@@ -7,9 +7,11 @@ from unittest import TestCase
 import pytest
 from parameterized import parameterized
 
+from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.settings import Settings
 from censys.cloud_connectors.gcp import __provider_setup__
 from censys.cloud_connectors.gcp.enums import GcpRoles
+from censys.cloud_connectors.gcp.settings import GcpSpecificSettings
 from tests.base_case import BaseCase
 
 failed_import = False
@@ -129,11 +131,48 @@ class TestGcpProviderSetup(BaseCase, TestCase):
 
     @parameterized.expand(
         [
+            (0, "TEST_PROJECTS"),
+        ]
+    )
+    def test_get_project_ids_from_cli(self, returncode: int, test_data_key: str):
+        # Test data
+        expected_projects: list[dict[str, str]] = self.data[test_data_key]
+
+        # Mock
+        mock_run = self.mocker.patch.object(self.setup_cli, "run_command")
+        mock_run.return_value.returncode = returncode
+        mock_run.return_value.stdout = json.dumps(expected_projects)
+
+        # Actual call
+        actual = self.setup_cli.get_project_ids_from_cli()
+
+        # Assertions
+        assert actual == expected_projects
+        mock_run.assert_called_once_with("gcloud projects list --format=json")
+
+    def test_get_project_ids_from_cli_fail(self):
+        # Test data
+        expected_projects = None
+
+        # Mock
+        mock_run = self.mocker.patch.object(self.setup_cli, "run_command")
+        mock_run.return_value.returncode = 1
+        mock_run.return_value.stdout = json.dumps(expected_projects)
+
+        # Actual call
+        actual = self.setup_cli.get_project_ids_from_cli()
+
+        # Assertions
+        assert actual == expected_projects
+        mock_run.assert_called_once_with("gcloud projects list --format=json")
+
+    @parameterized.expand(
+        [
             (0, "censys-example-project", "TEST_PROJECT"),
             (1, None, "TEST_EMPTY_STR"),
         ]
     )
-    def test_get_project_id_from_cli(
+    def test_get_default_project_id_from_cli(
         self, returncode: int, project_name, test_data_key: str
     ):
         # Test data
@@ -150,6 +189,25 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         # Assertions
         mock_run.assert_called_once_with("gcloud config get-value project")
         assert actual == project_name
+
+    @parameterized.expand(["TEST_PROJECTS"])
+    def test_prompt_select_project(self, test_data_key: str):
+        # Test data
+        test_projects: list[dict[str, str]] = self.data[test_data_key]
+        test_default_id = test_projects[0]["projectId"]
+
+        # Mock
+        mock_prompt = self.mocker.patch.object(self.setup_cli, "prompt_select_one")
+        mock_prompt.return_value = test_projects[0]
+
+        # Actual call
+        selected_project = self.setup_cli.prompt_select_project(
+            test_projects, test_default_id
+        )
+
+        # Assertions
+        mock_prompt.assert_called_once()
+        assert selected_project == mock_prompt.return_value
 
     @parameterized.expand(
         [
@@ -181,20 +239,23 @@ class TestGcpProviderSetup(BaseCase, TestCase):
 
     @parameterized.expand(
         [
-            ("TEST_PROJECT", "", 1),
-            ("TEST_PROJECT", "[]", 0),
+            ("TEST_PROJECT", "TEST_EMPTY_STR", 1),
+            ("TEST_PROJECT", "TEST_EMPTY_LIST", 0),
+            ("TEST_PROJECT", "TEST_ORGANIZATION_EMPTY", 0),
         ]
     )
     def test_get_organization_id_from_cli_failure(
-        self, test_proj_data_key: str, stdout: str, returncode: int = 0
+        self, test_proj_data_key: str, test_out_data_key: str, returncode: int = 0
     ):
         # Test data
         test_proj_id: str = self.data[test_proj_data_key]
+        test_out_data = self.data[test_out_data_key]
+        test_out_data_json = json.dumps(test_out_data)
 
         # Mock
         mock_run = self.mocker.patch.object(self.setup_cli, "run_command")
         mock_run.return_value.returncode = returncode
-        mock_run.return_value.stdout = stdout
+        mock_run.return_value.stdout = test_out_data_json
 
         # Actual call
         actual = self.setup_cli.get_organization_id_from_cli(test_proj_id)
@@ -284,6 +345,52 @@ class TestGcpProviderSetup(BaseCase, TestCase):
             "Select a service account:", test_service_accounts, "email"
         )
         assert actual == mock_prompt.return_value
+
+    @parameterized.expand(
+        [
+            (
+                222222222222,
+                "test2-service-account@domain.com",
+                "TEST_GCP_SPECIFIC_SETTINGS",
+                "tests/data/test_gcp_service_account.json",
+            ),
+            (
+                333333333333,
+                "test3-service-account@domain.com",
+                "TEST_GCP_SPECIFIC_SETTINGS",
+            ),
+        ]
+    )
+    def test_get_current_key_file_path(
+        self,
+        test_organization_id: int,
+        test_service_account_email: str,
+        test_data_key_settings: str,
+        return_val: Optional[str] = None,
+    ):
+        # Test data
+        if return_val:
+            test_settings = GcpSpecificSettings.from_dict(
+                self.data[test_data_key_settings]
+            )
+        else:
+            test_settings = None
+        test_provider_config: dict[tuple, GcpSpecificSettings] = {
+            (test_organization_id, test_service_account_email): test_settings
+        }
+
+        # Mock
+        self.mocker.patch.dict(
+            self.setup_cli.settings.providers[ProviderEnum.GCP], test_provider_config
+        )
+
+        # Actual call
+        actual = self.setup_cli.get_current_key_file_path(
+            test_organization_id, test_service_account_email
+        )
+
+        # Assertions
+        assert actual == return_val
 
     def test_generate_service_account_email(self):
         # Test data

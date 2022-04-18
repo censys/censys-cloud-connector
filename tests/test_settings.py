@@ -82,7 +82,7 @@ class TestSettings(BaseCase, TestCase):
     @parameterized.expand(__connectors__)
     def test_scan_all(self, provider_name: str):
         provider = ProviderEnum[provider_name]
-        self.settings.providers[provider] = []
+        self.settings.providers[provider] = {}
         mock_connector = self.mocker.MagicMock()
         mock_connector().scan_all.return_value = []
         mock_provider = self.mocker.MagicMock()
@@ -100,6 +100,9 @@ class TestSettings(BaseCase, TestCase):
 class ExampleProviderSettings(ProviderSpecificSettings):
     advanced: bool
     other: str
+
+    def get_provider_key(self):
+        pass
 
 
 class TestProviderSpecificSettings(BaseCase):

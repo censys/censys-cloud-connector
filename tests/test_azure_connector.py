@@ -65,14 +65,23 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
         # Test data
         test_single_subscription = self.data["TEST_CREDS"]
         test_multiple_subscriptions = test_single_subscription.copy()
+        test_multiple_subscriptions["client_id"] = test_multiple_subscriptions[
+            "client_id"
+        ].replace("x", "y")
         test_multiple_subscriptions["subscription_id"] = [
             test_multiple_subscriptions["subscription_id"],
             test_multiple_subscriptions["subscription_id"].replace("x", "y"),
         ]
-        provider_settings = [
-            AzureSpecificSettings.from_dict(test_single_subscription),
-            AzureSpecificSettings.from_dict(test_multiple_subscriptions),
-        ]
+        provider_settings: dict[tuple, AzureSpecificSettings] = {
+            (
+                test_single_subscription["tenant_id"],
+                test_single_subscription["client_id"],
+            ): AzureSpecificSettings.from_dict(test_single_subscription),
+            (
+                test_multiple_subscriptions["tenant_id"],
+                test_multiple_subscriptions["client_id"],
+            ): AzureSpecificSettings.from_dict(test_multiple_subscriptions),
+        }
         self.connector.settings.providers[self.connector.provider] = provider_settings
 
         # Mock scan

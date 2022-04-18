@@ -1,5 +1,5 @@
 """GCP provider-specific settings."""
-from pydantic import Field, FilePath
+from pydantic import EmailStr, Field, FilePath
 
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.settings import ProviderSpecificSettings
@@ -12,11 +12,13 @@ class GcpSpecificSettings(ProviderSpecificSettings):
 
     organization_id: int = Field(
         gt=1,
+        lt=10**12,
         description="GCP organization ID.",
     )
     service_account_json_file: FilePath = Field(
         description="Path to service account json file."
     )
+    service_account_email: EmailStr = Field(description="Service account email.")
 
     def parent(self) -> str:
         """Name of the organization assets should belong to.
@@ -27,3 +29,11 @@ class GcpSpecificSettings(ProviderSpecificSettings):
             str: Parent.
         """
         return f"organizations/{self.organization_id}"
+
+    def get_provider_key(self) -> tuple[int, str]:
+        """Get provider key.
+
+        Returns:
+            tuple[int, str]: Provider key.
+        """
+        return self.organization_id, self.service_account_email

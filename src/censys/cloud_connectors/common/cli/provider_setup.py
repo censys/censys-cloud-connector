@@ -104,6 +104,7 @@ class ProviderSetupCli(BaseCli):
     provider: ProviderEnum
     provider_specific_settings_class: type[ProviderSpecificSettings]
     settings: Settings
+    extra_instructions: dict[str, str] = {}
 
     def __init__(self, settings: Settings):
         """Initialize the provider setup cli command.
@@ -115,6 +116,9 @@ class ProviderSetupCli(BaseCli):
 
     def setup(self) -> None:
         """Setup the provider.
+
+        This function is called by the CLI when the user selects the manual
+        input configuration option.
 
         Raises:
             KeyboardInterrupt: If the user cancels the setup.
@@ -140,9 +144,10 @@ class ProviderSetupCli(BaseCli):
         Args:
             provider_settings (ProviderSpecificSettings): The provider-specific settings to add.
         """
-        # TODO: Confirm that another provider is not already configured for the above organization ID
-        # This might be easier to do with a tuple of (organization_ids or subscription_ids)
-        self.settings.providers[self.provider].append(provider_settings)
+        # TODO: Confirm overwrite if it exists
+        self.settings.providers[self.provider][
+            provider_settings.get_provider_key()
+        ] = provider_settings
 
     def prompt_for_settings(self) -> ProviderSpecificSettings:
         """Prompt for settings.
@@ -165,6 +170,7 @@ class ProviderSetupCli(BaseCli):
                 "name": field.name,
                 "message": f"{snake_case_to_english(field.name)}:",
                 "validate": generate_validation(field),
+                "instruction": self.extra_instructions.get(field.name),
             }
             field_type = field.type_
             outer_type = field.outer_type_
@@ -178,6 +184,10 @@ class ProviderSetupCli(BaseCli):
             elif lenient_issubclass(field_type, (int, float)):
                 question["type"] = "number"
                 question["float_allowed"] = lenient_issubclass(field_type, float)
+                question["message"] = "Enter a " + question["message"]  # type: ignore
+                question["default"] = None
+                question["min_allowed"] = getattr(field_type, "gt", 0)
+                question["max_allowed"] = getattr(field_type, "lt", None)
             elif lenient_issubclass(field_type, str):
                 question["type"] = "input"
                 question["message"] = "Enter a " + question["message"]  # type: ignore
@@ -188,6 +198,7 @@ class ProviderSetupCli(BaseCli):
             elif lenient_issubclass(field_type, FilePath):
                 question["type"] = "filepath"
                 question["validate"] = PathValidator(is_file=True)
+                question["message"] = "Select a " + question["message"]  # type: ignore
             else:  # pragma: no cover
                 raise ValueError(f"Unsupported type for field {field.name}.")
 

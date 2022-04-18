@@ -41,6 +41,43 @@
 
   "TEST_PROJECT": "censys-example-project",
 
+  "TEST_PROJECTS":
+  [
+    {
+      "createTime": "xxxx-xx-xxxxx:xx:xx.xxxx",
+      "lifecycleState": "ACTIVE",
+      "name": "xxxx",
+      "parent": {
+        "id": "xxxxxxxxxxxx",
+        "type": "organization"
+      },
+      "projectId": "sample-project-i-a",
+      "projectNumber": "xxxxxxxa"
+    },
+    {
+      "createTime": "xxxx-xx-xxxxx:xx:xx.xxxx",
+      "lifecycleState": "ACTIVE",
+      "name": "xxxx",
+      "parent": {
+        "id": "xxxxxxxxxxxx",
+        "type": "organization"
+      },
+      "projectId": "sample-project-id-b",
+      "projectNumber": "xxxxxxxb"
+    },
+    {
+      "createTime": "xxxx-xx-xxxxx:xx:xx.xxxx",
+      "lifecycleState": "ACTIVE",
+      "name": "xxxx",
+      "parent": {
+        "id": "xxxxxxxxxxxx",
+        "type": "organization"
+      },
+      "projectId": "sample-project-i-c",
+      "projectNumber": "xxxxxxxc"
+    }
+  ],
+
   "TEST_ORGANIZATION": [
     {
       "id": "censys-example-project",
@@ -48,6 +85,17 @@
     },
     {
       "id": "502839482099",
+      "type": "organization"
+    }
+  ],
+
+  "TEST_ORGANIZATION_EMPTY": [
+    {
+      "id": "censys-example-project",
+      "type": "project"
+    },
+    {
+      "id": "",
       "type": "organization"
     }
   ],
@@ -90,5 +138,13 @@
     }
   ],
 
-  "TEST_SERVICE_ACCOUNT_EMAIL": "service-account-name@censys-example-project.iam.gserviceaccount.com"
+  "TEST_SERVICE_ACCOUNT_EMAIL": "service-account-name@censys-example-project.iam.gserviceaccount.com",
+
+  "TEST_GCP_SPECIFIC_SETTINGS": {
+    "provider": "gcp",
+    "organization_id": 222222222222,
+    "service_account_json_file": "tests/data/test_gcp_service_account.json",
+    "service_account_email": "test2-service-account@domain.com"
+  }
+
 }

@@ -2,6 +2,7 @@
 import collections
 import importlib
 import pathlib
+from abc import abstractmethod
 from typing import DefaultDict, Optional, OrderedDict, Union
 
 import yaml
@@ -11,12 +12,12 @@ from .enums import ProviderEnum
 
 
 def ordered_dict_representer(
-    dumper: yaml.Dumper, data: OrderedDict
+    dumper: yaml.SafeDumper, data: OrderedDict
 ) -> yaml.nodes.MappingNode:  # pragma: no cover
     """Represent a ordereddict as a mapping.
 
     Args:
-        dumper (yaml.Dumper): The dumper.
+        dumper (yaml.SafeDumper): The dumper.
         data (OrderedDict): The data to represent.
 
     Returns:
@@ -26,12 +27,12 @@ def ordered_dict_representer(
 
 
 def posix_path_representer(
-    dumper: yaml.Dumper, path: pathlib.PosixPath
+    dumper: yaml.SafeDumper, path: pathlib.PosixPath
 ) -> yaml.nodes.ScalarNode:  # pragma: no cover
     """Represent a path as a scalar.
 
     Args:
-        dumper (yaml.Dumper): The dumper.
+        dumper (yaml.SafeDumper): The dumper.
         path (pathlib.PosixPath): The path to represent.
 
     Returns:
@@ -84,14 +85,23 @@ class ProviderSpecificSettings(BaseSettings):
             data["provider"] = provider_name.title()
         return cls(**data)
 
+    @abstractmethod
+    def get_provider_key(self) -> tuple:
+        """Get the provider key.
+
+        Returns:
+            tuple: The provider key.
+        """
+        raise NotImplementedError
+
 
 class Settings(BaseSettings):
     """Settings for the Cloud Connector."""
 
     # Providers settings
-    providers: DefaultDict[
-        str, list[ProviderSpecificSettings]
-    ] = collections.defaultdict(list)
+    providers: DefaultDict[str, dict[tuple, ProviderSpecificSettings]] = DefaultDict(
+        dict
+    )
 
     # Required
     censys_api_key: str = Field(env="CENSYS_API_KEY", min_length=36, max_length=36)
@@ -105,12 +115,12 @@ class Settings(BaseSettings):
 
     # Toggle services
     # TODO: Add toggle services/rework this into providers.yml
-    scan_frequency: int = Field(default=-1)
-    search_ips: bool = Field(default=True, env="SEARCH_IPS")
-    search_containers: bool = Field(default=True, env="SEARCH_CONTAINERS")
-    search_databases: bool = Field(default=True, env="SEARCH_DATABASES")
-    search_dns: bool = Field(default=True, env="SEARCH_DNS")
-    search_storage: bool = Field(default=True, env="SEARCH_STORAGE")
+    # scan_frequency: int = Field(default=-1)
+    # search_ips: bool = Field(default=True, env="SEARCH_IPS")
+    # search_containers: bool = Field(default=True, env="SEARCH_CONTAINERS")
+    # search_databases: bool = Field(default=True, env="SEARCH_DATABASES")
+    # search_dns: bool = Field(default=True, env="SEARCH_DNS")
+    # search_storage: bool = Field(default=True, env="SEARCH_STORAGE")
 
     # Censys
     censys_beta_url: HttpUrl = Field(
@@ -161,13 +171,15 @@ class Settings(BaseSettings):
                 provider.module_path()
             ).__settings__
             provider_settings = provider_settings_cls.from_dict(provider_config)
-            self.providers[provider].append(provider_settings)
+            self.providers[provider][
+                provider_settings.get_provider_key()
+            ] = provider_settings
 
     def write_providers_config_file(self):
         """Write providers config file."""
         all_providers = []
         for provider_settings in self.providers.values():
-            all_providers.extend([pss.as_dict() for pss in provider_settings])
+            all_providers.extend([pss.as_dict() for pss in provider_settings.values()])
         with open(self.providers_config_file, "w") as f:
             yaml.safe_dump(all_providers, f, default_flow_style=False, sort_keys=False)
 

@@ -1,7 +1,8 @@
 {
   "TEST_CREDS": {
     "organization_id": "6543219870",
-    "service_account_json_file": "test_gcp_service_account.json"
+    "service_account_json_file": "test_gcp_service_account.json",
+    "service_account_email": "test2-service-account@domain.com"
   },
   "TEST_COMPUTE_ADDRESS": {
     "asset": {
