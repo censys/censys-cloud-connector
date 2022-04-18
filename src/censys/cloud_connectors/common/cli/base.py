@@ -106,7 +106,8 @@ def prompt(questions: InquirerPyQuestions, **kwargs) -> dict:
     if isinstance(questions, dict):
         questions = [questions]
     for question in questions:
-        # Add better instructions
+        if question.get("instruction") is not None:
+            continue
         if question.get("type") == "list":
             question["instruction"] = "(Use arrow keys)"
             if question.get("multiselect"):

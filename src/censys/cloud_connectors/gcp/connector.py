@@ -55,10 +55,10 @@ class GcpCloudConnector(CloudConnector):
 
     def scan_all(self):
         """Scan all Gcp Organizations."""
-        provider_settings: list[GcpSpecificSettings] = self.settings.providers.get(
-            self.provider, []
-        )
-        for provider_setting in provider_settings:
+        provider_settings: dict[
+            tuple, GcpSpecificSettings
+        ] = self.settings.providers.get(self.provider, {})
+        for provider_setting in provider_settings.values():
             self.provider_settings = provider_setting
             self.organization_id = provider_setting.organization_id
             self.scan()

@@ -110,10 +110,16 @@ class TestGcpConnector(BaseCase, TestCase):
         test_creds = self.data["TEST_CREDS"].copy()
         second_test_creds = test_creds.copy()
         second_test_creds["organization_id"] = 9876543210
-        provider_settings = [
-            GcpSpecificSettings.from_dict(test_creds),
-            GcpSpecificSettings.from_dict(second_test_creds),
-        ]
+        provider_settings: dict[tuple, GcpSpecificSettings] = {
+            (
+                test_creds["organization_id"],
+                test_creds["service_account_email"],
+            ): GcpSpecificSettings.from_dict(test_creds),
+            (
+                second_test_creds["organization_id"],
+                second_test_creds["service_account_email"],
+            ): GcpSpecificSettings.from_dict(second_test_creds),
+        }
         self.connector.settings.providers[self.connector.provider] = provider_settings
 
         # Mock
