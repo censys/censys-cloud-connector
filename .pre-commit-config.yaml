@@ -6,6 +6,22 @@
 #   pre-commit autoupdate
 fail_fast: true
 repos:
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.67.0
+    hooks:
+      - id: terraform_fmt
+        name: terraform-fmt
+  - repo: https://github.com/terraform-docs/terraform-docs
+    rev: v0.16.0
+    hooks:
+      - id: terraform-docs-go
+        name: terraform-docs for gcp func
+        args:
+          [
+            "-c",
+            "./.terraform-docs.yml",
+            "./terraform/google-scheduled-function",
+          ]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.2.0
     hooks:
@@ -24,7 +40,7 @@ repos:
       - id: markdownlint-fix
         name: fix markdownlint
   - repo: https://github.com/asottile/pyupgrade
-    rev: v2.31.1
+    rev: v2.32.0
     hooks:
       - id: pyupgrade
         args: [--py39-plus]
@@ -35,6 +51,7 @@ repos:
         entry: poetry run black .
         pass_filenames: false
         language: system
+        types: [python]
   - repo: local
     hooks:
       - id: system
@@ -42,6 +59,7 @@ repos:
         entry: poetry run isort .
         pass_filenames: false
         language: system
+        types: [python]
   - repo: local
     hooks:
       - id: system
@@ -49,6 +67,7 @@ repos:
         entry: poetry run flake8 .
         pass_filenames: false
         language: system
+        types: [python]
   - repo: local
     hooks:
       - id: system
@@ -56,3 +75,4 @@ repos:
         entry: poetry run mypy -p censys.cloud_connectors
         pass_filenames: false
         language: system
+        types: [python]

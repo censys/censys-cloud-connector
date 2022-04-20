@@ -6,7 +6,7 @@ from abc import abstractmethod
 from typing import DefaultDict, Optional, OrderedDict, Union
 
 import yaml
-from pydantic import BaseSettings, Field, HttpUrl, validate_arguments
+from pydantic import BaseSettings, Field, HttpUrl, validate_arguments, validator
 
 from .enums import ProviderEnum
 
@@ -99,16 +99,23 @@ class Settings(BaseSettings):
     """Settings for the Cloud Connector."""
 
     # Providers settings
-    providers: DefaultDict[str, dict[tuple, ProviderSpecificSettings]] = DefaultDict(
-        dict
-    )
+    providers: DefaultDict[
+        ProviderEnum, dict[tuple, ProviderSpecificSettings]
+    ] = DefaultDict(dict)
 
     # Required
     censys_api_key: str = Field(env="CENSYS_API_KEY", min_length=36, max_length=36)
 
     # Optional
     providers_config_file: str = Field(
-        default="providers.yml", env="PROVIDERS_CONFIG_FILE"
+        default="providers.yml",
+        env="PROVIDERS_CONFIG_FILE",
+        description="Providers config file",
+    )
+    secrets_dir: str = Field(
+        default="./secrets",
+        env="SECRETS_DIR",
+        description="Directory containing secrets",
     )
     logging_level: str = Field(default="INFO", env="LOGGING_LEVEL")
     dry_run: bool = Field(default=False, env="DRY_RUN")
@@ -126,6 +133,22 @@ class Settings(BaseSettings):
     censys_beta_url: HttpUrl = Field(
         default="https://app.censys.io/api/beta", env="CENSYS_BETA_URL"
     )
+
+    @validator("secrets_dir")
+    def validate_secrets_dir(cls, v):
+        """Validate secrets_dir.
+
+        Ensure value doesn't end with a slash
+
+        Args:
+            v (str): The value to validate.
+
+        Returns:
+            str: The validated value.
+        """
+        if v.endswith("/"):
+            v = v[:-1]
+        return v
 
     class Config:
         """Config for pydantic."""
@@ -167,7 +190,7 @@ class Settings(BaseSettings):
                 raise ValueError(f"Provider name is not valid: {provider_name}") from e
             if selected_providers and provider not in selected_providers:
                 continue
-            provider_settings_cls = importlib.import_module(
+            provider_settings_cls: ProviderSpecificSettings = importlib.import_module(
                 provider.module_path()
             ).__settings__
             provider_settings = provider_settings_cls.from_dict(provider_config)

@@ -5,6 +5,7 @@ from parameterized import parameterized
 
 from censys.cloud_connectors.common.cli import main
 from censys.cloud_connectors.common.cli.commands import config, scan
+from censys.cloud_connectors.common.enums import ProviderEnum
 from tests.base_case import BaseCase
 
 
@@ -35,17 +36,10 @@ class TestCli(BaseCase, TestCase):
 
 class TestConfigCli(BaseCase, TestCase):
     def test_cli_config(self):
-        # Test data
-        mock_connectors = [
-            "azure",
-            "test_connector_2",
-        ]
-
         # Mock
-        self.mocker.patch("censys.cloud_connectors.__connectors__", mock_connectors)
         mock_prompt = self.mocker.patch(
             "censys.cloud_connectors.common.cli.commands.config.prompt",
-            return_value={"provider": "azure"},
+            return_value={"provider": ProviderEnum.AZURE},
         )
 
         mock_args = self.mocker.MagicMock()
@@ -67,23 +61,17 @@ class TestConfigCli(BaseCase, TestCase):
 
         # Assertions
         assert mock_prompt.call_count == 1
-        mock_importlib.assert_called_once_with("censys.cloud_connectors.azure")
+        mock_importlib.assert_called_once_with(
+            "censys.cloud_connectors.azure_connector"
+        )
         mock_settings.return_value.read_providers_config_file.assert_called_once_with()
         mock_setup_cls.assert_called_once()
         mock_setup_cls.return_value.setup.assert_called_once()
 
     def test_cli_config_provider_option(self):
-        # Test data
-        mock_connectors = [
-            "test_connector_1",
-            "azure",
-        ]
-
         # Mock
-        self.mocker.patch("censys.cloud_connectors.__connectors__", mock_connectors)
-
         mock_args = self.mocker.MagicMock()
-        mock_args.provider = mock_connectors[1]
+        mock_args.provider = ProviderEnum.GCP
 
         mock_importlib = self.mocker.patch(
             "censys.cloud_connectors.common.cli.commands.config.importlib.import_module"
@@ -100,7 +88,7 @@ class TestConfigCli(BaseCase, TestCase):
         config.cli_config(mock_args)
 
         # Assertions
-        mock_importlib.assert_called_once_with("censys.cloud_connectors.azure")
+        mock_importlib.assert_called_once_with("censys.cloud_connectors.gcp_connector")
         mock_settings.return_value.read_providers_config_file.assert_called_once_with()
         mock_setup_cls.assert_called_once()
         mock_setup_cls.return_value.setup.assert_called_once()
@@ -128,45 +116,9 @@ class TestScanCli(BaseCase, TestCase):
         mock_settings.return_value.scan_all.assert_called_once()
 
     def test_cli_scan_provider_option(self):
-        # Test data
-        mock_connectors = [
-            "test_connector_1",
-            "azure",
-        ]
-
         # Mock
-        self.mocker.patch("censys.cloud_connectors.__connectors__", mock_connectors)
-
         mock_args = self.mocker.MagicMock()
-        mock_args.provider = [mock_connectors[1]]
-
-        mock_settings = self.mocker.patch(
-            "censys.cloud_connectors.common.cli.commands.scan.Settings"
-        )
-        mock_settings.return_value.read_providers_config_file = self.mocker.Mock()
-        mock_settings.return_value.scan_all = self.mocker.Mock()
-
-        # Actual call
-        scan.cli_scan(mock_args)
-
-        # Assertions
-        mock_settings.return_value.read_providers_config_file.assert_called_once_with(
-            mock_args.provider
-        )
-        mock_settings.return_value.scan_all.assert_called_once_with()
-
-    def test_cli_scan_provider_option(self):
-        # Test data
-        mock_connectors = [
-            "test_connector_1",
-            "azure",
-        ]
-
-        # Mock
-        self.mocker.patch("censys.cloud_connectors.__connectors__", mock_connectors)
-
-        mock_args = self.mocker.MagicMock()
-        mock_args.provider = [mock_connectors[1]]
+        mock_args.provider = [ProviderEnum.AZURE]
 
         mock_settings = self.mocker.patch(
             "censys.cloud_connectors.common.cli.commands.scan.Settings"

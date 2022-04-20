@@ -23,7 +23,7 @@ class CloudAssetTest(BaseCase, TestCase):
         cloud_asset = CloudAsset(
             type=TEST_TYPE,
             value=TEST_VALUE,
-            csp_label=ProviderEnum.AWS,
+            csp_label=ProviderEnum.GCP,
             scan_data=TEST_SCAN_DATA,
             uid=TEST_UID,
         )
@@ -31,13 +31,13 @@ class CloudAssetTest(BaseCase, TestCase):
         assert cloud_asset.to_dict() == {
             "type": TEST_TYPE,
             "value": TEST_VALUE,
-            "cspLabel": ProviderEnum.AWS.label(),
+            "cspLabel": ProviderEnum.GCP.label(),
             "scanData": '{"test_scan_data": "test_scan_data"}',
         }
 
     def test_object_storage_asset(self):
         cloud_asset = ObjectStorageAsset(
-            value=TEST_VALUE, csp_label=ProviderEnum.AWS, uid=TEST_UID
+            value=TEST_VALUE, csp_label=ProviderEnum.GCP, uid=TEST_UID
         )
         assert cloud_asset.type == "OBJECT_STORAGE"
 

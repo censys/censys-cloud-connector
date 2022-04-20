@@ -3,7 +3,7 @@ name = "cloud-connectors-unified"
 version = "3.0.0"
 description = "Censys Cloud Connectors Unified"
 authors = ["Censys, Inc. <support@censys.io>"]
-license = "PROPRIETARY"
+license = "Apache-2.0"
 packages = [{ include = "censys/cloud_connectors", from = "src" }]
 
 [tool.poetry.scripts]
@@ -33,6 +33,8 @@ azure-mgmt-resource = { version = "20.0.0", optional = true }
 azure-mgmt-sql = { version = "^3.0.1", optional = true }
 azure-mgmt-storage = { version = "^19.1.0", optional = true }
 azure-storage-blob = { version = "^12.9.0", optional = true }
+# Specified sys_platform to avoid issues with platform_system
+pywin32 = {version = "^303", optional = true, markers = "sys_platform == \"win32\""}
 # GCP
 google-auth = { version = "^2.6.0", optional = true }
 google-cloud-resource-manager = { version = "^1.4.1", optional = true }

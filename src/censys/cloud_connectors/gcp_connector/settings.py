@@ -1,5 +1,7 @@
 """GCP provider-specific settings."""
-from pydantic import EmailStr, Field, FilePath
+from pathlib import Path
+
+from pydantic import EmailStr, Field
 
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.settings import ProviderSpecificSettings
@@ -8,14 +10,14 @@ from censys.cloud_connectors.common.settings import ProviderSpecificSettings
 class GcpSpecificSettings(ProviderSpecificSettings):
     """GCP specific settings."""
 
-    provider: str = ProviderEnum.GCP
+    provider = ProviderEnum.GCP
 
     organization_id: int = Field(
         gt=1,
         lt=10**12,
         description="GCP organization ID.",
     )
-    service_account_json_file: FilePath = Field(
+    service_account_json_file: Path = Field(
         description="Path to service account json file."
     )
     service_account_email: EmailStr = Field(description="Service account email.")

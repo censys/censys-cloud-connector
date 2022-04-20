@@ -5,14 +5,15 @@ from unittest.mock import MagicMock
 import pytest
 from parameterized import parameterized
 
+from censys.cloud_connectors.common.enums import ProviderEnum
 from tests.base_connector_case import BaseConnectorCase
 
 failed_import = False
 try:
     from azure.core.exceptions import ClientAuthenticationError, HttpResponseError
 
-    from censys.cloud_connectors.azure import AzureCloudConnector
-    from censys.cloud_connectors.azure.settings import AzureSpecificSettings
+    from censys.cloud_connectors.azure_connector import AzureCloudConnector
+    from censys.cloud_connectors.azure_connector.settings import AzureSpecificSettings
 except ImportError:
     failed_import = True
 
@@ -26,9 +27,10 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
         super().setUp()
         with open(self.shared_datadir / "test_azure_responses.json") as f:
             self.data = json.load(f)
-        self.settings.providers["azure"] = [
-            AzureSpecificSettings.from_dict(self.data["TEST_CREDS"])
-        ]
+        test_azure_settings = AzureSpecificSettings.from_dict(self.data["TEST_CREDS"])
+        self.settings.providers[ProviderEnum.AZURE] = {
+            test_azure_settings.get_provider_key(): test_azure_settings
+        }
         self.connector = AzureCloudConnector(self.settings)
         # Set subscription_id as its required for certain calls
         self.connector.subscription_id = self.data["TEST_CREDS"]["subscription_id"]
@@ -43,7 +45,7 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
 
     def mock_client(self, client_name: str) -> MagicMock:
         return self.mocker.patch(
-            f"censys.cloud_connectors.azure.connector.{client_name}"
+            f"censys.cloud_connectors.azure_connector.connector.{client_name}"
         )
 
     @parameterized.expand([(ClientAuthenticationError,)])
@@ -72,15 +74,12 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
             test_multiple_subscriptions["subscription_id"],
             test_multiple_subscriptions["subscription_id"].replace("x", "y"),
         ]
+        test_azure_settings = [
+            AzureSpecificSettings.from_dict(test_single_subscription),
+            AzureSpecificSettings.from_dict(test_multiple_subscriptions),
+        ]
         provider_settings: dict[tuple, AzureSpecificSettings] = {
-            (
-                test_single_subscription["tenant_id"],
-                test_single_subscription["client_id"],
-            ): AzureSpecificSettings.from_dict(test_single_subscription),
-            (
-                test_multiple_subscriptions["tenant_id"],
-                test_multiple_subscriptions["client_id"],
-            ): AzureSpecificSettings.from_dict(test_multiple_subscriptions),
+            p.get_provider_key(): p for p in test_azure_settings
         }
         self.connector.settings.providers[self.connector.provider] = provider_settings
 

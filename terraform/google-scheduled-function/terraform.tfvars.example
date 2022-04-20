@@ -1,0 +1,9 @@
+# Required Variables
+region = "us-central1"
+project_id = ""
+censys_api_key = ""
+
+# Additional Variables
+job_schedule = "0 */4 * * *"
+time_zone = "Etc/UTC"
+logging_level = "INFO"

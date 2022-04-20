@@ -22,7 +22,7 @@ class CaseInsensitiveEnumMeta(EnumMeta):
 class ProviderEnum(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     """Providers supported by Censys."""
 
-    AWS = "AWS"
+    # AWS = "AWS"
     AZURE = "Azure"
     GCP = "GCP"
 
@@ -48,4 +48,4 @@ class ProviderEnum(str, Enum, metaclass=CaseInsensitiveEnumMeta):
         Returns:
             str: The module path of the provider.
         """
-        return f"censys.cloud_connectors.{self.name.lower()}"
+        return f"censys.cloud_connectors.{self.name.lower()}_connector"
