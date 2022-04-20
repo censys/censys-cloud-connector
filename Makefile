@@ -1,7 +1,7 @@
 SHELL:=/usr/bin/env bash
 
-APP_NAME        := cloud-connector
-REGISTRY_NAME   := gcr.io/censys-io
+APP_NAME        := censys-cloud-connector
+REGISTRY_NAME   := ghcr.io/censys
 DOCKER_TAG      := $$(git rev-parse HEAD)
 DOCKER_DS       := $$(date -u "+%Y-%m-%d_%H-%M-%S")
 DOCKER_IMG      := ${REGISTRY_NAME}/${APP_NAME}:${DOCKER_TAG}

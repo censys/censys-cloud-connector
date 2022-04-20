@@ -3,7 +3,8 @@ import argparse
 
 from pydantic import ValidationError
 
-from censys.cloud_connectors import __connectors__, __version__
+from censys.cloud_connectors import __version__
+from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.logger import get_logger
 from censys.cloud_connectors.common.settings import Settings
 
@@ -45,11 +46,12 @@ def include_cli(parent_parser: argparse._SubParsersAction):
         description="Scan with Censys Cloud Connectors",
         help="scan with censys cloud connectors",
     )
+    provider_choices = [str(provider).lower() for provider in ProviderEnum]
     config_parser.add_argument(
         "-p",
         "--provider",
-        choices=__connectors__,
-        help=f"specify one or more cloud service provider(s): {__connectors__}",
+        choices=provider_choices,
+        help=f"specify one or more cloud service provider(s): {provider_choices}",
         metavar="PROVIDER",
         dest="provider",
         action="extend",

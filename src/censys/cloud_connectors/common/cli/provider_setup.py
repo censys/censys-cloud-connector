@@ -1,10 +1,10 @@
 """Base for all provider-specific setup cli commands."""
+from pathlib import Path
 from typing import get_origin
 
 from InquirerPy import prompt
 from InquirerPy.validator import PathValidator
 from prompt_toolkit.validation import Document, ValidationError, Validator
-from pydantic import FilePath
 from pydantic.fields import ModelField
 from pydantic.utils import lenient_issubclass
 
@@ -195,10 +195,12 @@ class ProviderSetupCli(BaseCli):
                 # TODO: Is this something we want?
                 if "secret" in field.name.lower():
                     question["type"] = "password"
-            elif lenient_issubclass(field_type, FilePath):
+            elif lenient_issubclass(field_type, Path):
                 question["type"] = "filepath"
-                question["validate"] = PathValidator(is_file=True)
                 question["message"] = "Select a " + question["message"]  # type: ignore
+                question["default"] = self.settings.secrets_dir + "/"
+                question["filter"] = lambda path_str: Path(path_str).name
+                question["validate"] = PathValidator(is_file=True)
             else:  # pragma: no cover
                 raise ValueError(f"Unsupported type for field {field.name}.")
 

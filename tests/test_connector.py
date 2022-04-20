@@ -13,7 +13,7 @@ from tests.base_connector_case import BaseConnectorCase
 
 
 class ExampleCloudConnector(CloudConnector):
-    provider = ProviderEnum.AWS
+    provider = ProviderEnum.GCP
 
     def get_seeds(self):
         return super().get_seeds()
@@ -65,7 +65,7 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
 
     def test_add_cloud_asset(self):
         asset = CloudAsset(
-            type="TEST", value="test-value", csp_label=ProviderEnum.AWS, uid="test-uid"
+            type="TEST", value="test-value", csp_label=ProviderEnum.GCP, uid="test-uid"
         )
         self.connector.add_cloud_asset(asset)
         test_uid = self.connector.label_prefix + "test-uid"
@@ -98,7 +98,7 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
     def test_submit_cloud_assets(self):
         # Test data
         asset = CloudAsset(
-            type="TEST", value="test-value", csp_label=ProviderEnum.AWS, uid="test-uid"
+            type="TEST", value="test-value", csp_label=ProviderEnum.GCP, uid="test-uid"
         )
         self.connector.add_cloud_asset(asset)
 
@@ -119,7 +119,7 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
     def test_fail_submit_cloud_assets(self):
         # Test data
         asset = CloudAsset(
-            type="TEST", value="test-value", csp_label=ProviderEnum.AWS, uid="test-uid"
+            type="TEST", value="test-value", csp_label=ProviderEnum.GCP, uid="test-uid"
         )
         self.connector.add_cloud_asset(asset)
 

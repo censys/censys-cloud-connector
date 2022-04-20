@@ -1,6 +1,4 @@
 import json
-import os.path
-from tempfile import NamedTemporaryFile
 from typing import Optional
 from unittest import TestCase
 
@@ -9,9 +7,9 @@ from parameterized import parameterized
 
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.settings import Settings
-from censys.cloud_connectors.gcp import __provider_setup__
-from censys.cloud_connectors.gcp.enums import GcpRoles
-from censys.cloud_connectors.gcp.settings import GcpSpecificSettings
+from censys.cloud_connectors.gcp_connector import __provider_setup__
+from censys.cloud_connectors.gcp_connector.enums import GcpRoles
+from censys.cloud_connectors.gcp_connector.settings import GcpSpecificSettings
 from tests.base_case import BaseCase
 
 failed_import = False
@@ -29,7 +27,10 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         super().setUp()
         with open(self.shared_datadir / "test_gcp_cli_responses.json") as f:
             self.data = json.load(f)
-        self.settings = Settings(censys_api_key=self.consts["censys_api_key"])
+        self.settings = Settings(
+            censys_api_key=self.consts["censys_api_key"],
+            secrets_dir=str(self.shared_datadir),
+        )
         self.setup_cli = __provider_setup__(self.settings)
 
     @parameterized.expand(
@@ -352,7 +353,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
                 222222222222,
                 "test2-service-account@domain.com",
                 "TEST_GCP_SPECIFIC_SETTINGS",
-                "tests/data/test_gcp_service_account.json",
+                "test_gcp_service_account.json",
             ),
             (
                 333333333333,
@@ -370,9 +371,10 @@ class TestGcpProviderSetup(BaseCase, TestCase):
     ):
         # Test data
         if return_val:
-            test_settings = GcpSpecificSettings.from_dict(
-                self.data[test_data_key_settings]
-            )
+            test_creds = self.data[test_data_key_settings]
+            if service_account_json_file := test_creds.get("service_account_json_file"):
+                test_creds["service_account_json_file"] = service_account_json_file
+            test_settings = GcpSpecificSettings.from_dict(test_creds)
         else:
             test_settings = None
         test_provider_config: dict[tuple, GcpSpecificSettings] = {
@@ -445,23 +447,20 @@ class TestGcpProviderSetup(BaseCase, TestCase):
 
     @parameterized.expand(
         [
-            (True, True, True),
-            (False, False),
-            (True, False),
+            (True, True),
+            (False,),
         ]
     )
     def test_create_service_account(
         self,
         confirmation_answer: bool = True,
-        should_file_exist: bool = True,
         expected_return: bool = False,
     ):
         # Test data
         test_organization_id = 6549873210
         test_project_id = "test-project-id"
         test_service_account_name = "test-service-account"
-        test_key_file = NamedTemporaryFile()
-        test_key_file_path = test_key_file.name
+        test_key_file_path = "test-project-key.json"
 
         # Mock
         mock_print_command = self.mocker.patch.object(self.setup_cli, "print_command")
@@ -469,11 +468,6 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         mock_prompt.return_value = {"create_service_account": confirmation_answer}
         mock_run = self.mocker.patch.object(self.setup_cli, "run_command")
         mock_run.return_value.returncode = 0
-        mock_exists = None
-        if not should_file_exist:
-            mock_exists = self.mocker.patch.object(
-                os.path, "exists", return_value=False
-            )
 
         # Actual call
         actual_return = self.setup_cli.create_service_account(
@@ -488,8 +482,6 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         mock_prompt.assert_called_once()
         if confirmation_answer:
             mock_run.assert_called()
-            if mock_exists is not None:
-                mock_exists.assert_called_once_with(test_key_file_path)
         if expected_return:
             assert actual_return == test_key_file_path
         else:
@@ -503,16 +495,14 @@ class TestGcpProviderSetup(BaseCase, TestCase):
 
     @parameterized.expand(
         [
-            (True, True, True),
-            (False, False, False),
-            (True, False, False),
-            (True, False, False, 1),
+            (True, True),
+            (False, False),
+            (True, False, 1),
         ]
     )
     def test_enable_service_account(
         self,
         enable_service_account: bool = True,
-        should_file_exist: bool = True,
         expected_return: bool = True,
         returncode: int = 0,
     ):
@@ -520,8 +510,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         test_organization_id = 6543219870
         test_project_id = "test-project-id"
         test_service_account_name = "test-service-account"
-        test_key_file = NamedTemporaryFile()
-        test_key_file_path = test_key_file.name
+        test_key_file_path = "test-project-key.json"
 
         # Mock
         mock_print_command = self.mocker.patch.object(self.setup_cli, "print_command")
@@ -529,9 +518,6 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         mock_prompt.return_value = {"enable_service_account": enable_service_account}
         mock_run = self.mocker.patch.object(self.setup_cli, "run_command")
         mock_run.return_value.returncode = returncode
-        mock_exists = self.mocker.patch.object(
-            os.path, "exists", return_value=should_file_exist
-        )
 
         # Actual call
         actual_return = self.setup_cli.enable_service_account(
@@ -546,8 +532,6 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         mock_prompt.assert_called_once()
         if enable_service_account:
             mock_run.assert_called()
-            if returncode == 0:
-                mock_exists.assert_called_once_with(test_key_file_path)
         if expected_return:
             assert actual_return == test_key_file_path
         else:

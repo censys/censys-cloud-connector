@@ -13,5 +13,5 @@
     - yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
 - provider: gcp
   organization_id: 222222222222
-  service_account_json_file: tests/data/test_gcp_service_account.json
+  service_account_json_file: test_gcp_service_account.json
   service_account_email: test2-service-account@domain.com

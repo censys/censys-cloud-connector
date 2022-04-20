@@ -7,9 +7,9 @@ from parameterized import parameterized
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.seed import Seed
 from censys.cloud_connectors.common.settings import Settings
-from censys.cloud_connectors.gcp.connector import GcpCloudConnector
-from censys.cloud_connectors.gcp.enums import GcpSecurityCenterResourceTypes
-from censys.cloud_connectors.gcp.settings import GcpSpecificSettings
+from censys.cloud_connectors.gcp_connector.connector import GcpCloudConnector
+from censys.cloud_connectors.gcp_connector.enums import GcpSecurityCenterResourceTypes
+from censys.cloud_connectors.gcp_connector.settings import GcpSpecificSettings
 from tests.base_case import BaseCase
 
 failed_import = False
@@ -25,19 +25,23 @@ class TestGcpConnector(BaseCase, TestCase):
         super().setUp()
         with open(self.shared_datadir / "test_gcp_responses.json") as f:
             self.data = json.load(f)
-        self.settings = Settings(censys_api_key=self.consts["censys_api_key"])
+        self.settings = Settings(
+            censys_api_key=self.consts["censys_api_key"],
+            secrets_dir=str(self.shared_datadir),
+        )
         test_creds = self.data["TEST_CREDS"]
         # Ensure the service account json file exists
-        test_creds["service_account_json_file"] = str(
-            self.shared_datadir / test_creds["service_account_json_file"]
-        )
-        self.settings.providers["gcp"] = [GcpSpecificSettings.from_dict(test_creds)]
+        test_creds["service_account_json_file"] = test_creds[
+            "service_account_json_file"
+        ]
+        test_gcp_settings = GcpSpecificSettings.from_dict(test_creds)
+        self.settings.providers[ProviderEnum.GCP] = {
+            test_gcp_settings.get_provider_key(): test_gcp_settings
+        }
         self.connector = GcpCloudConnector(self.settings)
         self.connector.organization_id = self.data["TEST_CREDS"]["organization_id"]
         self.connector.credentials = self.mocker.MagicMock()
-        self.connector.provider_settings = GcpSpecificSettings.from_dict(
-            self.data["TEST_CREDS"]
-        )
+        self.connector.provider_settings = test_gcp_settings
 
     def tearDown(self) -> None:
         # Reset the deaultdicts as they are immutable
@@ -72,7 +76,7 @@ class TestGcpConnector(BaseCase, TestCase):
     def test_scan(self):
         # Mock
         mock_sc_client = self.mocker.patch(
-            "censys.cloud_connectors.gcp.connector.securitycenter_v1.SecurityCenterClient"
+            "censys.cloud_connectors.gcp_connector.connector.securitycenter_v1.SecurityCenterClient"
         )
         mock_scan = self.mocker.patch.object(
             self.connector.__class__.__bases__[0], "scan"
@@ -88,7 +92,7 @@ class TestGcpConnector(BaseCase, TestCase):
     def test_scan_fail(self):
         # Mock
         mock_credentials = self.mocker.patch(
-            "censys.cloud_connectors.gcp.connector.service_account.Credentials.from_service_account_file",
+            "censys.cloud_connectors.gcp_connector.connector.service_account.Credentials.from_service_account_file",
             side_effect=ValueError,
         )
         mock_error_logger = self.mocker.patch.object(self.connector.logger, "error")
@@ -110,21 +114,18 @@ class TestGcpConnector(BaseCase, TestCase):
         test_creds = self.data["TEST_CREDS"].copy()
         second_test_creds = test_creds.copy()
         second_test_creds["organization_id"] = 9876543210
+        test_gcp_settings = [
+            GcpSpecificSettings.from_dict(test_creds),
+            GcpSpecificSettings.from_dict(second_test_creds),
+        ]
         provider_settings: dict[tuple, GcpSpecificSettings] = {
-            (
-                test_creds["organization_id"],
-                test_creds["service_account_email"],
-            ): GcpSpecificSettings.from_dict(test_creds),
-            (
-                second_test_creds["organization_id"],
-                second_test_creds["service_account_email"],
-            ): GcpSpecificSettings.from_dict(second_test_creds),
+            p.get_provider_key(): p for p in test_gcp_settings
         }
         self.connector.settings.providers[self.connector.provider] = provider_settings
 
         # Mock
         self.mocker.patch(
-            "censys.cloud_connectors.gcp.connector.service_account.Credentials.from_service_account_file",
+            "censys.cloud_connectors.gcp_connector.connector.service_account.Credentials.from_service_account_file",
             return_value=None,
         )
         mock_scan = self.mocker.patch.object(self.connector, "scan")
@@ -158,7 +159,7 @@ class TestGcpConnector(BaseCase, TestCase):
     def test_list_assets(self, filter: str):
         # Mock
         mock_sc_client = self.mocker.patch(
-            "censys.cloud_connectors.gcp.connector.securitycenter_v1.SecurityCenterClient"
+            "censys.cloud_connectors.gcp_connector.connector.securitycenter_v1.SecurityCenterClient"
         )
         self.connector.security_center_client = mock_sc_client.return_value
 

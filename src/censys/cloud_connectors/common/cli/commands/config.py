@@ -6,7 +6,6 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from censys.cloud_connectors import __connectors__
 from censys.cloud_connectors.common.cli.base import print, print_question, prompt
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.logger import get_logger
@@ -41,22 +40,24 @@ def cli_config(args: argparse.Namespace):
                 "message": "Select a provider:",
                 "choices": [
                     {
-                        "name": ProviderEnum[c],
-                        "value": c,
+                        "name": str(provider),
+                        "value": provider,
                     }
-                    for c in __connectors__
+                    for provider in ProviderEnum
                 ],
             }
         ]
         answers = prompt(questions)
         if not answers:  # pragma: no cover
             raise KeyboardInterrupt
-        provider_name = answers["provider"]
+        provider = answers["provider"]
     else:
         provider_name = args.provider
-        print_question(f"Provider: [info]{ProviderEnum[provider_name]}[/info]")
+        provider = ProviderEnum[provider_name.upper()]
+        print_question(f"Provider: [info]{provider}[/info]")
+
     provider_setup_cls = importlib.import_module(
-        f"censys.cloud_connectors.{provider_name}"
+        provider.module_path()
     ).__provider_setup__
 
     with contextlib.suppress(FileNotFoundError):
@@ -82,11 +83,12 @@ def include_cli(parent_parser: argparse._SubParsersAction):
         description="Configure Censys Cloud Connectors",
         help="configure censys cloud connectors",
     )
+    provider_choices = [str(provider).lower() for provider in ProviderEnum]
     config_parser.add_argument(
         "-p",
         "--provider",
-        choices=__connectors__,
-        help=f"specify a cloud service provider: {__connectors__}",
+        choices=provider_choices,
+        help=f"specify a cloud service provider: {provider_choices}",
         metavar="PROVIDER",
         dest="provider",
         default=None,

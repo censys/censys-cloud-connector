@@ -4,7 +4,7 @@ from unittest import TestCase
 import pytest
 from parameterized import parameterized
 
-from censys.cloud_connectors.azure import __provider_setup__
+from censys.cloud_connectors.azure_connector import __provider_setup__
 from censys.cloud_connectors.common.settings import Settings
 from tests.base_case import BaseCase
 

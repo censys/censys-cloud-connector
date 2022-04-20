@@ -1,5 +1,6 @@
 """Gcp Cloud Connector."""
 import json
+from pathlib import Path
 from typing import Optional
 
 from google.api_core import exceptions
@@ -31,14 +32,18 @@ class GcpCloudConnector(CloudConnector):
 
     def scan(self):
         """Scan Gcp."""
+        key_file_path = (
+            Path(self.settings.secrets_dir)
+            / self.provider_settings.service_account_json_file
+        )
         try:
             self.credentials = service_account.Credentials.from_service_account_file(
-                self.provider_settings.service_account_json_file
+                str(key_file_path)
             )
         except ValueError as e:
             self.logger.error(
                 "Failed to load service account credentials from"
-                f" {self.provider_settings.service_account_json_file}: {e}"
+                f" {key_file_path}: {e}"
             )
         self.security_center_client = securitycenter_v1.SecurityCenterClient(
             credentials=self.credentials

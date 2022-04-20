@@ -5,7 +5,6 @@ from unittest import TestCase
 import pytest
 from parameterized import parameterized
 
-from censys.cloud_connectors import __connectors__
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.settings import ProviderSpecificSettings, Settings
 from tests.base_case import BaseCase
@@ -15,7 +14,10 @@ from tests.utils import assert_same_yaml
 class TestSettings(BaseCase, TestCase):
     def setUp(self) -> None:
         super().setUp()
-        self.settings = Settings(censys_api_key=self.consts["censys_api_key"])
+        self.settings = Settings(
+            censys_api_key=self.consts["censys_api_key"],
+            secrets_dir=str(self.shared_datadir),
+        )
 
     def test_read_providers_config_file_empty(self):
         temp_providers = self.settings.providers.copy()
@@ -79,9 +81,8 @@ class TestSettings(BaseCase, TestCase):
         self.settings.write_providers_config_file()
         assert_same_yaml(original_file, temp_file.name)
 
-    @parameterized.expand(__connectors__)
-    def test_scan_all(self, provider_name: str):
-        provider = ProviderEnum[provider_name]
+    @parameterized.expand(list(ProviderEnum))
+    def test_scan_all(self, provider: ProviderEnum):
         self.settings.providers[provider] = {}
         mock_connector = self.mocker.MagicMock()
         mock_connector().scan_all.return_value = []
@@ -91,9 +92,7 @@ class TestSettings(BaseCase, TestCase):
             "importlib.import_module", return_value=mock_provider
         )
         self.settings.scan_all()
-        mock_import_module.assert_called_once_with(
-            f"censys.cloud_connectors.{provider_name}"
-        )
+        mock_import_module.assert_called_once_with(provider.module_path())
         mock_connector().scan_all.assert_called_once()
 
 

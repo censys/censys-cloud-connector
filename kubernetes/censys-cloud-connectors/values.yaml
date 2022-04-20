@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: gcr.io/censys-io/cloud-connector
+  repository: ghcr.io/censys/censys-cloud-connector
   pullPolicy: Always
   # Overrides the image tag whose default is latest.
   tag: ""

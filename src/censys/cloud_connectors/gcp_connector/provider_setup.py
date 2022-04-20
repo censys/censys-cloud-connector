@@ -1,8 +1,8 @@
 """Gcp specific setup CLI."""
 import json
-import os.path
 import re
 import uuid
+from pathlib import Path
 from typing import Optional
 
 from InquirerPy.separator import Separator
@@ -74,7 +74,12 @@ class GcpSetupCli(ProviderSetupCli):
         kwargs = {}
         if active_account and (active_email := active_account.get("account")):
             kwargs["default"] = active_email
-        return self.prompt_select_one("Select a GCP account:", choices, **kwargs)
+        selected_choice = self.prompt_select_one(
+            "Select a GCP account:", choices, **kwargs
+        )
+        if selected_choice:
+            return selected_choice.get("value") or selected_choice
+        return None
 
     def get_project_ids_from_cli(self) -> Optional[list[dict]]:
         """Get list of active projects which the user has access to from the CLI.
@@ -123,6 +128,7 @@ class GcpSetupCli(ProviderSetupCli):
             choice = {"name": project_id, "value": project}
             if project.get("projectId") == default_project_id:
                 default_project = project
+                choice["name"] += " (Active)"  # type: ignore
                 choices.insert(0, choice)
             else:
                 choices.append(choice)
@@ -193,7 +199,9 @@ class GcpSetupCli(ProviderSetupCli):
         return [
             account
             for account in service_accounts
-            if "@developer.gserviceaccount.com" not in account.get("email")
+            if (email := account.get("email"))
+            and "@developer.gserviceaccount.com" not in email
+            and "@appspot.gserviceaccount.com" not in email
         ]
 
     def prompt_select_service_account(
@@ -230,8 +238,8 @@ class GcpSetupCli(ProviderSetupCli):
             self.provider
         ]  # type: ignore
 
-        if current_key_file_path := current_provider_config.get(current_provider):
-            return str(current_key_file_path.service_account_json_file)
+        if provider_settings := current_provider_config.get(current_provider):
+            return provider_settings.service_account_json_file.name
 
         return None
 
@@ -305,20 +313,52 @@ class GcpSetupCli(ProviderSetupCli):
 
     @validate_arguments
     def generate_create_key_command(
-        self, service_account_email: str, key_file_path: str
+        self,
+        service_account_email: str,
+        key_file_path: str,
+        project_id: Optional[str] = None,
     ) -> list[str]:
         """Generate create key command.
 
         Args:
             service_account_email (str): Service account email.
             key_file_path (str): Key file path.
+            project_id (str): Project ID.
 
         Returns:
             list[str]: Create key commands.
         """
+        key_file_path = str(Path(self.settings.secrets_dir) / key_file_path)
+        cmd = f"gcloud iam service-accounts keys create {key_file_path} --iam-account {service_account_email}"
+        if project_id:
+            cmd += f" --project {project_id}"
         return [
             "# Generates and downloads a key for the service account",
-            f"gcloud iam service-accounts keys create {key_file_path} --iam-account {service_account_email}",
+            cmd,
+        ]
+
+    def generate_enable_api_command(
+        self,
+        apis: Optional[list[str]] = None,
+        project_id: Optional[str] = None,
+    ) -> list[str]:
+        """Generate enable API command.
+
+        Args:
+            apis (list[str]): APIs.
+            project_id (str): Project ID.
+
+        Returns:
+            list[str]: Enable API commands.
+        """
+        if not apis:
+            apis = ["securitycenter.googleapis.com"]
+        cmd = f"gcloud services enable {' '.join(apis)}"
+        if project_id:
+            cmd += f" --project {project_id}"
+        return [
+            "# Enable APIs",
+            cmd,
         ]
 
     @validate_arguments
@@ -341,10 +381,12 @@ class GcpSetupCli(ProviderSetupCli):
             Optional[str]: The service account key file.
         """
         commands = [
+            "# Create a service account",
             self.generate_create_service_account_command(
                 service_account_name, project_id=project_id
-            )
+            ),
         ]
+        commands.extend(self.generate_enable_api_command(project_id=project_id))
         service_account_email = self.generate_service_account_email(
             service_account_name, project_id
         )
@@ -356,7 +398,9 @@ class GcpSetupCli(ProviderSetupCli):
             )
         )
         commands.extend(
-            self.generate_create_key_command(service_account_email, key_file_path)
+            self.generate_create_key_command(
+                service_account_email, key_file_path, project_id
+            )
         )
 
         self.print_command("\n".join(commands))
@@ -382,28 +426,25 @@ class GcpSetupCli(ProviderSetupCli):
                 )
                 return None
 
-        # Check key_file_path exists
-        if not os.path.exists(key_file_path):
-            self.print_error(
-                f"Failed to create service account. Error: {key_file_path} does not exist"
-            )
-            return None
-
         return key_file_path
 
     @validate_arguments
     def generate_enable_service_account_command(
-        self, service_account_email: str
+        self, service_account_email: str, project_id: Optional[str] = None
     ) -> str:
         """Generate enable service account command.
 
         Args:
             service_account_email (str): Service account email.
+            project_id (str): Project ID.
 
         Returns:
             str: Enable service account command.
         """
-        return f"gcloud iam service-accounts enable {service_account_email}"
+        cmd = f"gcloud iam service-accounts enable {service_account_email}"
+        if project_id:
+            cmd += f" --project {project_id}"
+        return cmd
 
     @validate_arguments
     def enable_service_account(
@@ -418,8 +459,8 @@ class GcpSetupCli(ProviderSetupCli):
         Args:
             organization_id (int): Organization id.
             project_id (str): Project id.
-            service_account_name: The service account name.
-            key_file_path: The place to store the key file.
+            service_account_name (str): The service account name.
+            key_file_path (str): The place to store the key file.
 
         Returns:
             Optional[str]: The existing service account key file.
@@ -427,7 +468,13 @@ class GcpSetupCli(ProviderSetupCli):
         service_account_email = self.generate_service_account_email(
             service_account_name, project_id
         )
-        commands = [self.generate_enable_service_account_command(service_account_email)]
+        commands = [
+            "# Enable service account",
+            self.generate_enable_service_account_command(
+                service_account_email, project_id
+            ),
+        ]
+        commands.extend(self.generate_enable_api_command(project_id=project_id))
         commands.extend(
             self.generate_role_binding_command(
                 organization_id,
@@ -436,7 +483,9 @@ class GcpSetupCli(ProviderSetupCli):
             )
         )
         commands.extend(
-            self.generate_create_key_command(service_account_email, key_file_path)
+            self.generate_create_key_command(
+                service_account_email, key_file_path, project_id
+            )
         )
 
         self.print_command("\n".join(commands))
@@ -466,14 +515,6 @@ class GcpSetupCli(ProviderSetupCli):
                 )
                 return None
 
-        # Check key_file_path exists
-        if not os.path.exists(key_file_path):
-            self.print_error(
-                f"Failed to enable service account. Error: {key_file_path} does not exist"
-                # TODO: is this the correct error?
-            )
-            return None
-
         return key_file_path
 
     def prompt_to_create_service_account(
@@ -484,7 +525,7 @@ class GcpSetupCli(ProviderSetupCli):
         Args:
             organization_id (int): Organization id.
             project_id (str): Project id.
-            key_file_path: The place to store the key file.
+            key_file_path (str): The place to store the key file.
 
         Returns:
             str: The service account email.
@@ -559,8 +600,9 @@ class GcpSetupCli(ProviderSetupCli):
             self.print_error("No GCP Account selected.")
             exit(1)
 
-        account_email = selected_account["account"]
-        if selected_account.get("status") != "ACTIVE":
+        if selected_account.get("status") != "ACTIVE" and (
+            account_email := selected_account.get("account")
+        ):
             questions = [
                 {
                     "type": "confirm",
@@ -599,19 +641,19 @@ class GcpSetupCli(ProviderSetupCli):
 
         organization_id = self.get_organization_id_from_cli(project_id)
         if not organization_id:
-            self.print_error("Unable to get Organization ID from gcloud CLI.")
+            self.print_error("Unable to get Organization Id from gcloud CLI.")
             exit(1)
         questions = [
             {
                 "type": "input",
                 "name": "organization_id",
-                "message": "Confirm your organization ID:",
+                "message": "Confirm your Organization Id:",
                 "default": str(organization_id),
             }
         ]
         answers = self.prompt(questions)
         if not answers.get("organization_id"):
-            self.print_error("No Organization ID selected.")
+            self.print_error("No Organization Id selected.")
             exit(1)
 
         service_accounts = self.get_service_accounts_from_cli(project_id)
@@ -622,8 +664,9 @@ class GcpSetupCli(ProviderSetupCli):
             # TODO: tell user to check permissions
             exit(1)
 
+        create_new_service_account: Optional[str] = "Create new service account"
+        service_account_action = create_new_service_account
         if len(service_accounts) > 0:
-            create_new_service_account = "Create new service account"
             service_account_choices = [acct.get("email") for acct in service_accounts]
             answers = self.prompt(
                 {
@@ -637,29 +680,25 @@ class GcpSetupCli(ProviderSetupCli):
                     ],
                 },
             )
-            service_account_action: Optional[str] = answers.get(
-                "service_account_action"
-            )
-        else:
-            service_account_action = create_new_service_account
-
-        service_account_email: Optional[str] = None
+            service_account_action = answers.get("service_account_action")
 
         if service_account_action is None:
             self.print_error("No service account selected.")
             exit(1)
 
+        service_account_email: Optional[str] = None
         current_key_file_path: Optional[str] = None
         if service_account_action != create_new_service_account:
             service_account_email = service_account_action
             current_key_file_path = self.get_current_key_file_path(
                 organization_id, service_account_email
             )
+
         if current_key_file_path:
             default_path = current_key_file_path
         else:
             random_str = uuid.uuid4().hex.upper()[0:4]
-            default_path = f"./secrets/{project_id}-{random_str}-key.json"
+            default_path = f"{project_id}-{random_str}-key.json"
 
         answers = self.prompt(
             {
