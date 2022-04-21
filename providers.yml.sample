@@ -4,10 +4,25 @@
   client_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
   client_secret: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
   subscription_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-  # you can optionally specify more than one subscription_id
+  # The subscription_id field takes one or more subscription IDs.
   # subscription_id:
   #   - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
   #   - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  # The ignore field takes a list of Azure resource types to ignore during scanning.
+  # ignore:
+  #   - Microsoft.Network/publicIPAddresses
+  #   - Microsoft.ContainerInstance/containerGroups
+  #   - Microsoft.Sql/servers
+  #   - Microsoft.Network/dnszones
+  #   - Microsoft.Storage/storageAccounts
 - provider: gcp
-  service_account_json_file: service_account.json
   organization_id: xxxxxxxx-xxxx-xxxx
+  service_account_json_file: service_account.json
+  service_account_email: censys-cloud-connector@project-id.iam.gserviceaccount.com
+  # The ignore field takes a list of GCP resource types to ignore during scanning.
+  # ignore:
+  #   - google.compute.Address
+  #   - google.container.Cluster
+  #   - google.cloud.sql.Instance
+  #   - google.cloud.dns.ManagedZone
+  #   - google.cloud.storage.Bucket

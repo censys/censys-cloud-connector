@@ -58,7 +58,6 @@ class GcpSecurityCenterResourceTypes(str, Enum):
     CLOUD_SQL_INSTANCE = "google.cloud.sql.Instance"
     DNS_ZONE = "google.cloud.dns.ManagedZone"
     STORAGE_BUCKET = "google.cloud.storage.Bucket"
-    ORGANIZATION = "google.cloud.resourcemanager.Organization"
 
     def filter(self) -> str:
         """Get the filter for the resource type.

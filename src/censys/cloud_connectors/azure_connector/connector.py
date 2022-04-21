@@ -1,6 +1,6 @@
 """Azure Cloud Connector."""
 import contextlib
-from typing import Optional
+from typing import Callable, Optional
 
 from azure.core.exceptions import (
     ClientAuthenticationError,
@@ -20,7 +20,9 @@ from censys.cloud_connectors.common.cloud_asset import AzureContainerAsset
 from censys.cloud_connectors.common.connector import CloudConnector
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.seed import DomainSeed, IpSeed
+from censys.cloud_connectors.common.settings import Settings
 
+from .enums import AzureResourceTypes
 from .settings import AzureSpecificSettings
 
 
@@ -31,6 +33,26 @@ class AzureCloudConnector(CloudConnector):
     subscription_id: str
     credentials: ClientSecretCredential
     provider_settings: AzureSpecificSettings
+
+    seed_scanners: dict[AzureResourceTypes, Callable[[], None]]
+    cloud_asset_scanners: dict[AzureResourceTypes, Callable[[], None]]
+
+    def __init__(self, settings: Settings):
+        """Initialize Azure Cloud Connector.
+
+        Args:
+            settings (Settings): Settings.
+        """
+        super().__init__(settings)
+        self.seed_scanners = {
+            AzureResourceTypes.PUBLIC_IP_ADDRESSES: self.get_ip_addresses,
+            AzureResourceTypes.CONTAINER_GROUPS: self.get_clusters,
+            AzureResourceTypes.SQL_SERVERS: self.get_sql_servers,
+            AzureResourceTypes.DNS_ZONES: self.get_dns_records,
+        }
+        self.cloud_asset_scanners = {
+            AzureResourceTypes.STORAGE_ACCOUNTS: self.get_storage_containers,
+        }
 
     def scan(self):
         """Scan Azure."""
@@ -43,7 +65,6 @@ class AzureCloudConnector(CloudConnector):
             tuple, AzureSpecificSettings
         ] = self.settings.providers.get(self.provider, {})
         for provider_setting in provider_settings.values():
-            # TODO: Add support for disabling specific services
             self.provider_settings = provider_setting
             self.credentials = ClientSecretCredential(
                 tenant_id=provider_setting.tenant_id,
@@ -54,9 +75,6 @@ class AzureCloudConnector(CloudConnector):
                 self.logger.info(f"Scanning Azure Subscription {subscription_id}")
                 self.subscription_id = subscription_id
                 self.scan()
-                # TODO: Implement when connector is fully tested
-                # except Exception as e:
-                #     self.logger.error(f"Failed to scan {self.organization_id}: {e}")
 
     def format_label(self, asset: AzureModel) -> str:
         """Format Azure asset label.
@@ -74,14 +92,6 @@ class AzureCloudConnector(CloudConnector):
         if not asset_location:
             raise ValueError("Asset has no location.")
         return f"{self.label_prefix}{self.subscription_id}/{asset_location}"
-
-    def get_seeds(self):
-        """Get Azure seeds."""
-        # TODO: Make these optional by adding them to settings
-        self.get_ip_addresses()
-        self.get_clusters()
-        self.get_sql_servers()
-        self.get_dns_records()
 
     def get_ip_addresses(self):
         """Get Azure IP addresses."""
@@ -160,9 +170,17 @@ class AzureCloudConnector(CloudConnector):
                             DomainSeed(value=cname, label=self.format_label(zone))
                         )
 
-    def get_cloud_assets(self):
-        """Get Azure cloud assets."""
-        self.get_storage_containers()
+    def get_seeds(self):
+        """Get Azure seeds."""
+        for seed_type, seed_scanner in self.seed_scanners.items():
+            if (
+                self.provider_settings.ignore
+                and seed_type in self.provider_settings.ignore
+            ):
+                self.logger.debug(f"Skipping {seed_type}")
+                continue
+            self.logger.debug(f"Scanning {seed_type}")
+            seed_scanner()
 
     def get_storage_containers(self):
         """Get Azure containers."""
@@ -201,3 +219,15 @@ class AzureCloudConnector(CloudConnector):
                         f"Failed to get Azure container {container} for {account.name}: {error.message}",
                         exc_info=True,
                     )
+
+    def get_cloud_assets(self):
+        """Get Azure cloud assets."""
+        for cloud_asset_type, cloud_asset_scanner in self.cloud_asset_scanners.items():
+            if (
+                self.provider_settings.ignore
+                and cloud_asset_type in self.provider_settings.ignore
+            ):
+                self.logger.debug(f"Skipping {cloud_asset_type}")
+                continue
+            self.logger.debug(f"Scanning {cloud_asset_type}")
+            cloud_asset_scanner()
