@@ -1,7 +1,7 @@
 """Gcp Cloud Connector."""
 import json
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 from google.api_core import exceptions
 from google.cloud import securitycenter_v1
@@ -15,6 +15,7 @@ from censys.cloud_connectors.common.cloud_asset import GcpStorageBucketAsset
 from censys.cloud_connectors.common.connector import CloudConnector
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.seed import DomainSeed, IpSeed
+from censys.cloud_connectors.common.settings import Settings
 
 from .enums import GcpSecurityCenterResourceTypes
 from .settings import GcpSpecificSettings
@@ -29,6 +30,27 @@ class GcpCloudConnector(CloudConnector):
     organization_id: int
     credentials: service_account.Credentials
     provider_settings: GcpSpecificSettings
+    security_center_client: securitycenter_v1.SecurityCenterClient
+
+    seed_scanners: dict[GcpSecurityCenterResourceTypes, Callable[[], None]]
+    cloud_asset_scanners: dict[GcpSecurityCenterResourceTypes, Callable[[], None]]
+
+    def __init__(self, settings: Settings):
+        """Initialize Gcp Cloud Connector.
+
+        Args:
+            settings (Settings): Settings.
+        """
+        super().__init__(settings)
+        self.seed_scanners = {
+            GcpSecurityCenterResourceTypes.COMPUTE_ADDRESS: self.get_compute_addresses,
+            GcpSecurityCenterResourceTypes.CONTAINER_CLUSTER: self.get_container_clusters,
+            GcpSecurityCenterResourceTypes.CLOUD_SQL_INSTANCE: self.get_cloud_sql_instances,
+            GcpSecurityCenterResourceTypes.DNS_ZONE: self.get_dns_records,
+        }
+        self.cloud_asset_scanners = {
+            GcpSecurityCenterResourceTypes.STORAGE_BUCKET: self.get_storage_buckets,
+        }
 
     def scan(self):
         """Scan Gcp."""
@@ -179,10 +201,15 @@ class GcpCloudConnector(CloudConnector):
 
     def get_seeds(self):
         """Get Gcp seeds."""
-        self.get_compute_addresses()
-        self.get_container_clusters()
-        self.get_cloud_sql_instances()
-        self.get_dns_records()
+        for seed_type, seed_scanner in self.seed_scanners.items():
+            if (
+                self.provider_settings.ignore
+                and seed_type in self.provider_settings.ignore
+            ):
+                self.logger.debug(f"Skipping {seed_type}")
+                continue
+            self.logger.debug(f"Scanning {seed_type}")
+            seed_scanner()
 
     def get_storage_buckets(self):
         """Get Gcp storage buckets."""
@@ -215,4 +242,12 @@ class GcpCloudConnector(CloudConnector):
 
     def get_cloud_assets(self):
         """Get Gcp cloud assets."""
-        self.get_storage_buckets()
+        for cloud_asset_type, cloud_asset_scanner in self.cloud_asset_scanners.items():
+            if (
+                self.provider_settings.ignore
+                and cloud_asset_type in self.provider_settings.ignore
+            ):
+                self.logger.debug(f"Skipping {cloud_asset_type}")
+                continue
+            self.logger.debug(f"Scanning {cloud_asset_type}")
+            cloud_asset_scanner()

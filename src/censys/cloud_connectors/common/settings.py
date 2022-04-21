@@ -3,12 +3,15 @@ import collections
 import importlib
 import pathlib
 from abc import abstractmethod
-from typing import DefaultDict, Optional, OrderedDict, Union
+from typing import TYPE_CHECKING, DefaultDict, Optional, OrderedDict, Union
 
 import yaml
 from pydantic import BaseSettings, Field, HttpUrl, validate_arguments, validator
 
 from .enums import ProviderEnum
+
+if TYPE_CHECKING:
+    from censys.cloud_connectors.common.connector import CloudConnector
 
 
 def ordered_dict_representer(
@@ -64,10 +67,10 @@ class ProviderSpecificSettings(BaseSettings):
         """
         res = OrderedDict()
         settings_as_dict = self.dict()
-        if provider_name := settings_as_dict.get("provider"):
-            settings_as_dict["provider"] = provider_name.lower()
-        for key in ["provider"]:
-            res[key] = settings_as_dict.pop(key)
+        if provider_name := settings_as_dict.pop("provider", None):
+            res["provider"] = provider_name.lower()
+        if ignore := settings_as_dict.pop("ignore", None):
+            res["ignore"] = ignore
         res.update(settings_as_dict)
         return res
 
@@ -221,5 +224,5 @@ class Settings(BaseSettings):
                 raise ModuleNotFoundError(
                     f"Connector module not found for provider: {provider}"
                 ) from e
-            connector = connector_cls(self)
+            connector: "CloudConnector" = connector_cls(self)
             connector.scan_all()

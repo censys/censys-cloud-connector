@@ -158,7 +158,7 @@ class ProviderSetupCli(BaseCli):
         Raises:
             ValueError: If the settings are invalid.
         """
-        excluded_fields: list[str] = ["provider"]
+        excluded_fields: list[str] = ["provider", "ignore"]
         settings_fields: dict[
             str, ModelField
         ] = self.provider_specific_settings_class.__fields__

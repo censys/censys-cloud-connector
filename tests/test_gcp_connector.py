@@ -309,21 +309,61 @@ class TestGcpConnector(BaseCase, TestCase):
         )
 
     def test_get_seeds(self):
+        # Test data
+        self.connector.provider_settings = GcpSpecificSettings.from_dict(
+            self.data["TEST_CREDS"]
+        )
+
+        seed_scanners = {
+            GcpSecurityCenterResourceTypes.COMPUTE_ADDRESS: self.mocker.Mock(),
+            GcpSecurityCenterResourceTypes.CONTAINER_CLUSTER: self.mocker.Mock(),
+            GcpSecurityCenterResourceTypes.CLOUD_SQL_INSTANCE: self.mocker.Mock(),
+            GcpSecurityCenterResourceTypes.DNS_ZONE: self.mocker.Mock(),
+        }
+
         # Mock
-        mocks = self.mocker.patch.multiple(
-            GcpCloudConnector,
-            get_compute_addresses=self.mocker.Mock(),
-            get_container_clusters=self.mocker.Mock(),
-            get_cloud_sql_instances=self.mocker.Mock(),
-            get_dns_records=self.mocker.Mock(),
+        self.mocker.patch.object(
+            self.connector,
+            "seed_scanners",
+            new_callable=self.mocker.PropertyMock(return_value=seed_scanners),
         )
 
         # Actual call
         self.connector.get_seeds()
 
         # Assertions
-        for mock in mocks.values():
+        for mock in self.connector.seed_scanners.values():
             mock.assert_called_once()
+
+    def test_get_seeds_ignore(self):
+        # Test data
+        self.connector.provider_settings = GcpSpecificSettings.from_dict(
+            self.data["TEST_CREDS_IGNORE"]
+        )
+
+        seed_scanners = {
+            GcpSecurityCenterResourceTypes.COMPUTE_ADDRESS: self.mocker.Mock(),
+            GcpSecurityCenterResourceTypes.CONTAINER_CLUSTER: self.mocker.Mock(),
+            GcpSecurityCenterResourceTypes.CLOUD_SQL_INSTANCE: self.mocker.Mock(),
+            GcpSecurityCenterResourceTypes.DNS_ZONE: self.mocker.Mock(),
+        }
+
+        # Mock
+        self.mocker.patch.object(
+            self.connector,
+            "seed_scanners",
+            new_callable=self.mocker.PropertyMock(return_value=seed_scanners),
+        )
+
+        # Actual call
+        self.connector.get_seeds()
+
+        # Assertions
+        for resource_type, mock in self.connector.seed_scanners.items():
+            if resource_type in self.connector.provider_settings.ignore:
+                mock.assert_not_called()
+            else:
+                mock.assert_called_once()
 
     def test_get_storage_buckets(self):
         # Test data
@@ -361,16 +401,42 @@ class TestGcpConnector(BaseCase, TestCase):
             assert "accountNumber" in bucket.scan_data
 
     def test_get_cloud_assets(self):
+        # Test data
+        self.connector.provider_settings = GcpSpecificSettings.from_dict(
+            self.data["TEST_CREDS"]
+        )
+        cloud_asset_scanners = {
+            GcpSecurityCenterResourceTypes.STORAGE_BUCKET: self.mocker.Mock(),
+        }
+
         # Mock
-        mocks = self.mocker.patch.multiple(
-            GcpCloudConnector,
-            get_storage_buckets=self.mocker.Mock(),
-            # Include more when needed
+        self.mocker.patch.object(
+            self.connector,
+            "cloud_asset_scanners",
+            new_callable=self.mocker.PropertyMock(return_value=cloud_asset_scanners),
         )
 
         # Actual call
         self.connector.get_cloud_assets()
 
         # Assertions
-        for mock in mocks.values():
+        for mock in cloud_asset_scanners.values():
             mock.assert_called_once()
+
+    def test_get_cloud_assets_ignore(self):
+        # Test data
+        self.connector.provider_settings = GcpSpecificSettings.from_dict(
+            self.data["TEST_CREDS_IGNORE"]
+        )
+
+        # Mock
+        mock_storage_bucket = self.mocker.patch.object(
+            self.connector,
+            "get_storage_buckets",
+        )
+
+        # Actual call
+        self.connector.get_cloud_assets()
+
+        # Assertions
+        mock_storage_bucket.assert_not_called()

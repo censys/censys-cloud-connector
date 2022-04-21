@@ -102,6 +102,41 @@ poetry run censys-cc scan    # Scan for assets
 > You will need to have generated your `providers.yml` file using the
 > `censys-cc config` commmand before you can run the connector.
 
+#### providers.yml
+
+The `providers.yml` file contains the configuration for all cloud providers.
+The file is a YAML file and is structured as follows:
+
+```yaml
+- provider: azure
+  tenant_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  client_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  client_secret: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  subscription_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  # The subscription_id field takes one or more subscription IDs.
+  # subscription_id:
+  #   - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  #   - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  # The ignore field takes a list of Azure resource types to ignore during scanning.
+  # ignore:
+  #   - Microsoft.Network/publicIPAddresses
+  #   - Microsoft.ContainerInstance/containerGroups
+  #   - Microsoft.Sql/servers
+  #   - Microsoft.Network/dnszones
+  #   - Microsoft.Storage/storageAccounts
+- provider: gcp
+  organization_id: xxxxxxxx-xxxx-xxxx
+  service_account_json_file: service_account.json
+  service_account_email: censys-cloud-connector@project-id.iam.gserviceaccount.com
+  # The ignore field takes a list of GCP resource types to ignore during scanning.
+  # ignore:
+  #   - google.compute.Address
+  #   - google.container.Cluster
+  #   - google.cloud.sql.Instance
+  #   - google.cloud.dns.ManagedZone
+  #   - google.cloud.storage.Bucket
+```
+
 #### Environment Variables
 
 The following environment variables are available for use in the connector:

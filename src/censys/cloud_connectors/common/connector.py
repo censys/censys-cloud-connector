@@ -18,9 +18,9 @@ class CloudConnector(ABC):
     """Base class for Cloud Connectors."""
 
     provider: ProviderEnum
-    label_prefix: str = ""
-    seeds: dict[str, list[Seed]] = defaultdict(list)
-    cloud_assets: dict[str, list[CloudAsset]] = defaultdict(list)
+    label_prefix: str
+    seeds: dict[str, list[Seed]]
+    cloud_assets: dict[str, list[CloudAsset]]
 
     def __init__(self, settings: Settings):
         """Initialize the Cloud Connector.
@@ -44,6 +44,9 @@ class CloudConnector(ABC):
         self._add_cloud_asset_path = (
             f"{settings.censys_beta_url}/cloudConnector/addCloudAssets"
         )
+
+        self.seeds = defaultdict(list)
+        self.cloud_assets = defaultdict(list)
 
     @abstractmethod
     def get_seeds(self) -> None:

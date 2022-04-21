@@ -197,8 +197,6 @@ class AzureSetupCli(ProviderSetupCli):
             client_id=service_principal.get("appId"),
             client_secret=service_principal.get("password"),
         )
-        # TODO: Confirm that another provider is not already configured for the above subscription IDs
-        # If so, prompt to overwrite/merge
         self.add_provider_specific_settings(provider_settings)
 
     def setup(self):

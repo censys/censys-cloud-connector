@@ -1,16 +1,21 @@
 """GCP provider-specific settings."""
 from pathlib import Path
+from typing import Optional
 
 from pydantic import EmailStr, Field
 
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.settings import ProviderSpecificSettings
 
+from .enums import GcpSecurityCenterResourceTypes
+
 
 class GcpSpecificSettings(ProviderSpecificSettings):
     """GCP specific settings."""
 
     provider = ProviderEnum.GCP
+
+    ignore: Optional[list[GcpSecurityCenterResourceTypes]] = None
 
     organization_id: int = Field(
         gt=1,

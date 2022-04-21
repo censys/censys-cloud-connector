@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 from parameterized import parameterized
 
+from censys.cloud_connectors.azure_connector.enums import AzureResourceTypes
 from censys.cloud_connectors.common.enums import ProviderEnum
 from tests.base_connector_case import BaseConnectorCase
 
@@ -113,21 +114,59 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
             self.connector.format_label(test_asset)
 
     def test_get_seeds(self):
+        # Test data
+        self.connector.provider_settings = AzureSpecificSettings.from_dict(
+            self.data["TEST_CREDS"]
+        )
+        seed_scanners = {
+            AzureResourceTypes.PUBLIC_IP_ADDRESSES: self.mocker.Mock(),
+            AzureResourceTypes.CONTAINER_GROUPS: self.mocker.Mock(),
+            AzureResourceTypes.SQL_SERVERS: self.mocker.Mock(),
+            AzureResourceTypes.DNS_ZONES: self.mocker.Mock(),
+        }
+
         # Mock
-        mocks = self.mocker.patch.multiple(
-            AzureCloudConnector,
-            get_ip_addresses=self.mocker.Mock(),
-            get_clusters=self.mocker.Mock(),
-            get_sql_servers=self.mocker.Mock(),
-            get_dns_records=self.mocker.Mock(),
+        self.mocker.patch.object(
+            self.connector,
+            "seed_scanners",
+            new_callable=self.mocker.PropertyMock(return_value=seed_scanners),
         )
 
         # Actual call
         self.connector.get_seeds()
 
         # Assertions
-        for mock in mocks.values():
+        for mock in self.connector.seed_scanners.values():
             mock.assert_called_once()
+
+    def test_get_seeds_ignore(self):
+        # Test data
+        self.connector.provider_settings = AzureSpecificSettings.from_dict(
+            self.data["TEST_CREDS_IGNORE"]
+        )
+        seed_scanners = {
+            AzureResourceTypes.PUBLIC_IP_ADDRESSES: self.mocker.Mock(),
+            AzureResourceTypes.CONTAINER_GROUPS: self.mocker.Mock(),
+            AzureResourceTypes.SQL_SERVERS: self.mocker.Mock(),
+            AzureResourceTypes.DNS_ZONES: self.mocker.Mock(),
+        }
+
+        # Mock
+        self.mocker.patch.object(
+            self.connector,
+            "seed_scanners",
+            new_callable=self.mocker.PropertyMock(return_value=seed_scanners),
+        )
+
+        # Actual call
+        self.connector.get_seeds()
+
+        # Assertions
+        for resource_type, mock in self.connector.seed_scanners.items():
+            if resource_type in self.connector.provider_settings.ignore:
+                mock.assert_not_called()
+            else:
+                mock.assert_called_once()
 
     def test_get_ip_addresses(self):
         # Test data
@@ -287,19 +326,44 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
         )
 
     def test_get_cloud_assets(self):
+        # Test data
+        self.connector.provider_settings = AzureSpecificSettings.from_dict(
+            self.data["TEST_CREDS"]
+        )
+        cloud_asset_scanners = {
+            AzureResourceTypes.STORAGE_ACCOUNTS: self.mocker.Mock(),
+        }
+
         # Mock
-        mocks = self.mocker.patch.multiple(
-            AzureCloudConnector,
-            get_storage_containers=self.mocker.Mock(),
-            # Include more when needed
+        self.mocker.patch.object(
+            self.connector,
+            "cloud_asset_scanners",
+            new_callable=self.mocker.PropertyMock(return_value=cloud_asset_scanners),
         )
 
         # Actual call
         self.connector.get_cloud_assets()
 
         # Assertions
-        for mock in mocks.values():
+        for mock in cloud_asset_scanners.values():
             mock.assert_called_once()
+
+    def test_get_cloud_assets_ignore(self):
+        # Test data
+        self.connector.provider_settings = AzureSpecificSettings.from_dict(
+            self.data["TEST_CREDS_IGNORE"]
+        )
+
+        # Mock
+        mock_storage_container = self.mocker.patch.object(
+            self.connector, "get_storage_containers"
+        )
+
+        # Actual call
+        self.connector.get_cloud_assets()
+
+        # Assertions
+        mock_storage_container.assert_not_called()
 
     def test_get_storage_containers(self):
         # Test data

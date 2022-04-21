@@ -9,9 +9,8 @@ try:  # pragma: no cover
 except ImportError:  # pragma: no cover
     from importlib_metadata import PackageNotFoundError, version  # type: ignore
 
-# FIXME: Fix version for local development.
 try:
-    __version__: str = version(__package__ or __name__)
+    __version__: str = version("censys-cloud-connectors")
 except PackageNotFoundError:
     __version__ = "0.0.0"
 
