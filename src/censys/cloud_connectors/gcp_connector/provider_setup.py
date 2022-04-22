@@ -177,6 +177,12 @@ class GcpSetupCli(ProviderSetupCli):
             return False
         return True
 
+    def print_login_instructions(self) -> None:
+        """Print login instructions."""
+        self.print_info(
+            "Please login to your GCP account with the command: `gcloud auth login`."
+        )
+
     def get_service_accounts_from_cli(
         self, project_id: Optional[str] = None
     ) -> Optional[list[dict]]:
@@ -592,11 +598,11 @@ class GcpSetupCli(ProviderSetupCli):
             exit(1)
         if not accounts:
             self.print_error("No Credentialed GCP Accounts found.")
+            self.print_login_instructions()
             exit(1)
 
         selected_account = self.prompt_select_account(accounts)
         if selected_account is None:
-            # TODO: Print login instructions
             self.print_error("No GCP Account selected.")
             exit(1)
 
