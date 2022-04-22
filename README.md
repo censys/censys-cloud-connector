@@ -77,35 +77,67 @@ cd cloud-connectors-unified
 # Ensure you have poetry installed
 pip install --upgrade poetry
 
-# Install dependencies
+# Recommended installation
 poetry install -E azure -E gcp  # All dependencies (This is recommended)
-poetry install -E azure  # Only Azure dependencies
-poetry install -E gcp  # Only GCP dependencies
-poetry install  # Only core dependencies
+
+# Other installations
+# poetry install -E azure  # Only Azure dependencies
+# poetry install -E gcp  # Only GCP dependencies
+
+# Copy .env file
+cp .env.sample .env
 ```
+
+#### Environment Variables
+
+The following environment variables are available for use in the connector:
+
+- `CENSYS_API_KEY` - Your Censys ASM API key found in the
+  [ASM Integrations Page][censys-asm-integrations]. (**Required**)
+- `PROVIDERS_CONFIG_FILE` - The path to the `providers.yml` file.
+- `SECRETS_DIR` - The path to the directory containing the secrets.
+- `LOGGING_LEVEL` - The logging level. Valid values are `DEBUG`, `INFO`,
+  `WARN`, `ERROR`, and `CRITICAL`.
+- `DRY_RUN` - If set to `true`, the connector will not write any data to the
+  ASM platform. This is useful for testing.
+
+`.env.sample` is a sample file that contains the above environment variables.
+  Please use this file as a template to create your own `.env` file.
 
 #### Configuration
 
 To configure the connector, you can use the command line interface. The base
-command is `censys-cc`. The following commands are available:
+command is `censys-cc`. The configuration command is:
 
 ```sh
 poetry run censys-cc config  # Configure supported providers
-poetry run censys-cc scan    # Scan for assets
 ```
 
-- The `censys-cc config` command will guide you through the configuration of
-  supported cloud providers. This command will assist you in generating a
-  `providers.yml` file. This file can contain multiple provider configurations.
-- The `censys-cc scan` command runs the connector.
+The `censys-cc config` command will guide you through the configuration of
+supported cloud providers. This command will assist you in generating a
+`providers.yml` file. This file can contain multiple provider configurations.
+You can optionally specify a provider in the command line with the flag
+`--provider`.
 
-> You will need to have generated your `providers.yml` file using the
-> `censys-cc config` commmand before you can run the connector.
+> Before configuring the connector, make sure you are logged in to your cloud
+> provider's CLI tool. See our [supported providers](#supported-providers)
+> below for more information.
+
+#### Supported Providers
+
+Log in to your cloud provider's CLI tool using the following commands:
+
+- [Google's gcloud CLI][gcloud-cli]:  `gcloud auth login`
+
+- [Azure CLI][azure-cli]:  `az login`
 
 #### providers.yml
 
 The `providers.yml` file contains the configuration for all cloud providers.
 The file is a YAML file and is structured as follows:
+
+> You will need to have generated your `providers.yml` file using the
+> `censys-cc config` commmand before you can run the connector.
 
 ```yaml
 - provider: azure
@@ -137,18 +169,18 @@ The file is a YAML file and is structured as follows:
   #   - google.cloud.storage.Bucket
 ```
 
-#### Environment Variables
+### Running the Connector
 
-The following environment variables are available for use in the connector:
+To run the connector, you can use the command line interface.
 
-- `CENSYS_API_KEY` - Your Censys ASM API key found in the
-  [ASM Integrations Page][censys-asm-integrations]. (**Required**)
-- `PROVIDERS_CONFIG_FILE` - The path to the `providers.yml` file.
-- `SECRETS_DIR` - The path to the directory containing the secrets.
-- `LOGGING_LEVEL` - The logging level. Valid values are `DEBUG`, `INFO`,
-  `WARN`, `ERROR`, and `CRITICAL`.
-- `DRY_RUN` - If set to `true`, the connector will not write any data to the
-  ASM platform. This is useful for testing.
+```sh
+poetry run censys-cc scan  # Scan cloud assets
+```
+
+The `censys-cc scan` command runs the connector. You can optionally specify a
+provider in the command line with the flag `--provider`. You can specify as
+many providers as you would like. The connector will only scan for assets from
+the specified providers.
 
 ---
 
@@ -272,3 +304,5 @@ correct version of Python automatically.
 [poetry-install]: https://python-poetry.org/docs/
 [pyenv-install]: https://github.com/pyenv/pyenv#installation
 [censys-asm-integrations]: https://app.censys.io/integrations
+[azure-cli]: https://docs.microsoft.com/en-us/cli/azure/install-azure-cli
+[gcloud-cli]: https://cloud.google.com/sdk/docs/install
