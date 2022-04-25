@@ -53,7 +53,7 @@ def cli_config(args: argparse.Namespace):
         provider = answers["provider"]
     else:
         provider_name = args.provider
-        provider = ProviderEnum[provider_name.upper()]
+        provider = ProviderEnum[provider_name]
         print_question(f"Provider: [info]{provider}[/info]")
 
     provider_setup_cls = importlib.import_module(
@@ -91,6 +91,8 @@ def include_cli(parent_parser: argparse._SubParsersAction):
         help=f"specify a cloud service provider: {provider_choices}",
         metavar="PROVIDER",
         dest="provider",
+        nargs="?",
+        type=str.lower,
         default=None,
     )
     config_parser.set_defaults(func=cli_config)

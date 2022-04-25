@@ -1,3 +1,4 @@
+from typing import Optional
 from unittest import TestCase
 
 import pytest
@@ -95,6 +96,51 @@ class TestBaseCli(BaseCase, TestCase):
         # Actual call
         with pytest.raises(KeyboardInterrupt):
             self.base_cli.prompt([{"type": "input", "name": "test"}])
+
+    @parameterized.expand(
+        [
+            (True, {"name": "test_name", "value": "test_value"}),
+            (False, None),
+        ]
+    )
+    def test_prompt_select_one_from_one(
+        self, choose: bool, expected_answer: Optional[dict]
+    ):
+        # Test data
+        test_choices = [{"name": "test_name", "value": "test_value"}]
+
+        # Mock
+        self.mocker.patch(
+            "censys.cloud_connectors.common.cli.base.prompt",
+            return_value={"use_only_choice": choose},
+        )
+
+        # Actual call
+        actual_answers = self.base_cli.prompt_select_one("Choose:", test_choices)
+
+        # Assertions
+        assert actual_answers == expected_answer
+
+    def test_prompt_select_one_from_many(self):
+        # Test data
+        test_answers = {"name": "name_b", "value": "value_b"}
+        test_choices = [
+            {"name": "name_a", "value": "value_a"},
+            {"name": "name_b", "value": "value_b"},
+            {"name": "name_c", "value": "value_c"},
+        ]
+
+        # Mock
+        self.mocker.patch(
+            "censys.cloud_connectors.common.cli.base.prompt",
+            return_value={"choice": test_answers},
+        )
+
+        # Actual call
+        actual_answers = self.base_cli.prompt_select_one("Choose:", test_choices)
+
+        # Assertions
+        assert actual_answers == test_answers
 
     @parameterized.expand(
         [

@@ -1,5 +1,6 @@
 """Censys Cloud Connectors scan command."""
 import argparse
+from typing import Optional
 
 from pydantic import ValidationError
 
@@ -26,8 +27,11 @@ def cli_scan(args: argparse.Namespace):
         logger.error(e)
         return
 
+    selected_providers: Optional[list[ProviderEnum]] = None
+    if args.provider:
+        selected_providers = [ProviderEnum[provider] for provider in args.provider]
     try:
-        settings.read_providers_config_file(args.provider)
+        settings.read_providers_config_file(selected_providers)
     except ValidationError as e:  # pragma: no cover
         logger.error(e)
         return
@@ -56,6 +60,7 @@ def include_cli(parent_parser: argparse._SubParsersAction):
         dest="provider",
         action="extend",
         nargs="+",
+        type=str.lower,
         default=None,
     )
     config_parser.set_defaults(func=cli_scan)
