@@ -130,6 +130,21 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         mock_prompt.assert_called_once()
         assert selected_account == mock_prompt.return_value
 
+    def test_prompt_select_account_none(self):
+        # Test data
+        test_accounts: list[dict[str, str]] = self.data["TEST_ACCOUNTS"]
+
+        # Mock
+        mock_prompt = self.mocker.patch.object(self.setup_cli, "prompt_select_one")
+        mock_prompt.return_value = None
+
+        # Actual call
+        selected_account = self.setup_cli.prompt_select_account(test_accounts)
+
+        # Assertions
+        mock_prompt.assert_called_once()
+        assert selected_account == mock_prompt.return_value
+
     @parameterized.expand(
         [
             (0, "TEST_PROJECTS"),
@@ -282,6 +297,18 @@ class TestGcpProviderSetup(BaseCase, TestCase):
 
         # Assertions
         mock_run.assert_called_once_with(f"gcloud config set account {account_name}")
+
+    def test_print_login_instructions(self):
+        # Mock
+        mock_print = self.mocker.patch.object(self.setup_cli, "print_info")
+
+        # Actual call
+        self.setup_cli.print_login_instructions()
+
+        # Assertions
+        mock_print.assert_called_once_with(
+            "Please login to your GCP account with the command: `gcloud auth login`."
+        )
 
     @parameterized.expand(
         [
@@ -447,14 +474,19 @@ class TestGcpProviderSetup(BaseCase, TestCase):
 
     @parameterized.expand(
         [
-            (True, True),
+            (
+                True,
+                True,
+            ),
             (False,),
+            (True, False, 1),
         ]
     )
     def test_create_service_account(
         self,
         confirmation_answer: bool = True,
         expected_return: bool = False,
+        return_code: int = 0,
     ):
         # Test data
         test_organization_id = 6549873210
@@ -467,7 +499,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         mock_prompt = self.mocker.patch.object(self.setup_cli, "prompt")
         mock_prompt.return_value = {"create_service_account": confirmation_answer}
         mock_run = self.mocker.patch.object(self.setup_cli, "run_command")
-        mock_run.return_value.returncode = 0
+        mock_run.return_value.returncode = return_code
 
         # Actual call
         actual_return = self.setup_cli.create_service_account(
@@ -536,3 +568,69 @@ class TestGcpProviderSetup(BaseCase, TestCase):
             assert actual_return == test_key_file_path
         else:
             assert actual_return is None
+
+    @parameterized.expand(
+        [
+            (
+                "test-service-account",
+                {"new_account_name": "test-service-account"},
+                "test-project-key.json",
+            ),
+            ("a", {"new_account_name": ""}, None, "Service account name is required."),
+            (
+                "test-service-account",
+                {"new_account_name": "test-service-account"},
+                None,
+                "Failed to create service account key file. Please try again.",
+            ),
+        ]
+    )
+    def test_prompt_to_create_service_account(
+        self,
+        test_service_account_name: str,
+        prompt_return_val: dict,
+        create_account_return_val: Optional[str] = None,
+        error_message: str = None,
+    ):
+        # Test data
+        test_organization_id = 6549873210
+        test_project_id = "test-project-id"
+        expected_email = (
+            (
+                test_service_account_name
+                + "@"
+                + test_project_id
+                + ".iam.gserviceaccount.com"
+            )
+            if not error_message
+            else ""
+        )
+
+        # Mock
+        mock_prompt = self.mocker.patch.object(self.setup_cli, "prompt")
+        mock_prompt.return_value = prompt_return_val
+        mock_create_service_account = self.mocker.patch.object(
+            self.setup_cli, "create_service_account"
+        )
+        mock_create_service_account.return_value = create_account_return_val
+
+        # Actual call
+        actual: str = ""
+        if error_message is None:
+            actual = self.setup_cli.prompt_to_create_service_account(
+                test_organization_id, test_project_id, create_account_return_val
+            )
+        else:
+            with pytest.raises(SystemExit):
+                actual = self.setup_cli.prompt_to_create_service_account(
+                    test_organization_id, test_project_id, create_account_return_val
+                )
+
+        # Assertions
+        mock_prompt.assert_called_once()
+        if error_message == "Service account name is required.":
+            assert mock_create_service_account.call_count == 0
+            assert actual == ""
+        else:
+            mock_create_service_account.assert_called_once()
+            assert actual == expected_email

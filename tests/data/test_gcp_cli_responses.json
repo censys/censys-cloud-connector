@@ -11,6 +11,10 @@
     {
       "account": "inactive-gcp-account@censys.io",
       "status": ""
+    },
+    {
+      "account": "",
+      "status": ""
     }
   ],
 
@@ -73,7 +77,7 @@
         "id": "xxxxxxxxxxxx",
         "type": "organization"
       },
-      "projectId": "sample-project-i-c",
+      "projectId": "",
       "projectNumber": "xxxxxxxc"
     }
   ],
