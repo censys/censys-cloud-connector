@@ -9,3 +9,4 @@ services:
       - ./secrets:/app/secrets
     env_file:
       - ./.env
+    # command: scan --daemon 4

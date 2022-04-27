@@ -167,7 +167,9 @@ The file is a YAML file and is structured as follows:
   #   - google.cloud.storage.Bucket
 ```
 
-### Running the Connector
+---
+
+### Local Deployment
 
 To run the connector, you can use the command line interface.
 
@@ -175,10 +177,26 @@ To run the connector, you can use the command line interface.
 poetry run censys-cc scan  # Scan cloud assets
 ```
 
-The `censys-cc scan` command runs the connector. You can optionally specify a
-provider in the command line with the flag `--provider`. You can specify as
-many providers as you would like. The connector will only scan for assets from
-the specified providers.
+The `censys-cc scan` command runs the connector.
+
+#### Default settings:
+- The connector will scan for assets from all providers in
+[`providers.yml`](./providers.yml).
+- The connector will run once.
+
+#### Additional options:
+- You can specify one or more providers in the command line with the flag
+`--provider`. The connector will only scan for assets from the specified
+providers.
+
+- You can set a scheduled interval for the connector to run on with the flag
+`--daemon`. This option takes in a time interval in hours. If you do not
+specify an interval, the default will be set to 1 hour.
+
+  ```sh
+  censys-cc scan --daemon       # Run every 1 hour
+  censys-cc scan --daemon 1.5   # Run every 1.5 hours
+  ```
 
 ---
 
@@ -226,27 +244,33 @@ The following command will run the Docker container. You can specify the
 environment variables you want to pass to the container using the `-e` flag.
 The container also requires the `providers.yml` file. The `-v` flag will
 mount the `providers.yml` file as a volume. If your `providers.yml` references
-additional secret files, you can mount it as a volume as well. We also include
-the `--rm` flag to ensure the container is removed after it has finished.
+additional secret files, you can mount it as a volume as well. The `-d` flag
+is used to run the container in the background. We also include the `--rm`
+flag to ensure the container is removed after it has finished.
 
 ```sh
+
+# Ensure you have sourced your environmental variables
+source .env
+
 # Mount the providers.yml and secrets files as volumes
-docker run --rm \
+docker run -d --rm \
   -e "CENSYS_API_KEY=$CENSYS_API_KEY" \
   -v $(pwd)/providers.yml:/app/providers.yml \
-  -v $(pwd)/secrets:/app/secrets \
-  ghcr.io/censys/censys-cloud-connector:latest
+  -v $(pwd)/secrets:/app/secrets \               
+  ghcr.io/censys/censys-cloud-connector:latest \
+  --daemon 4
 
 # Alternatively if you do not need the secrets volume
 docker run --rm \
   -e "CENSYS_API_KEY=$CENSYS_API_KEY" \
   -v $(pwd)/providers.yml:/app/providers.yml \
-  ghcr.io/censys/censys-cloud-connector:latest
+  ghcr.io/censys/censys-cloud-connector:latest \
+  --daemon 4
 ```
 
-> It is important to note that the container runs once by default.
-
-<!-- TODO: Add cron instructions -->
+> More information about the `--daemon` flag is found
+> [here](#additional-options).
 
 ---
 
@@ -260,6 +284,13 @@ your server.
 ```sh
 docker-compose up -d
 ```
+
+2. [Optional] Run your connector on a scheduled interval
+
+Uncomment the line `# command: scan --daemon 4` in
+[docker-compose.yml](./docker-compose.yml).
+
+Details about the `--daemon` option can be found [here](#additional-options).
 
 ---
 
