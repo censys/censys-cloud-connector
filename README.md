@@ -1,7 +1,5 @@
 # Censys Unified Cloud Connector
 
-[![Apache License](https://img.shields.io/badge/license-Apache%202.0-orange.svg?style=flat-square)](./LICENSE)
-
 The Censys Unified Cloud Connector is a standalone connector that gathers
 assets from various cloud providers and stores them in Censys ASM. This
 Connector offers users the ability to supercharge our ASM Platform with total
@@ -72,7 +70,7 @@ a brief overview of how to deploy the connector to your environment.
 ```sh
 # Clone the repository
 git clone https://github.com/censys/censys-cloud-connector.git
-cd cloud-connectors-unified
+cd censys-cloud-connector
 
 # Ensure you have poetry installed
 pip install --upgrade poetry
@@ -102,7 +100,7 @@ The following environment variables are available for use in the connector:
   ASM platform. This is useful for testing.
 
 `.env.sample` is a sample file that contains the above environment variables.
-  Please use this file as a template to create your own `.env` file.
+Please use this file as a template to create your own `.env` file.
 
 #### Configuration
 
@@ -127,9 +125,9 @@ You can optionally specify a provider in the command line with the flag
 
 Log in to your cloud provider's CLI tool using the following commands:
 
-- [Google's gcloud CLI][gcloud-cli]:  `gcloud auth login`
+- [Google's gcloud CLI][gcloud-cli]: `gcloud auth login`
 
-- [Azure CLI][azure-cli]:  `az login`
+- [Azure CLI][azure-cli]: `az login`
 
 #### providers.yml
 
@@ -206,7 +204,9 @@ This option deploys the connector to Azure as a Azure Function.
 
 This method assumes you have Docker installed and running on your server.
 
-1. Pull the Docker image
+1. Authenticate to the [GitHub Container Registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-to-the-container-registry)
+
+2. Pull the Docker image <!-- markdownlint-disable -->
 
 ```sh
 docker pull ghcr.io/censys/censys-cloud-connector:latest
@@ -220,7 +220,7 @@ docker pull ghcr.io/censys/censys-cloud-connector:latest
   docker build -t ghcr.io/censys/censys-cloud-connector:latest .
   ```
 
-2. Run the Docker container <!-- markdownlint-disable -->
+3. Run the Docker container <!-- markdownlint-disable -->
 
 The following command will run the Docker container. You can specify the
 environment variables you want to pass to the container using the `-e` flag.
@@ -297,6 +297,15 @@ It is highly recommended that a Python version shim like
 [pyenv][pyenv-install] is used.
 Once installed, Poetry will make a virtualenv using the
 correct version of Python automatically.
+
+## Developer Documentation
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) to change or test the code or for
+information on the CI/CD pipeline.
+
+## License
+
+[![Apache 2](https://img.shields.io/badge/license-Apache%202.0-orange.svg?style=flat-square)](./LICENSE)
 
 <!-- References -->
 

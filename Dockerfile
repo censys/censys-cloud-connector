@@ -1,6 +1,7 @@
 ARG PYTHON_VERSION=3.9
+ARG BASE_IMAGE=python:${PYTHON_VERSION}-bullseye
 
-FROM python:${PYTHON_VERSION}-slim
+FROM ${BASE_IMAGE}
 
 LABEL org.opencontainers.image.title="Censys Cloud Connector" \
       org.opencontainers.image.description="The Censys Unified Cloud Connector is a standalone connector that gathers assets from various cloud providers and stores them in Censys ASM." \
@@ -8,7 +9,7 @@ LABEL org.opencontainers.image.title="Censys Cloud Connector" \
       org.opencontainers.image.license="Apache-2.0" \
       org.opencontainers.image.source=https://github.com/censys/censys-cloud-connector \
       org.opencontainers.image.documentation=https://github.com/censys/censys-cloud-connector#readme \
-      org.opencontainers.image.base.name="registry.hub.docker.com/library/python:${PYTHON_VERSION}-slim"
+      org.opencontainers.image.base.name="registry.hub.docker.com/library/${BASE_IMAGE}"
 
 # Default extras to support both Azure and GCP
 ARG EXTRAS="azure gcp"
