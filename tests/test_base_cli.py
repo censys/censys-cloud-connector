@@ -87,6 +87,68 @@ class TestBaseCli(BaseCase, TestCase):
         # Assertions
         assert actual_answers == test_answers
 
+    @parameterized.expand(
+        [
+            ("input"),
+            ("input", "draw", "draw"),
+            ("list", "(Use arrow keys)"),
+            ("list", "(Use ctrl+r to select all)", None, True),
+            ("filepath", "(Tab completion is enabled)"),
+        ]
+    )
+    def test_prompt_instructions(
+        self,
+        type: str,
+        expected_instruction: Optional[str] = None,
+        given_instructions: Optional[str] = None,
+        multiselect: Optional[bool] = None,
+    ):
+        # Test data
+        given_question = {
+            "type": type,
+            "name": "test",
+            "instruction": given_instructions,
+            "multiselect": multiselect,
+        }
+
+        expected_question = {
+            "type": type,
+            "name": "test",
+            "instruction": expected_instruction,
+            "multiselect": multiselect,
+        }
+
+        # Mock
+        mock_prompt = self.mocker.patch(
+            "censys.cloud_connectors.common.cli.base.inquirer_prompt"
+        )
+        # Actual call
+        self.base_cli.prompt(given_question)
+
+        # Assertions
+        mock_prompt.assert_called_once_with([expected_question])
+
+    def test_prompt_multiple(self):
+        # Test data
+        given_questions = [
+            {"type": "input", "name": "test_input", "instruction": "draw"},
+            {"type": "list", "name": "test_list"},
+        ]
+        expected_questions = [
+            {"type": "input", "name": "test_input", "instruction": "draw"},
+            {"type": "list", "name": "test_list", "instruction": "(Use arrow keys)"},
+        ]
+
+        # Mock
+        mock_prompt = self.mocker.patch(
+            "censys.cloud_connectors.common.cli.base.inquirer_prompt"
+        )
+        # Actual call
+        self.base_cli.prompt(given_questions)
+
+        # Assertions
+        mock_prompt.assert_called_once_with(expected_questions)
+
     def test_prompt_no_answers(self):
         # Mock
         self.mocker.patch(
@@ -123,11 +185,11 @@ class TestBaseCli(BaseCase, TestCase):
 
     def test_prompt_select_one_from_many(self):
         # Test data
-        test_answers = {"name": "name_b", "value": "value_b"}
+        test_answers = {"choice": "name_b", "value": "value_b"}
         test_choices = [
-            {"name": "name_a", "value": "value_a"},
-            {"name": "name_b", "value": "value_b"},
-            {"name": "name_c", "value": "value_c"},
+            {"choice": "name_a", "value": "value_a"},
+            {"choice": "name_b", "value": "value_b"},
+            {"choice": "name_c", "value": "value_c"},
         ]
 
         # Mock
@@ -137,7 +199,9 @@ class TestBaseCli(BaseCase, TestCase):
         )
 
         # Actual call
-        actual_answers = self.base_cli.prompt_select_one("Choose:", test_choices)
+        actual_answers = self.base_cli.prompt_select_one(
+            "Choose:", test_choices, "choice", "value_b"
+        )
 
         # Assertions
         assert actual_answers == test_answers
