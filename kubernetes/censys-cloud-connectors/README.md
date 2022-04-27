@@ -15,7 +15,7 @@ The following prerequisites are required to deploy using Kubernetes:
 1. Install the Censys Cloud Connector Chart
 
 ```sh <!-- markdownlint-disable-next-line MD013 -->
-helm isntall censys-cloud-connectors ./kubernetes/censys-cloud-connectors --namespace YOUR_NAMESPACE
+helm install censys-cloud-connectors ./kubernetes/censys-cloud-connectors --namespace YOUR_NAMESPACE
 ```
 
 - To upgrade the Censys Cloud Connector Chart:
