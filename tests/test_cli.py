@@ -99,6 +99,7 @@ class TestScanCli(BaseCase, TestCase):
         # Mock
         mock_args = self.mocker.MagicMock()
         mock_args.provider = None
+        mock_args.scan_interval = None
 
         mock_settings = self.mocker.patch(
             "censys.cloud_connectors.common.cli.commands.scan.Settings"
@@ -119,6 +120,7 @@ class TestScanCli(BaseCase, TestCase):
         # Mock
         mock_args = self.mocker.MagicMock()
         mock_args.provider = [ProviderEnum.AZURE]
+        mock_args.scan_interval = None
 
         mock_settings = self.mocker.patch(
             "censys.cloud_connectors.common.cli.commands.scan.Settings"
