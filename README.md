@@ -121,6 +121,9 @@ You can optionally specify a provider in the command line with the flag
 > provider's CLI tool. See our [supported providers](#supported-providers)
 > below for more information.
 
+**You have successfully configured your cloud connector if your
+[providers.yml](./providers.yml) file is populated with your credentials.**
+
 #### Supported Providers
 
 Log in to your cloud provider's CLI tool using the following commands:
@@ -179,12 +182,14 @@ poetry run censys-cc scan  # Scan cloud assets
 
 The `censys-cc scan` command runs the connector.
 
-#### Default settings:
+#### Default settings
+
 - The connector will scan for assets from all providers in
 [`providers.yml`](./providers.yml).
 - The connector will run once.
 
-#### Additional options:
+#### Additional options
+
 - You can specify one or more providers in the command line with the flag
 `--provider`. The connector will only scan for assets from the specified
 providers.
@@ -249,7 +254,6 @@ is used to run the container in the background. We also include the `--rm`
 flag to ensure the container is removed after it has finished.
 
 ```sh
-
 # Ensure you have sourced your environmental variables
 source .env
 
@@ -257,7 +261,7 @@ source .env
 docker run -d --rm \
   -e "CENSYS_API_KEY=$CENSYS_API_KEY" \
   -v $(pwd)/providers.yml:/app/providers.yml \
-  -v $(pwd)/secrets:/app/secrets \               
+  -v $(pwd)/secrets:/app/secrets \
   ghcr.io/censys/censys-cloud-connector:latest \
   --daemon 4
 
@@ -299,6 +303,12 @@ Details about the `--daemon` option can be found [here](#additional-options).
 This method assumes you have Kubernetes installed and running on your server.
 
 <!-- TODO: Add steps -->
+
+---
+
+### Confirm Results
+
+Visit the [Seed Data Page][seed-data] and the [Storage Buckets Page][storage-bucket] to confirm that you're seeing seeds and storage buckets from your cloud provider(s).
 
 ---
 
@@ -346,3 +356,5 @@ information on the CI/CD pipeline.
 [censys-asm-integrations]: https://app.censys.io/integrations
 [azure-cli]: https://docs.microsoft.com/en-us/cli/azure/install-azure-cli
 [gcloud-cli]: https://cloud.google.com/sdk/docs/install
+[seed-data]: https://app.censys.io/seeds
+[storage-bucket]: https://app.censys.io/storage-bucket
