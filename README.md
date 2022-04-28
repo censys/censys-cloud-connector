@@ -138,7 +138,7 @@ The `providers.yml` file contains the configuration for all cloud providers.
 The file is a YAML file and is structured as follows:
 
 > You will need to have generated your `providers.yml` file using the
-> `censys-cc config` commmand before you can run the connector.
+> `censys-cc config` command before you can run the connector.
 
 ```yaml
 - provider: azure
