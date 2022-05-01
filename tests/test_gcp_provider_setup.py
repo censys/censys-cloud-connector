@@ -69,7 +69,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
 
         # Assertions
         assert actual == expected_accounts
-        mock_run.assert_called_once_with("gcloud auth list --format=json")
+        mock_run.assert_called_once_with("gcloud auth list --format json")
 
     def test_get_accounts_from_cli_failure(self):
         # Test data
@@ -86,7 +86,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
 
         # Assertions
         assert actual == expected_accounts
-        mock_run.assert_called_once_with("gcloud auth list --format=json")
+        mock_run.assert_called_once_with("gcloud auth list --format json")
 
     @parameterized.expand(
         [
@@ -164,7 +164,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
 
         # Assertions
         assert actual == expected_projects
-        mock_run.assert_called_once_with("gcloud projects list --format=json")
+        mock_run.assert_called_once_with("gcloud projects list --format json")
 
     def test_get_project_ids_from_cli_fail(self):
         # Test data
@@ -180,7 +180,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
 
         # Assertions
         assert actual == expected_projects
-        mock_run.assert_called_once_with("gcloud projects list --format=json")
+        mock_run.assert_called_once_with("gcloud projects list --format json")
 
     @parameterized.expand(
         [
@@ -249,7 +249,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
 
         # Assertions
         mock_run.assert_called_once_with(
-            f"gcloud projects get-ancestors {test_proj_id} --format=json"
+            f"gcloud projects get-ancestors {test_proj_id} --format json"
         )
         assert actual == expected_org
 
@@ -278,7 +278,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
 
         # Assertions
         mock_run.assert_called_once_with(
-            f"gcloud projects get-ancestors {test_proj_id} --format=json"
+            f"gcloud projects get-ancestors {test_proj_id} --format json"
         )
         assert actual is None, "Should return None if no organization id found."
 
@@ -297,18 +297,6 @@ class TestGcpProviderSetup(BaseCase, TestCase):
 
         # Assertions
         mock_run.assert_called_once_with(f"gcloud config set account {account_name}")
-
-    def test_print_login_instructions(self):
-        # Mock
-        mock_print = self.mocker.patch.object(self.setup_cli, "print_info")
-
-        # Actual call
-        self.setup_cli.print_login_instructions()
-
-        # Assertions
-        mock_print.assert_called_once_with(
-            "Please login to your GCP account with the command: `gcloud auth login`."
-        )
 
     @parameterized.expand(
         [
@@ -356,23 +344,6 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         # Assertions
         mock_run.assert_called_once_with(test_command)
         assert actual == expected_service_accounts
-
-    def test_prompt_select_service_account(self):
-        # Test data
-        test_service_accounts = self.data["TEST_SERVICE_ACCOUNTS"]
-
-        # Mock
-        mock_prompt = self.mocker.patch.object(self.setup_cli, "prompt_select_one")
-        mock_prompt.return_value = test_service_accounts[0]
-
-        # Actual call
-        actual = self.setup_cli.prompt_select_service_account(test_service_accounts)
-
-        # Assertions
-        mock_prompt.assert_called_once_with(
-            "Select a service account:", test_service_accounts, "email"
-        )
-        assert actual == mock_prompt.return_value
 
     @parameterized.expand(
         [
