@@ -263,14 +263,21 @@ docker run -d --rm \
   -v $(pwd)/providers.yml:/app/providers.yml \
   -v $(pwd)/secrets:/app/secrets \
   ghcr.io/censys/censys-cloud-connector:latest \
-  --daemon 4
+  scan --daemon 4
 
 # Alternatively if you do not need the secrets volume
-docker run --rm \
+docker run -d --rm \
   -e "CENSYS_API_KEY=$CENSYS_API_KEY" \
   -v $(pwd)/providers.yml:/app/providers.yml \
   ghcr.io/censys/censys-cloud-connector:latest \
-  --daemon 4
+  scan --daemon 4
+
+# Additionally if you only need to scan once
+docker run --rm \
+  -e "CENSYS_API_KEY=$CENSYS_API_KEY" \
+  -v $(pwd)/providers.yml:/app/providers.yml \
+  -v $(pwd)/secrets:/app/secrets \
+  ghcr.io/censys/censys-cloud-connector:latest
 ```
 
 > More information about the `--daemon` flag is found

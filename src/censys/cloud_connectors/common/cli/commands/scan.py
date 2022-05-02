@@ -93,7 +93,7 @@ def include_cli(parent_parser: argparse._SubParsersAction):
 
     config_parser.add_argument(
         "-d",
-        "--dameon",
+        "--daemon",
         help="run on a scheduled interval (must be greater than or equal to 1 hour)",
         dest="scan_interval",
         nargs="?",

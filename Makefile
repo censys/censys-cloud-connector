@@ -56,11 +56,17 @@ test-cov: $(INSTALL_STAMP)  ## Runs tests and generates coverage report
 .PHONY: build-image
 build-image:  ## Builds docker image
 	docker build -t $(DOCKER_IMG):$(DOCKER_TAG) .
-	docker tag $(DOCKER_IMG):$(DOCKER_TAG) $(DOCKER_IMG):latest
 
 .PHONY: push-image
 push-image: build-image ## Pushes docker image to gcr
 	docker push $(DOCKER_IMG):$(DOCKER_TAG)
+
+.PHONY: tag-latest
+tag-latest: build-image  ## Tags docker image as latest
+	docker tag $(DOCKER_IMG):$(DOCKER_TAG) $(DOCKER_IMG):latest
+
+.PHONY: push-latest
+push-latest: tag-latest  ## Pushes docker image as latest
 	docker push $(DOCKER_IMG):latest
 
 # via https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
