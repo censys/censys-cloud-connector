@@ -17,9 +17,6 @@ def cli_config(args: argparse.Namespace):
 
     Args:
         args (argparse.Namespace): Namespace.
-
-    Raises:
-        KeyboardInterrupt: If the user cancels the prompt.
     """
     logger = get_logger(log_name="censys_cloud_connectors", level="INFO")
 
@@ -48,8 +45,6 @@ def cli_config(args: argparse.Namespace):
             }
         ]
         answers = prompt(questions)
-        if not answers:  # pragma: no cover
-            raise KeyboardInterrupt
         provider = answers["provider"]
     else:
         provider_name = args.provider

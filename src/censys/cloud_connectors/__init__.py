@@ -5,14 +5,11 @@ __copyright__ = "Copyright 2022 Censys, Inc."
 import os.path
 
 try:  # pragma: no cover
-    from importlib.metadata import PackageNotFoundError, version
+    from importlib.metadata import version
 except ImportError:  # pragma: no cover
-    from importlib_metadata import PackageNotFoundError, version  # type: ignore
+    from importlib_metadata import version  # type: ignore
 
-try:
-    __version__: str = version("censys-cloud-connectors")
-except PackageNotFoundError:
-    __version__ = "0.0.0"
+__version__: str = version("censys-cloud-connectors")
 
 
 def get_connectors(ignore_prefix: str = "__") -> list[str]:
