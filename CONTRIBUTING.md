@@ -25,7 +25,7 @@ merging.
 
 ### Commit Messages
 
-Search is now using
+Censys Cloud Connectors are now using
 [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
 to structure its commit messages, in the event we want to automatically
 generate changelogs in the future.
@@ -40,7 +40,7 @@ Commit messages should always be written as if to complete the follow sentence:
 - `feat`: A new feature or component.
 - `improve`: A code code that is neither a new feature nor a bug fix but improves
   functionality.
-- `refactor`: A code change that is niether a new feature nor
+- `refactor`: A code change that is neither a new feature nor
   a bug fix but does not change the current functionality of the code.
 - `chore`: A repeatable action such as static code generation.
 - `docs`: Changes to documentation.
@@ -53,9 +53,9 @@ Finally, there is a `build` type which has its own set of scopes. See below.
 
 #### Scope
 
-The scope should be the name of an area of Search. While this is certainly not
-an exhaustive list, please consider using an existing scope before adding a
-new one.
+The scope should be the name of an area of the Cloud Connector. While this is
+certainly not an exhaustive list, please consider using an existing scope
+before adding a new one.
 
 Scopes are not required, but they help keep commits succinct and autonomous.
 
