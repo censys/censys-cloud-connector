@@ -49,7 +49,7 @@ def cli_scan(args: argparse.Namespace):
         )
         try:
             scheduler.run()
-        except KeyboardInterrupt:
+        except KeyboardInterrupt:  # pragma: no cover
             logger.info("Exiting...")
             return
 

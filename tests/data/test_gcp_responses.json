@@ -150,7 +150,7 @@
         "project": "censys-cc-test-project",
         "serverCaCert": "{\"certSerialNumber\":\"0\",\"commonName\":\"C\\u003dUS,O\\u003dGoogle\\\\, Inc,CN\\u003dGoogle Cloud SQL Server CA,dnQualifier\\u003d43c6e4cb-fa36-4330-b0d5-bd3463acf7da\",\"createTime\":\"2022-03-07T18:27:45.673Z\",\"expirationTime\":\"2032-03-04T18:28:45.673Z\",\"instance\":\"test-cloud-sql-instance\",\"kind\":\"sql#sslCert\",\"sha1Fingerprint\":\"79294c92908b9fea999aae81fc61da899eef17d7\"}",
         "region": "us-central1",
-        "serviceAccountEmailAddress": "p685962742949-y4htf1@gcp-sa-cloud-sql.iam.gserviceaccount.com",
+        "serviceAccountEmailAddress": "email@domain.iam.gserviceaccount.com",
         "ipAddresses": "[{\"ipAddress\":\"34.68.26.108\",\"type\":\"PRIMARY\"}]",
         "name": "test-cloud-sql-instance"
       },

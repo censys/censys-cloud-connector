@@ -137,8 +137,8 @@
     "cname_record": { "cname": "censys.io" }
   },
   "TEST_STORAGE_ACCOUNT": {
-    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/NetworkWatcherRG/providers/Microsoft.Storage/storageAccounts/cc-test-storage-acctount-secondary",
-    "name": "cc-test-storage-acctount-secondary",
+    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/NetworkWatcherRG/providers/Microsoft.Storage/storageAccounts/cc-test-storage-account-secondary",
+    "name": "cc-test-storage-account-secondary",
     "type": "Microsoft.Storage/storageAccounts",
     "tags": {},
     "location": "eastus",
@@ -146,12 +146,12 @@
     "kind": "StorageV2",
     "provisioning_state": "Succeeded",
     "primary_endpoints": {
-      "blob": "https://cc-test-storage-acctount-secondary.blob.core.windows.net/",
-      "queue": "https://cc-test-storage-acctount-secondary.queue.core.windows.net/",
-      "table": "https://cc-test-storage-acctount-secondary.table.core.windows.net/",
-      "file": "https://cc-test-storage-acctount-secondary.file.core.windows.net/",
-      "web": "https://cc-test-storage-acctount-secondary.z13.web.core.windows.net/",
-      "dfs": "https://cc-test-storage-acctount-secondary.dfs.core.windows.net/"
+      "blob": "https://cc-test-storage-account-secondary.blob.core.windows.net/",
+      "queue": "https://cc-test-storage-account-secondary.queue.core.windows.net/",
+      "table": "https://cc-test-storage-account-secondary.table.core.windows.net/",
+      "file": "https://cc-test-storage-account-secondary.file.core.windows.net/",
+      "web": "https://cc-test-storage-account-secondary.z13.web.core.windows.net/",
+      "dfs": "https://cc-test-storage-account-secondary.dfs.core.windows.net/"
     },
     "primary_location": "eastus",
     "status_of_primary": "available",
@@ -164,11 +164,11 @@
       "key2": "2022-02-21T18:50:11.147226Z"
     },
     "secondary_endpoints": {
-      "blob": "https://cc-test-storage-acctount-secondary.blob.core.windows.net/",
-      "queue": "https://cc-test-storage-acctount-secondary.queue.core.windows.net/",
-      "table": "https://cc-test-storage-acctount-secondary.table.core.windows.net/",
-      "web": "https://cc-test-storage-acctount-secondary.z13.web.core.windows.net/",
-      "dfs": "https://cc-test-storage-acctount-secondary.dfs.core.windows.net/"
+      "blob": "https://cc-test-storage-account-secondary.blob.core.windows.net/",
+      "queue": "https://cc-test-storage-account-secondary.queue.core.windows.net/",
+      "table": "https://cc-test-storage-account-secondary.table.core.windows.net/",
+      "web": "https://cc-test-storage-account-secondary.z13.web.core.windows.net/",
+      "dfs": "https://cc-test-storage-account-secondary.dfs.core.windows.net/"
     },
     "encryption": {
       "services": {
