@@ -347,7 +347,7 @@ class GcpSetupCli(ProviderSetupCli):
         return [
             "# Enable APIs",
             GcloudCommands.ENABLE_SERVICES.generate(
-                service=" ".join(apis), project=project_id
+                service=" ".join([str(api) for api in apis]), project=project_id
             ),
         ]
 
@@ -522,9 +522,6 @@ class GcpSetupCli(ProviderSetupCli):
                     "default": "censys-cloud-connector",
                     "validate": validate_service_account_name,
                     "invalid_message": "Service account name must be between 6 and 30 characters.",
-                    "transformer": lambda name: self.generate_service_account_email(
-                        name, project_id
-                    ),
                 }
             ]
         )
@@ -561,6 +558,7 @@ class GcpSetupCli(ProviderSetupCli):
         selected_account = self.prompt_select_account(accounts)
         if selected_account is None:
             self.print_error(GcpMessages.ERROR_NO_ACCOUNT_SELECTED)
+            self.print_info(GcpMessages.LOGIN_INSTRUCTIONS)
             exit(1)
 
         if selected_account.get("status") != "ACTIVE" and (
@@ -681,7 +679,6 @@ class GcpSetupCli(ProviderSetupCli):
         else:
             existing_account_name = service_account_action.split("@")[0]
             service_account_email = service_account_action
-
             if not self.enable_service_account(
                 organization_id,
                 project_id,
