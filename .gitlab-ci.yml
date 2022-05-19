@@ -56,7 +56,9 @@ unit tests:
   script: pytest --cov --cov-report xml
   artifacts:
     reports:
-      cobertura: coverage.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
 
 scan helm chart - CVE:
   stage: test
