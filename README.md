@@ -346,6 +346,10 @@ It is highly recommended that a Python version shim like
 Once installed, Poetry will make a virtualenv using the
 correct version of Python automatically.
 
+### Azure Roles
+Ensure the account's Access control (IAM) role is set to `Contributor`. If you encounter the following error, please ensure the user has correct Assigned Roles to perform the action:
+> `The client 'user@example.com' with object id 'uuid' does not have authorization to perform action 'Microsoft.Authorization/roleAssignments/write' over scope '/subscriptions/uuid' or the scope is invalid. If access was recently granted, please refresh your credentials.`
+
 ## Developer Documentation
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) to change or test the code or for
