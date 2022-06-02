@@ -5,6 +5,7 @@ from unittest import TestCase
 import pytest
 from parameterized import parameterized
 
+from censys.cloud_connectors.aws_connector.settings import AwsSpecificSettings
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.settings import ProviderSpecificSettings, Settings
 from tests.base_case import BaseCase
@@ -41,6 +42,7 @@ class TestSettings(BaseCase, TestCase):
         [
             (ProviderEnum.AZURE, "test_all_providers.yml", 2),
             (ProviderEnum.GCP, "test_all_providers.yml", 1),
+            (ProviderEnum.AWS, "test_all_providers.yml", 2),
         ]
     )
     def test_read_providers_config_file_provider_option(
@@ -130,3 +132,32 @@ class TestProviderSpecificSettings(BaseCase):
         assert (
             provider_settings.other == "other variable"
         ), "Must be the same as the input"
+
+
+class TestAwsSpecificSettings(BaseCase):
+    # TODO parameterize test? not sure how to splat as ctor params
+    # TODO move into other file?
+    def test_provider_key(self):
+        settings = AwsSpecificSettings(
+            account_number=[456, 123],
+            access_key="access-key",
+            secret_key="secret-key",
+            regions=["us-east-1", "us-west-1"],
+        )
+
+        assert settings.get_provider_key() == ("123_456", "us-east-1_us-west-1")
+
+    def test_access_type_required(self):
+        with pytest.raises(ValueError, match=r".*access type required"):
+            AwsSpecificSettings(account_number=[456], regions=["us-east-1"])
+
+    def test_only_one_access_type(self):
+        with pytest.raises(ValueError, match=r".*one access type.*"):
+            AwsSpecificSettings(
+                account_number=[456],
+                access_key="access-key",
+                secret_key="secret-key",
+                primary_access_id="primary-access",
+                primary_access_secret_id="primary-secret",
+                regions=["us-east-1"],
+            )

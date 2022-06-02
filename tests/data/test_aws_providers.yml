@@ -1,0 +1,25 @@
+# multiple account numbers
+- provider: aws
+  account_number:
+    - 999999999999
+    - 999999999998
+    - 999999999997
+  access_key: xxxxxxxxxxxxxxxxxxxx
+  secret_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  regions:
+    - xxxxxxxxx
+# user access
+- provider: aws
+  account_number: 999999999999
+  access_key: xxxxxxxxxxxxxxxxxxxx
+  secret_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  regions:
+    - xxxxxxxxx
+# role access
+- provider: aws
+  account_number: 999999999999
+  primary_access_id: xxxxxxxxxxxxxxxxxxxx
+  primary_access_secret_id: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  role_to_assume: xxx:xxx:xxx::xxxxxxxxxxxx:xxx/xxxxxxxxxxx
+  regions:
+    - xxxxxxxxx

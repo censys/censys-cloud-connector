@@ -22,7 +22,7 @@ class CaseInsensitiveEnumMeta(EnumMeta):
 class ProviderEnum(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     """Providers supported by Censys."""
 
-    # AWS = "AWS"
+    AWS = "AWS"
     AZURE = "Azure"
     GCP = "GCP"
 
