@@ -24,4 +24,5 @@ ignore-names =
     tearDown
 classmethod-decorators =
     classmethod,
-    validator
+    validator,
+    root_validator
