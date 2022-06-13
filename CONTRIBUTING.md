@@ -84,7 +84,7 @@ The following scopes are recommended for use with the build commit type:
 Please note that there is a sample vscode `settings.json` and `extensions.json`
 files in the `.vscode` directory.
 
-Features inlcuded in the extensions:
+Features included in the extensions:
 
 - Use pytest as a test runner
 - `.toml`, `.yaml`, `.env` file extension support

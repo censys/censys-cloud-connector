@@ -282,15 +282,17 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         )
         assert actual is None, "Should return None if no organization id found."
 
-    @parameterized.expand([(0, None), (1, "Unable to switch active account")])
-    def test_switch_active_cli_account(self, returncode: int, returnmessage):
+    @parameterized.expand([(0,), (1, "Unable to switch active account")])
+    def test_switch_active_cli_account(
+        self, returncode: int, return_message: Optional[str] = None
+    ):
         # Test data
         account_name = "censys-test@censys.io"
 
         # Mock
         mock_run = self.mocker.patch.object(self.setup_cli, "run_command")
         mock_run.return_value.returncode = returncode
-        mock_run.return_value.stdout = returnmessage
+        mock_run.return_value.stdout = return_message
 
         # Actual call
         self.setup_cli.switch_active_cli_account(account_name)

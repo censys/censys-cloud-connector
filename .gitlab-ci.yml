@@ -48,14 +48,18 @@ lint:
 .test-template:
   extends: .poetry
   stage: test
-  script: pytest
 
 unit tests:
   extends: .test-template
   image: python:3.9
-  script: pytest --cov --cov-report xml
+  script: pytest --junitxml pytest.xml --cov --cov-report xml
   artifacts:
+    when: always
+    paths:
+      - pytest.xml
+      - coverage.xml
     reports:
+      junit: pytest.xml
       coverage_report:
         coverage_format: cobertura
         path: coverage.xml
