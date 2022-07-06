@@ -9,7 +9,7 @@ REQUIREMENTS	:= requirements.txt
 VENV 			:= .venv
 INSTALL_STAMP 	:= ${VENV}/.install.stamp
 POETRY 			:= $(shell command -v poetry 2> /dev/null)
-EXTRAS 			:= -E azure -E gcp
+EXTRAS 			:= -E azure -E gcp -E aws
 VERSION			:= $(shell ${POETRY} version -s)
 
 .PHONY: all

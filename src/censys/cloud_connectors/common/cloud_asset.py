@@ -83,3 +83,34 @@ class AzureContainerAsset(ObjectStorageAsset):
         except ValueError:
             raise ValueError("Container URL is not valid")
         return str(url)
+
+
+class AwsStorageBucketAsset(ObjectStorageAsset):
+    """AWS Container asset."""
+
+    csp_label = ProviderEnum.AWS
+
+    @validator("value")
+    def value_is_valid_bucket_name(cls, v: str) -> str:
+        """Validate that the bucket name is valid.
+
+        Args:
+            v (str): Bucket name.
+
+        Returns:
+            Bucket name.
+        """
+        return v
+
+    @staticmethod
+    def url(bucket: str, region: str = "us-east-1") -> str:
+        """Get the URL of the container.
+
+        Args:
+            bucket (str): Bucket name.
+            region (str): Region name.
+
+        Returns:
+            str: Container URL.
+        """
+        return f"https://{bucket}.s3.{region}.amazonaws.com"

@@ -33,6 +33,8 @@ class BaseConnectorCase(BaseCase):
     def assert_seeds_with_values(self, seeds: list[Seed], values: list[str]):
         """Assert that the seeds have the expected values.
 
+        Each Seed type has a value property which is compared against the values array in order.
+
         Args:
             seeds (list[Seed]): The seeds.
             values (list[str]): The expected values.

@@ -25,7 +25,7 @@ variables:
   before_script:
     - pip install poetry
     - poetry config virtualenvs.in-project true
-    - poetry install -E azure -E gcp --no-ansi --no-interaction -vv
+    - poetry install -E azure -E gcp -E aws --no-ansi --no-interaction -vv
     - source `poetry env info --path`/bin/activate
 
 make_requirements_txt:
@@ -33,7 +33,7 @@ make_requirements_txt:
   stage: require
   script:
     - pip install poetry
-    - poetry export -o "$PIP_REQUIREMENTS_FILE" -E azure -E gcp
+    - poetry export -o "$PIP_REQUIREMENTS_FILE" -E azure -E gcp -E aws
   artifacts:
     paths:
       - "$PIP_REQUIREMENTS_FILE"

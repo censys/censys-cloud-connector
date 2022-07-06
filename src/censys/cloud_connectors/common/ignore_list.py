@@ -1,5 +1,7 @@
 """Ignored IPs and domains."""
 IGNORED_IPS = {
+    # AWS Ignored
+    "0.0.0.0",
     # Cloudflare
     "1.0.0.1",
     "1.1.1.1",

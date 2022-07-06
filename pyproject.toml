@@ -19,6 +19,9 @@ pydantic = {extras = ["dotenv", "email"], version = "^1.9.0"}
 PyYAML = "^6.0"
 requests = "^2.27.1"
 rich = "^12.0.0"
+# AWS
+boto3 = {version = "^1.24.2", optional = true}
+boto3-stubs = {extras = ["apigateway", "apigatewayv2", "ecs", "ec2", "elb", "elbv2", "rds", "route53", "route53domains", "s3"], version = "^1.24.11", optional = true}
 # Azure
 azure-cli = { version = "^2.34.1", optional = true }
 azure-common = { version = "^1.1.28", optional = true }
@@ -71,6 +74,10 @@ types-PyYAML = "^6.0.5"
 types-requests = "^2.27.14"
 
 [tool.poetry.extras]
+aws = [
+    "boto3",
+    "boto3-stubs",
+]
 azure = [
     "azure-cli",
     "azure-common",
