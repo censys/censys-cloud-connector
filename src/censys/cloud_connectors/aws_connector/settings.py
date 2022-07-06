@@ -4,6 +4,7 @@ from typing import Any, Optional, Union
 
 from pydantic import ConstrainedInt, Field, root_validator, validator
 
+from censys.cloud_connectors.aws_connector.enums import AwsResourceTypes
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.settings import ProviderSpecificSettings
 
@@ -19,11 +20,13 @@ class AwsSpecificSettings(ProviderSpecificSettings):
     """AWS specific settings."""
 
     provider = ProviderEnum.AWS
+    ignore: Optional[list[AwsResourceTypes]] = None
     account_number: list[AwsAccountNumber] = Field(min_items=1)
 
     # User Account Access
     access_key: Optional[str] = Field(min_length=1)
     secret_key: Optional[str] = Field(min_length=1)
+    session_token: Optional[str] = Field(min_length=1)
 
     # Role Account Access
     primary_access_id: Optional[str] = Field(min_length=1)

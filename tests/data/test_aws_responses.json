@@ -1,0 +1,194 @@
+{
+  "TEST_CREDS": {
+    "account_number": [
+      999999999999,
+      999999999998
+    ],
+    "access_key": "xxxxxxxxxxxxxxxxxxxx",
+    "secret_key": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "regions": [
+      "test-region-1"
+    ]
+  },
+  "TEST_CREDS_USER": {
+    "TODO": "fake-user-access-type"
+  },
+  "TEST_CREDS_ROLE": {
+    "TODO": "fake-assumed-role-access-type"
+  },
+  "TEST_API_GATEWAY_DOMAINS_V1": {
+    "items": [
+      {
+        "createdDate": "2016-04-05T19:58:27Z",
+        "description": "First description",
+        "id": "first-id",
+        "name": "first-name"
+      }
+    ]
+  },
+  "TEST_API_GATEWAY_DOMAINS_V2": {
+    "Items": [
+      {
+        "ApiEndpoint": "https://a1b2c3d5.execute-api.us-west-2.amazonaws.com",
+        "ApiId": "a1b2c3d5",
+        "ApiKeySelectionExpression": "$request.header.x-api-key",
+        "CreatedDate": "2020-04-07T20:23:50Z",
+        "Name": "my-http-api",
+        "ProtocolType": "HTTP",
+        "RouteSelectionExpression": "$request.method $request.path",
+        "Tags": {}
+      },
+      {
+        "ApiEndpoint": "wss://a1b2c3d4.execute-api.us-west-2.amazonaws.com",
+        "ApiId": "a1b2c3d4",
+        "ApiKeySelectionExpression": "$request.header.x-api-key",
+        "CreatedDate": "2020-04-07T20:21:59Z",
+        "Name": "my-websocket-api",
+        "ProtocolType": "WEBSOCKET",
+        "RouteSelectionExpression": "$request.body.message",
+        "Tags": {}
+      }
+    ]
+  },
+  "TEST_LOAD_BALANCER_V1": {
+    "LoadBalancerDescriptions": [
+      {
+        "DNSName": "my-load-balancer-1234567890.us-west-2.elb.amazonaws.com"
+      }
+    ]
+  },
+  "TEST_LOAD_BALANCER_V2": {
+    "LoadBalancers": [
+      {
+        "DNSName": "my-load-balancer-424835706.us-west-2.elb.amazonaws.com"
+      }
+    ]
+  },
+  "TEST_NETWORK_INTERFACES": {
+    "NetworkInterfaces": [
+      {
+        "PrivateIpAddresses": [
+          {
+            "Association": {
+              "PublicIp": "108.156.117.66"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "TEST_RDS_INSTANCES": {
+    "DBInstances": [
+      {
+        "Endpoint": {
+          "Address": "my-db-instance.ccc.test-region-1.rds.amazonaws.com",
+          "Port": 3306
+        }
+      }
+    ]
+  },
+  "TEST_ROUTE53_DOMAINS": {
+    "Domains": [
+      {
+        "DomainName": "example.com"
+      },
+      {
+        "DomainName": "example.net"
+      }
+    ]
+  },
+  "TEST_ROUTE53_DOMAINS_PAGINATED": {},
+  "TEST_ROUTE53_ZONES_LIST_HOSTED_ZONES": {
+    "HostedZones": [
+      {
+        "Name": "example.com.",
+        "Id": "/hostedzone/Z123456789",
+        "Config": {
+          "PrivateZone": false
+        }
+      },
+      {
+        "Name": "example.net.",
+        "Id": "/hostedzone/Z987654321",
+        "Config": {
+          "PrivateZone": true
+        }
+      }
+    ]
+  },
+  "TEST_ROUTE53_ZONES_LIST_RESOURCE_RECORD_SETS": {
+    "ResourceRecordSets": [
+      {
+        "Name": "example.com",
+        "Type": "A",
+        "ResourceRecords": [
+          {
+            "Value": "example.com."
+          }
+        ]
+      },
+      {
+        "Name": "sub.example.com",
+        "Type": "CNAME",
+        "ResourceRecords": [
+          {
+            "Value": "sub.example.com."
+          }
+        ]
+      },
+      {
+        "Name": "example.com",
+        "Type": "NS",
+        "ResourceRecords": [
+          {
+            "Value": "ns.example.com."
+          }
+        ]
+      }
+    ]
+  },
+  "TEST_S3_BUCKETS": {
+    "Buckets": [
+      {
+        "Name": "test-bucket-1"
+      },
+      {
+        "Name": "test-bucket-2"
+      }
+    ]
+  },
+  "TEST_ECS_LIST_CLUSTERS": {
+    "clusterArns": [
+      "arn:aws:ecs:us-east-1:123456789012:cluster/test-cluster"
+    ]
+  },
+  "TEST_ECS_LIST_CONTAINER_INSTANCES": {
+    "containerInstanceArns": [
+      "arn:aws:ecs:us-east-1:123456789012:container-instance/test-container-instance"
+    ]
+  },
+  "TEST_ECS_DESCRIBE_CONTAINER_INSTANCES": {
+    "containerInstances": [
+      {
+        "containerInstanceArn": "arn:aws:ecs:us-east-1:123456789012:container-instance/test-container-instance",
+        "ec2InstanceId": "i-1234567890abcdef0"
+      }
+    ]
+  },
+  "TEST_ECS_EC2_DESCRIBE_INSTANCES": {
+    "Reservations": [
+      {
+        "Instances": [
+          {
+            "InstanceId": "i-1234567890abcdef0",
+            "PublicIpAddress": "108.156.117.66"
+          },
+          {
+            "InstanceId": "i-1234567890abcdef1",
+            "PublicIpAddress": "108.156.117.67"
+          }
+        ]
+      }
+    ]
+  }
+}
