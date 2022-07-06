@@ -4,7 +4,7 @@
 #   pre-commit run --all-files
 # Update this file:
 #   pre-commit autoupdate
-fail_fast: true
+# fail_fast: true
 repos:
   - repo: https://github.com/antonbabenko/pre-commit-terraform
     rev: v1.68.1

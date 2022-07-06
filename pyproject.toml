@@ -12,13 +12,15 @@ censys-cc = "censys.cloud_connectors.common.cli:main"
 [tool.poetry.dependencies]
 python = "^3.9"
 # Common
+backoff = "^2.1.2"
 censys = "^2.1.2"
 importlib-metadata = { version = "*", python = "<=3.8" }
 inquirerpy = "^0.3.3"
+polling2 = "^0.5.0"
 pydantic = {extras = ["dotenv", "email"], version = "^1.9.0"}
 PyYAML = "^6.0"
 requests = "^2.27.1"
-rich = "^12.0.0"
+rich = "^12.4.4"
 # AWS
 boto3 = {version = "^1.24.2", optional = true}
 boto3-stubs = {extras = ["apigateway", "apigatewayv2", "ecs", "ec2", "elb", "elbv2", "rds", "route53", "route53domains", "s3"], version = "^1.24.11", optional = true}
@@ -141,6 +143,8 @@ module = [
     "google.oauth2",
     # Azure
     "azure.*",
+    # Polling
+    "polling2",
 ]
 ignore_missing_imports = true
 

@@ -5,15 +5,42 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
+from google.api_core import exceptions
+from google.cloud import securitycenter_v1
+from google.oauth2 import service_account
 from InquirerPy.separator import Separator
 from pydantic import validate_arguments
 from rich.progress import track
 
-from censys.cloud_connectors.common.cli.provider_setup import ProviderSetupCli
+from censys.cloud_connectors.common.cli.provider_setup import (
+    ProviderSetupCli,
+    backoff_wrapper,
+)
 from censys.cloud_connectors.common.enums import ProviderEnum
 
-from .enums import GcloudCommands, GcpApiIds, GcpMessages, GcpRoles
+from .enums import (
+    GcloudCommands,
+    GcpApiIds,
+    GcpMessages,
+    GcpRoles,
+    GcpSecurityCenterResourceTypes,
+)
 from .settings import GcpSpecificSettings
+
+
+def validate_service_account_name(service_account_name: str) -> bool:
+    """Validate service account name.
+
+    Service account name must be between 6 and 30 characters (inclusive), must begin with a
+    lowercase letter, and consist of lowercase alphanumeric characters that can be separated by hyphens.
+
+    Args:
+        service_account_name (str): Service account name.
+
+    Returns:
+        bool: True if valid, False otherwise.
+    """
+    return bool(re.match(r"^[a-z][a-z0-9-]{4,28}[a-z0-9]$", service_account_name))
 
 
 class GcpSetupCli(ProviderSetupCli):
@@ -474,7 +501,6 @@ class GcpSetupCli(ProviderSetupCli):
             self.print_info(GcpMessages.LOGIN_TRY_AGAIN)
             return None
 
-        # TODO: Investigate progress bar
         for command in track(commands, description="Running...", transient=True):
             res = self.run_command(command)
             if res.returncode != 0:
@@ -498,21 +524,6 @@ class GcpSetupCli(ProviderSetupCli):
         Returns:
             str: The service account email.
         """
-
-        def validate_service_account_name(service_account_name: str) -> bool:
-            """Validate service account name.
-
-            Service account name must be between 6 and 30 characters (inclusive), must begin with a
-            lowercase letter, and consist of lowercase alphanumeric characters that can be separated by hyphens.
-
-            Args:
-                service_account_name (str): Service account name.
-
-            Returns:
-                bool: True if valid, False otherwise.
-            """
-            return bool(re.match(r"^[a-z][a-z0-9-]{5,29}$", service_account_name))
-
         answers = self.prompt(
             [
                 {
@@ -536,6 +547,44 @@ class GcpSetupCli(ProviderSetupCli):
             exit(1)
 
         return self.generate_service_account_email(new_account_name, project_id)
+
+    @backoff_wrapper(
+        (
+            ValueError,
+            exceptions.PermissionDenied,
+            exceptions.GoogleAPIError,
+            exceptions.PermissionDenied,
+        ),
+        task_description="[blue]Verifying service account...",
+    )
+    def verify_service_account_permissions(
+        self,
+        provider_settings: GcpSpecificSettings,
+    ) -> bool:
+        """Check if the service account has the required permissions.
+
+        Args:
+            provider_settings (GcpSpecificSettings): Provider settings.
+
+        Returns:
+            bool: True if the service account has the required permissions, False otherwise.
+        """
+        key_file_path = (
+            Path(self.settings.secrets_dir)
+            / provider_settings.service_account_json_file
+        )
+        cred = service_account.Credentials.from_service_account_file(str(key_file_path))
+        security_center_client = securitycenter_v1.SecurityCenterClient(
+            credentials=cred
+        )
+        request = {
+            "parent": provider_settings.parent(),
+            "page_size": 1,
+            "filter": GcpSecurityCenterResourceTypes.COMPUTE_ADDRESS.filter(),
+        }
+        res = security_center_client.list_assets(request=request)
+        next(res.pages)
+        return True
 
     def setup_with_cli(self) -> None:
         """Setup with gcloud CLI."""
@@ -688,14 +737,18 @@ class GcpSetupCli(ProviderSetupCli):
                 self.print_error(GcpMessages.ERROR_FAILED_TO_ENABLE_SERVICE_ACCOUNT)
                 exit(1)
 
-        # TODO: Wait until the service account can get a single `google.cloud.resourcemanager.Organization`
-        # from the security center API.
         provider_settings = self.provider_specific_settings_class(
             organization_id=organization_id,
             service_account_json_file=key_file_path,
             service_account_email=service_account_email,
         )
         self.add_provider_specific_settings(provider_settings)
+
+        if not self.verify_service_account_permissions(provider_settings):
+            self.print_error(GcpMessages.ERROR_FAILED_TO_VERIFY_SERVICE_ACCOUNT)
+            exit(1)
+
+        self.print_success("Service account was successfully created.")
 
     def setup(self):
         """Setup the GCP provider."""

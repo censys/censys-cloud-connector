@@ -1,9 +1,16 @@
 """Azure specific setup CLI."""
 from typing import Optional
 
+from azure.core.exceptions import ClientAuthenticationError, HttpResponseError
+from azure.identity import ClientSecretCredential
+from azure.mgmt.network import NetworkManagementClient
 from pydantic import validate_arguments
 
-from censys.cloud_connectors.common.cli.provider_setup import ProviderSetupCli
+from censys.cloud_connectors.azure_connector.enums import AzureMessages
+from censys.cloud_connectors.common.cli.provider_setup import (
+    ProviderSetupCli,
+    backoff_wrapper,
+)
 from censys.cloud_connectors.common.enums import ProviderEnum
 
 from .settings import AzureSpecificSettings
@@ -166,16 +173,40 @@ class AzureSetupCli(ProviderSetupCli):
             self.print_error(error)
         return None
 
+    @backoff_wrapper(
+        (HttpResponseError, ClientAuthenticationError, ValueError),
+        task_description="[blue]Verifying service principal...",
+    )
+    def verify_service_principal(self, provider_setting: AzureSpecificSettings) -> bool:
+        """Verify the service principal.
+
+        Args:
+            provider_setting (AzureSpecificSettings): Azure specific settings.
+
+        Returns:
+            bool: True if valid, exits with error otherwise.
+        """
+        credential = ClientSecretCredential(
+            tenant_id=provider_setting.tenant_id,
+            client_id=provider_setting.client_id,
+            client_secret=provider_setting.client_secret,
+        )
+        for subscription_id in provider_setting.subscription_id:
+            network_client = NetworkManagementClient(credential, subscription_id)
+            res = network_client.public_ip_addresses.list_all()
+            next(res)
+        return True
+
     def setup_with_cli(self) -> None:
         """Setup with the Azure CLI."""
         subscriptions = self.get_subscriptions_from_cli()
         if len(subscriptions) == 0:
-            self.print_error("No subscriptions found")
+            self.print_error(AzureMessages.ERROR_NO_SUBSCRIPTIONS_FOUND)
             exit(1)
 
         selected_subscriptions = self.prompt_select_subscriptions(subscriptions)
         if len(selected_subscriptions) == 0:
-            self.print_error("No subscriptions selected")
+            self.print_error(AzureMessages.ERROR_NO_SUBSCRIPTIONS_SELECTED)
             exit(1)
 
         service_principal = self.create_service_principal(selected_subscriptions)
@@ -184,7 +215,6 @@ class AzureSetupCli(ProviderSetupCli):
                 "Service principal not created. Please try again or manually create a service principal"
             )
             exit(1)
-        self.print_success("Service principal was successfully created.")
 
         # Save the service principal
         provider_settings = self.provider_specific_settings_class(
@@ -198,6 +228,13 @@ class AzureSetupCli(ProviderSetupCli):
             client_secret=service_principal.get("password"),
         )
         self.add_provider_specific_settings(provider_settings)
+
+        # Verify the service principal
+        if not self.verify_service_principal(provider_settings):
+            self.print_error(AzureMessages.ERROR_FAILED_TO_VERIFY_SERVICE_PRINCIPAL)
+            exit(1)
+
+        self.print_success("Service principal was successfully created.")
 
     def setup(self):
         """Setup the Azure provider."""

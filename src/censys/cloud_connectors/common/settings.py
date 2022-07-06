@@ -123,14 +123,8 @@ class Settings(BaseSettings):
     logging_level: str = Field(default="INFO", env="LOGGING_LEVEL")
     dry_run: bool = Field(default=False, env="DRY_RUN")
 
-    # Toggle services
-    # TODO: Add toggle services/rework this into providers.yml
-    # scan_frequency: int = Field(default=-1)
-    # search_ips: bool = Field(default=True, env="SEARCH_IPS")
-    # search_containers: bool = Field(default=True, env="SEARCH_CONTAINERS")
-    # search_databases: bool = Field(default=True, env="SEARCH_DATABASES")
-    # search_dns: bool = Field(default=True, env="SEARCH_DNS")
-    # search_storage: bool = Field(default=True, env="SEARCH_STORAGE")
+    # Verification timeout
+    validation_timeout: int = Field(default=120, env="VALIDATION_TIMEOUT")
 
     # Censys
     censys_beta_url: HttpUrl = Field(

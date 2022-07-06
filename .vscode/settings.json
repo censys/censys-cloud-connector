@@ -24,6 +24,7 @@
     "autouse",
     "aws",
     "Balancingv",
+    "backoff",
     "capsys",
     "censys",
     "cname",
