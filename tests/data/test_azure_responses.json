@@ -214,5 +214,12 @@
     "metadata": null,
     "encryption_scope": {},
     "immutable_storage_with_versioning_enabled": false
+  },
+  "TEST_AZURE_SPECIFIC_SETTINGS": {
+    "provider": "azure",
+    "subscription_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "tenant_id": "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy",
+    "client_id": "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy",
+    "client_secret": "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
   }
 }

@@ -1,14 +1,19 @@
 """Base for all provider-specific setup cli commands."""
+import logging
+from functools import wraps
 from pathlib import Path
-from typing import get_origin
+from typing import Any, Callable, Iterable, Optional, Union, get_origin
 
+import backoff
 from InquirerPy import prompt
 from InquirerPy.validator import PathValidator
 from prompt_toolkit.validation import Document, ValidationError, Validator
 from pydantic.fields import ModelField
 from pydantic.utils import lenient_issubclass
+from rich.progress import Progress, TaskID, TimeElapsedColumn
 
 from censys.cloud_connectors.common.enums import ProviderEnum
+from censys.cloud_connectors.common.logger import get_logger
 from censys.cloud_connectors.common.settings import ProviderSpecificSettings, Settings
 
 from .base import BaseCli
@@ -98,6 +103,69 @@ def prompt_for_list(field: ModelField) -> list[str]:
     return values
 
 
+def backoff_wrapper(
+    exception: Union[type[Exception], Iterable[type[Exception]]],
+    task_description: Optional[str] = None,
+    **bo_kwargs: Any,
+) -> Callable:
+    """Wrap a method with a backoff decorator.
+
+    Args:
+        exception (Type[Exception] | Iterable[Type[Exception]]): The exception(s) to backoff on.
+        task_description (Optional[str]): The task description to use.
+        **bo_kwargs: The backoff decorator arguments.
+
+    Returns:
+        Callable: The wrapped method.
+    """
+
+    def decorator(method: Callable) -> Callable:
+        @wraps(method)
+        def wrapper(*args, **kwargs):
+            _progress: Optional[Progress] = None
+            _task: Optional[TaskID] = None
+
+            def on_success(_: Any) -> None:
+                if _progress and _task:
+                    _progress.stop_task(_task)
+
+            self: "ProviderSetupCli" = args[0]
+
+            default_kwargs = {
+                "wait_gen": backoff.expo,
+                "exception": exception,
+                "max_time": self.settings.validation_timeout,
+                "raise_on_giveup": False,
+                "on_success": on_success,
+                "logger": self.logger,
+                "backoff_log_level": logging.DEBUG,
+            }
+            default_kwargs.update(bo_kwargs)
+
+            with Progress(
+                *Progress.get_default_columns(), TimeElapsedColumn()
+            ) as progress:
+                _progress = progress
+                task = progress.add_task(
+                    task_description or "[red]Loading...",
+                    transient=True,
+                )
+                progress.start_task(task)
+                _task = task
+
+                @backoff.on_exception(**default_kwargs)
+                def _method():
+                    res = method(*args, **kwargs)
+                    progress.advance(task)
+                    return res
+
+                return _method()
+
+        return wrapper
+
+    return decorator
+
+
 class ProviderSetupCli(BaseCli):
     """Base for all provider-specific setup cli commands."""
 
@@ -113,6 +181,7 @@ class ProviderSetupCli(BaseCli):
             settings (Settings): The settings to use.
         """
         self.settings = settings
+        self.logger = get_logger("cloud_connector_setup", self.settings.logging_level)
 
     def setup(self) -> None:
         """Setup the provider.

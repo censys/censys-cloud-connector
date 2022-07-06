@@ -154,6 +154,7 @@ class GcpMessages(str, Enum):
     ERROR_FAILED_TO_CREATE_SERVICE_ACCOUNT_KEY = (
         "Failed to create service account key file. Please try again."
     )
+    ERROR_FAILED_TO_VERIFY_SERVICE_ACCOUNT = "Failed to verify GCP Service Account."
 
     def __str__(self) -> str:
         """Get the string representation of the message.

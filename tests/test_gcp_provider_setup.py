@@ -1,4 +1,5 @@
 import json
+import time
 from typing import Optional
 from unittest import TestCase
 
@@ -9,6 +10,9 @@ from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.settings import Settings
 from censys.cloud_connectors.gcp_connector import __provider_setup__
 from censys.cloud_connectors.gcp_connector.enums import GcpRoles
+from censys.cloud_connectors.gcp_connector.provider_setup import (
+    validate_service_account_name,
+)
 from censys.cloud_connectors.gcp_connector.settings import GcpSpecificSettings
 from tests.base_case import BaseCase
 
@@ -30,6 +34,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         self.settings = Settings(
             censys_api_key=self.consts["censys_api_key"],
             secrets_dir=str(self.shared_datadir),
+            validation_timeout=5,
         )
         self.setup_cli = __provider_setup__(self.settings)
 
@@ -607,3 +612,74 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         else:
             mock_create_service_account.assert_called_once()
             assert actual == expected_email
+
+    @parameterized.expand(
+        [
+            ("xxxxx", False),
+            ("xxxxxx", True),
+            ("1xxxxxx", False),
+            ("-xxxxxx", False),
+            ("xxxxx-xxxxx-xxxxx-xxxxx-xxxxxx", True),
+            ("xxxxx-xxxxx-xxxxx-xxxxx-xxxxx-", False),
+            ("xxxxx-xxxxx-xxxxx-xxxxx-xxxxxxx", False),
+        ]
+    )
+    def test_validate_service_account_name(
+        self, test_service_account_name: str, expected_return: bool
+    ):
+        # Actual call
+        actual_return = validate_service_account_name(test_service_account_name)
+
+        # Assertions
+        assert actual_return == expected_return
+
+    def test_verify_service_account_permissions_pass(
+        self, test_data_key_settings="TEST_GCP_SPECIFIC_SETTINGS"
+    ):
+        test_creds = self.data[test_data_key_settings]
+        if service_account_json_file := test_creds.get("service_account_json_file"):
+            test_creds["service_account_json_file"] = service_account_json_file
+        test_settings = GcpSpecificSettings.from_dict(test_creds)
+
+        mock_credentials = self.mocker.patch(
+            "censys.cloud_connectors.gcp_connector.connector.service_account.Credentials.from_service_account_file"
+        )
+        mock_list_assets = self.mocker.patch(
+            "censys.cloud_connectors.gcp_connector.connector.securitycenter_v1.SecurityCenterClient.list_assets"
+        )
+        self.setup_cli.verify_service_account_permissions(test_settings)
+
+        mock_credentials.assert_called_once()
+        mock_list_assets.assert_called_once()
+
+    def test_verify_service_account_permissions_fail(
+        self, test_data_key_settings="TEST_GCP_SPECIFIC_SETTINGS"
+    ):
+        # Test data
+        test_creds = self.data[test_data_key_settings]
+        if service_account_json_file := test_creds.get("service_account_json_file"):
+            test_creds["service_account_json_file"] = service_account_json_file
+        test_settings = GcpSpecificSettings.from_dict(test_creds)
+        test_validation_timeout = 4
+
+        # Mock
+        mock_credentials = self.mocker.patch(
+            "censys.cloud_connectors.gcp_connector.connector.service_account.Credentials.from_service_account_file",
+            side_effect=ValueError,
+        )
+
+        # Start timer
+        start_time = time.time()
+
+        # Actual call
+        res = self.setup_cli.verify_service_account_permissions(test_settings)
+
+        # End timer
+        end_time = time.time()
+
+        # Assertions
+        mock_credentials.assert_called()
+        assert (
+            end_time - start_time < test_validation_timeout + 1.5
+        ), "Timeout exceeded (with 1.5s margin)"
+        assert res is not True

@@ -1,10 +1,14 @@
 import json
+import time
 from unittest import TestCase
+from unittest.mock import MagicMock
 
 import pytest
+from azure.core.exceptions import HttpResponseError
 from parameterized import parameterized
 
 from censys.cloud_connectors.azure_connector import __provider_setup__
+from censys.cloud_connectors.azure_connector.settings import AzureSpecificSettings
 from censys.cloud_connectors.common.settings import Settings
 from tests.base_case import BaseCase
 
@@ -24,6 +28,20 @@ class TestAzureProviderSetup(BaseCase, TestCase):
             self.data = json.load(f)
         self.settings = Settings(censys_api_key=self.consts["censys_api_key"])
         self.setup_cli = __provider_setup__(self.settings)
+
+    def mock_asset(self, data: dict) -> MagicMock:
+        asset = self.mocker.MagicMock()
+        for key, value in data.items():
+            asset.__setattr__(key, value)
+        asset.as_dict.return_value = data
+        return asset
+
+    def mock_client(
+        self, client_name: str, module_name: str = "provider_setup"
+    ) -> MagicMock:
+        return self.mocker.patch(
+            f"censys.cloud_connectors.azure_connector.{module_name}.{client_name}"
+        )
 
     def test_get_subscriptions_from_cli(self):
         # Test data
@@ -177,6 +195,72 @@ class TestAzureProviderSetup(BaseCase, TestCase):
         else:
             assert creds is None
 
+    def test_verify_service_principal_pass(
+        self, test_data_key_settings="TEST_AZURE_SPECIFIC_SETTINGS"
+    ):
+        # Test data
+        test_creds = self.data[test_data_key_settings]
+        test_settings = AzureSpecificSettings.from_dict(test_creds)
+        test_list_all_response = []
+        test_seed_values = []
+        for i in range(3):
+            test_ip_response = self.data["TEST_IP_ADDRESS"].copy()
+            ip_address = test_ip_response["ip_address"][:-1] + str(i)
+            test_ip_response["ip_address"] = ip_address
+            test_seed_values.append(ip_address)
+            test_list_all_response.append(self.mock_asset(test_ip_response))
+
+        # Mock
+        mock_network_client = self.mock_client("NetworkManagementClient")
+        mock_public_ips = self.mocker.patch.object(
+            mock_network_client.return_value, "public_ip_addresses"
+        )
+        mock_public_ips.list_all.return_type = "azure.core.paging.ItemPaged[azure.mgmt.network.v2015_06_15.models.PublicIPAddressListResult]"
+
+        # Actual call
+        res = self.setup_cli.verify_service_principal(test_settings)
+
+        # Assertions
+        mock_network_client.assert_called_once()
+        mock_public_ips.list_all.assert_called_once()
+        assert res is True
+
+    def test_verify_service_principal_fail(
+        self, test_data_key_settings="TEST_AZURE_SPECIFIC_SETTINGS"
+    ):
+        # Test data
+        test_creds = self.data[test_data_key_settings]
+        test_settings = AzureSpecificSettings.from_dict(test_creds)
+        test_validation_timeout = 4
+
+        # Mock
+        self.mocker.patch.object(
+            self.setup_cli.settings,
+            "validation_timeout",
+            return_value=test_validation_timeout,
+        )
+        mock_network_client = self.mock_client("NetworkManagementClient")
+        mock_public_ips = self.mocker.patch.object(
+            mock_network_client.return_value, "public_ip_addresses"
+        )
+        mock_public_ips.list_all.side_effect = HttpResponseError
+
+        # Start timer
+        start_time = time.time()
+
+        # Actual call
+        res = self.setup_cli.verify_service_principal(test_settings)
+
+        # End timer
+        end_time = time.time()
+
+        # Assertions
+        mock_public_ips.list_all.assert_called()
+        assert (
+            end_time - start_time < test_validation_timeout + 1.5
+        ), "Timeout exceeded (with 1.5s margin)"
+        assert res is not True
+
     def test_setup_input(self):
         # Mock prompt
         mock_prompt = self.mocker.patch.object(
@@ -229,6 +313,10 @@ class TestAzureProviderSetup(BaseCase, TestCase):
         # Mock create_service_principal
         mock_create_service_principal = self.mocker.patch.object(
             self.setup_cli, "create_service_principal", return_value=None
+        )
+        # Mock verify_service_principal
+        self.mocker.patch.object(
+            self.setup_cli, "verify_service_principal", return_value=True
         )
         # Assert exits if no service principal is created
         with pytest.raises(SystemExit):
