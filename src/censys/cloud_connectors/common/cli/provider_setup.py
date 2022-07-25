@@ -72,34 +72,33 @@ def prompt_for_list(field: ModelField) -> list[str]:
 
     Returns:
         List[str]: The list of values.
-
-    Raises:
-        KeyboardInterrupt: If the user cancels the prompt.
     """
-    field_name = snake_case_to_english(field.name)
-    questions = [
-        {
-            "type": "input",
-            "name": field.name,
-            "message": f"Enter a {field_name}:",
-            "validate": generate_validation(field),
-        },
-        {
-            "type": "confirm",
-            "name": "add_another",
-            "message": f"Add another {field_name}?",
-        },
-    ]
-    answers = prompt(questions)
-    if not answers:  # pragma: no cover
-        raise KeyboardInterrupt
-    values = [answers[field.name]]
-    while answers.get("add_another", False):
-        answers = prompt(questions)
-        if not answers:
-            # break instead of raise KeyboardInterrupt
+    values: list[str] = []
+    while True:
+        field_name = snake_case_to_english(field.name)
+        questions: list[dict[str, Union[str, Validator]]] = [
+            {
+                "type": "input",
+                "name": field.name,
+                "message": f"Enter a {field_name}:",
+                "validate": generate_validation(field),
+            },
+            {
+                "type": "confirm",
+                "name": "add_another",
+                "message": f"Add another {field_name}?",
+            },
+        ]
+        try:
+            answers = prompt(questions)
+            if not answers:
+                raise KeyboardInterrupt
+        except KeyboardInterrupt:
             break
-        values.append(str(answers[field.name]).strip())
+        answer = str(answers[field.name])
+        values.append(answer.strip())
+        if not answers.get("add_another", False):
+            break
     return values
 
 

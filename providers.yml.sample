@@ -21,6 +21,7 @@
   service_account_email: censys-cloud-connector@project-id.iam.gserviceaccount.com
   # The ignore field takes a list of GCP resource types to ignore during scanning.
   # ignore:
+  #   - google.compute.Instance
   #   - google.compute.Address
   #   - google.container.Cluster
   #   - google.cloud.sql.Instance

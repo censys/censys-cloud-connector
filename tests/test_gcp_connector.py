@@ -167,11 +167,45 @@ class TestGcpConnector(BaseCase, TestCase):
         self.connector.list_assets(filter)
 
         # Assertions
-        self.connector.security_center_client.list_assets.assert_called_once_with(
+        mock_sc_client.return_value.list_assets.assert_called_once_with(
             request={
                 "parent": f"organizations/{self.connector.organization_id}",
                 "filter": filter,
             }
+        )
+
+    def test_get_compute_instances(self):
+        self.skipTest("Test data is not available yet")
+        # Test data
+        test_list_assets_results = []
+        test_seed_values = []
+        for i in range(3):
+            test_asset_result = self.data["TEST_COMPUTE_INSTANCE"].copy()
+            # network_instances = test_asset_result["asset"]["resourceProperties"]["networkInterfaces"]
+            # TODO: Implement tests
+            ip_address = test_asset_result["asset"]["resourceProperties"]["address"]
+            ip_address = ip_address[:-1] + str(i)
+            test_asset_result["asset"]["resourceProperties"]["address"] = ip_address
+            test_seed_values.append(ip_address)
+            test_list_assets_results.append(
+                self.mock_list_assets_result(test_asset_result)
+            )
+        test_label = self.connector.format_label(test_list_assets_results[0])
+
+        # Mock
+        mock_list = self.mocker.patch.object(
+            self.connector, "list_assets", return_value=test_list_assets_results
+        )
+
+        # Actual call
+        self.connector.get_compute_instances()
+
+        # Assertions
+        mock_list.assert_called_once_with(
+            filter=GcpSecurityCenterResourceTypes.COMPUTE_INSTANCE.filter()
+        )
+        self.assert_seeds_with_values(
+            self.connector.seeds[test_label], test_seed_values
         )
 
     def test_get_compute_addresses(self):
@@ -315,6 +349,7 @@ class TestGcpConnector(BaseCase, TestCase):
         )
 
         seed_scanners = {
+            GcpSecurityCenterResourceTypes.COMPUTE_INSTANCE: self.mocker.Mock(),
             GcpSecurityCenterResourceTypes.COMPUTE_ADDRESS: self.mocker.Mock(),
             GcpSecurityCenterResourceTypes.CONTAINER_CLUSTER: self.mocker.Mock(),
             GcpSecurityCenterResourceTypes.CLOUD_SQL_INSTANCE: self.mocker.Mock(),
@@ -342,6 +377,7 @@ class TestGcpConnector(BaseCase, TestCase):
         )
 
         seed_scanners = {
+            GcpSecurityCenterResourceTypes.COMPUTE_INSTANCE: self.mocker.Mock(),
             GcpSecurityCenterResourceTypes.COMPUTE_ADDRESS: self.mocker.Mock(),
             GcpSecurityCenterResourceTypes.CONTAINER_CLUSTER: self.mocker.Mock(),
             GcpSecurityCenterResourceTypes.CLOUD_SQL_INSTANCE: self.mocker.Mock(),

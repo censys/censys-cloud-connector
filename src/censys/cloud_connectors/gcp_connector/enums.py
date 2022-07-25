@@ -113,6 +113,7 @@ class GcpRoles(str, Enum):
 class GcpSecurityCenterResourceTypes(str, Enum):
     """GCP security center resource types."""
 
+    COMPUTE_INSTANCE = "google.compute.Instance"
     COMPUTE_ADDRESS = "google.compute.Address"
     CONTAINER_CLUSTER = "google.container.Cluster"
     CLOUD_SQL_INSTANCE = "google.cloud.sql.Instance"
