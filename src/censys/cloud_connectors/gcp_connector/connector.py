@@ -43,6 +43,7 @@ class GcpCloudConnector(CloudConnector):
         """
         super().__init__(settings)
         self.seed_scanners = {
+            GcpSecurityCenterResourceTypes.COMPUTE_INSTANCE: self.get_compute_instances,
             GcpSecurityCenterResourceTypes.COMPUTE_ADDRESS: self.get_compute_addresses,
             GcpSecurityCenterResourceTypes.CONTAINER_CLUSTER: self.get_container_clusters,
             GcpSecurityCenterResourceTypes.CLOUD_SQL_INSTANCE: self.get_cloud_sql_instances,
@@ -121,6 +122,60 @@ class GcpCloudConnector(CloudConnector):
         if filter:
             request["filter"] = filter
         return self.security_center_client.list_assets(request=request)
+
+    def get_asset_dict(
+        self, list_assets_result: ListAssetsResponse.ListAssetsResult
+    ) -> dict:
+        """Get Gcp asset dict.
+
+        Args:
+            list_assets_result (ListAssetsResponse.ListAssetsResult): Gcp asset result.
+
+        Returns:
+            dict: Gcp asset dict.
+        """
+        return {
+            "asset": list_assets_result.asset,
+            "label": self.format_label(list_assets_result),
+        }
+
+    def get_compute_instances(self):
+        """Get Gcp compute instances assets."""
+        list_assets_results = self.list_assets(
+            filter=GcpSecurityCenterResourceTypes.COMPUTE_INSTANCE.filter()
+        )
+        for list_assets_result in list_assets_results:
+            self.logger.debug(list_assets_result.__dict__)
+            if network_interfaces := list_assets_result.asset.resource_properties.get(
+                "networkInterfaces"
+            ):
+                # network_interfaces is a json string that needs to be parsed
+                try:
+                    network_interfaces = json.loads(network_interfaces)
+                except json.JSONDecodeError:
+                    self.logger.error(
+                        f"Failed to parse network_interfaces for {list_assets_result.asset.name}"
+                    )
+                    continue
+                if (
+                    not isinstance(network_interfaces, list)
+                    or len(network_interfaces) == 0
+                ):
+                    continue
+                access_configs = network_interfaces[0].get("accessConfigs")
+                external_ip_addresses = [
+                    ip_address
+                    for access_config in access_configs
+                    if (ip_address := access_config.get("natIP"))
+                    and access_config.get("name") == "External NAT"
+                ]
+                for ip_address in external_ip_addresses:
+                    self.add_seed(
+                        IpSeed(
+                            value=ip_address,
+                            label=self.format_label(list_assets_result),
+                        )
+                    )
 
     def get_compute_addresses(self):
         """Get Gcp ip address assets."""

@@ -1,6 +1,6 @@
 # Poetry build
 data "external" "poetry_build" {
-  program     = ["python", "scripts/build.py"]
+  program     = ["poetry", "run", "python", "scripts/build.py"]
   working_dir = "${path.module}/../../"
 }
 
