@@ -1,25 +1,75 @@
-# multiple account numbers
-- provider: aws
-  account_number:
-    - 999999999999
-    - 999999999998
-    - 999999999997
-  access_key: xxxxxxxxxxxxxxxxxxxx
-  secret_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  regions:
-    - xxxxxxxxx
 # user access
 - provider: aws
-  account_number: 999999999999
   access_key: xxxxxxxxxxxxxxxxxxxx
   secret_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  accounts:
+    - role_name: xxx:xxx:xxx::xxxxxxxxxxxx:xxx/xxxxxxxxxxx
+      account_number: 101
   regions:
     - xxxxxxxxx
-# role access
+
+# sts assumed role
 - provider: aws
-  account_number: 999999999999
-  primary_access_id: xxxxxxxxxxxxxxxxxxxx
-  primary_access_secret_id: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  role_to_assume: xxx:xxx:xxx::xxxxxxxxxxxx:xxx/xxxxxxxxxxx
+  account_number: 102
+  access_key: xxxxxxxxxxxxxxxxxxxx
+  secret_key: xxxxxxxxxxxxxxxxxxxx
+  regions:
+    - xxxxxxxxx
+
+# lambda + fargate + user
+- provider: aws
+  account_number: 103
+  regions:
+    - xxxxxxxxx
+
+# lambda + fargate + sts
+- provider: aws
+  accounts:
+  - role_name: iam_role_name
+    account_number: 104
+  regions:
+    - xxxxxxxxx
+
+# docker/k8s + user
+- provider: aws
+  account_number: 105
+  access_key: access_key_value
+  secret_key: secret_key
+  regions:
+    - xxxxxxxxx
+
+# docker/k8s + sts
+- provider: aws
+  access_key: access_key_value
+  secret_key: secret_key
+  accounts:
+  - role_name: iam_role_name
+    account_number: 106
+  regions:
+    - xxxxxxxxx
+
+# separate iam user keys
+- provider: aws
+  accounts:
+    - access_key: access_key_value
+      secret_key: secret_key
+      account_number: 107
+  regions:
+    - xxxxxxxxx
+
+# combined example
+- provider: aws
+  access_key: x
+  secret_key: x
+  accounts:
+    - access_key: x
+      secret_key: x
+      account_number: 108
+    - role_name: role1
+      account_number: 109
+    - access_key: x
+      secret_key: x
+      role_name: role2
+      account_number: 110
   regions:
     - xxxxxxxxx

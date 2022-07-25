@@ -5,7 +5,10 @@ from unittest import TestCase
 import pytest
 from parameterized import parameterized
 
-from censys.cloud_connectors.aws_connector.settings import AwsSpecificSettings
+from censys.cloud_connectors.aws_connector.settings import (
+    AwsAccount,
+    AwsSpecificSettings,
+)
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.settings import ProviderSpecificSettings, Settings
 from tests.base_case import BaseCase
@@ -42,7 +45,7 @@ class TestSettings(BaseCase, TestCase):
         [
             (ProviderEnum.AZURE, "test_all_providers.yml", 2),
             (ProviderEnum.GCP, "test_all_providers.yml", 1),
-            (ProviderEnum.AWS, "test_all_providers.yml", 2),
+            (ProviderEnum.AWS, "test_all_providers.yml", 1),
         ]
     )
     def test_read_providers_config_file_provider_option(
@@ -135,29 +138,102 @@ class TestProviderSpecificSettings(BaseCase):
 
 
 class TestAwsSpecificSettings(BaseCase):
-    # TODO parameterize test? not sure how to splat as ctor params
-    # TODO move into other file?
     def test_provider_key(self):
         settings = AwsSpecificSettings(
-            account_number=[456, 123],
+            account_number=123,
             access_key="access-key",
             secret_key="secret-key",
             regions=["us-east-1", "us-west-1"],
         )
 
-        assert settings.get_provider_key() == ("123_456", "us-east-1_us-west-1")
+        assert settings.get_provider_key() == ("123", "us-east-1_us-west-1")
 
-    def test_access_type_required(self):
-        with pytest.raises(ValueError, match=r".*access type required"):
-            AwsSpecificSettings(account_number=[456], regions=["us-east-1"])
+    def test_provider_key_sorts_accounts(self):
+        settings = AwsSpecificSettings(
+            accounts=[AwsAccount(account_number=8), AwsAccount(account_number=7)],
+            regions=["us-east-1"],
+        )
 
-    def test_only_one_access_type(self):
-        with pytest.raises(ValueError, match=r".*one access type.*"):
+        assert settings.get_provider_key() == ("7_8", "us-east-1")
+
+    def test_account_number_or_accounts_validation(self):
+        with pytest.raises(ValueError, match=r"Cannot specify both.*"):
             AwsSpecificSettings(
-                account_number=[456],
-                access_key="access-key",
-                secret_key="secret-key",
-                primary_access_id="primary-access",
-                primary_access_secret_id="primary-secret",
+                account_number=123,
+                accounts=[AwsAccount(account_number=345)],
                 regions=["us-east-1"],
             )
+
+    def test_parse_provider(self):
+        self.settings = Settings(
+            censys_api_key="fake-key-xxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            secrets_dir=str(self.shared_datadir),
+        )
+        self.settings.providers_config_file = (
+            self.shared_datadir / "test_aws_providers.yml"
+        )
+        self.settings.read_providers_config_file()
+        assert len(self.settings.providers[ProviderEnum.AWS]) == 8
+
+    def test_get_credentials(self):
+        cred1 = {
+            "account_number": 123,
+            "access_key": "first-access-key",
+            "secret_key": "first-secret-key",
+            "role_name": None,
+        }
+
+        cred2 = {
+            "account_number": 456,
+            "access_key": "second-access-key",
+            "secret_key": "second-secret-key",
+            "role_name": None,
+        }
+
+        settings = AwsSpecificSettings(
+            accounts=[AwsAccount(**cred1), AwsAccount(**cred2)],
+            regions=["us-east-1"],
+        )
+
+        creds = []
+        for cred in settings.get_credentials():
+            creds.append(cred)
+
+        assert creds == [cred1, cred2]
+
+    def test_get_credentials_overrides(self):
+        access_key = "base-access-key"
+        secret_key = "base-secret-key"
+        cred1 = {
+            "account_number": 123,
+        }
+
+        cred2 = {
+            "account_number": 456,
+            "access_key": "override-access-key",
+            "secret_key": "override-secret-key",
+            "role_name": "override-role-name",
+        }
+
+        expected_cred1 = cred1.copy()
+        expected_cred1.update(
+            {"access_key": access_key, "secret_key": secret_key, "role_name": None}
+        )
+
+        expected_cred2 = cred2.copy()
+
+        account1 = AwsAccount(**cred1)
+        account2 = AwsAccount(**cred2)
+        settings = AwsSpecificSettings(
+            access_key=access_key,
+            secret_key=secret_key,
+            accounts=[account1, account2],
+            regions=["us-east-1"],
+        )
+
+        creds = []
+        for cred in settings.get_credentials():
+            creds.append(cred)
+
+        expected_creds = [expected_cred1, expected_cred2]
+        assert creds == expected_creds

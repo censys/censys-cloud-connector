@@ -16,15 +16,8 @@
   service_account_json_file: test_gcp_service_account.json
   service_account_email: test2-service-account@domain.com
 - provider: aws
-  account_number: 999999999999
+  account_number: 123
   access_key: xxxxxxxxxxxxxxxxxxxx
   secret_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  regions:
-    - xxxxxxxxx
-- provider: aws
-  account_number: 999999999998
-  primary_access_id: xxxxxxxxxxxxxxxxxxxx
-  primary_access_secret_id: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  role_to_assume: xxx:xxx:xxx::xxxxxxxxxxxx:xxx/xxxxxxxxxxx
   regions:
     - xxxxxxxxx
