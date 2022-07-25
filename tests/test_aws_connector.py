@@ -43,7 +43,7 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
         self.connector = AwsCloudConnector(self.settings)
         self.connector.provider_settings = test_aws_settings
 
-        self.connector.account_number = self.data["TEST_CREDS"]["account_number"][0]
+        self.connector.account_number = self.data["TEST_CREDS"]["account_number"]
 
         self.region = self.data["TEST_CREDS"]["regions"][0]
         self.connector.region = self.region
@@ -88,7 +88,7 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
 
     def test_scan_all(self):
         # Test data
-        test_single_account = self.data["TEST_CREDS"]
+        test_single_account = self.data["TEST_ACCOUNTS"]
         test_aws_settings = [
             AwsSpecificSettings.from_dict(test_single_account),
         ]

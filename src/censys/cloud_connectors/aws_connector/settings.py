@@ -1,66 +1,63 @@
 """AWS specific settings."""
 
-from typing import Any, Optional, Union
+from typing import Any, List, Optional
 
-from pydantic import ConstrainedInt, Field, root_validator, validator
+from pydantic import BaseModel, Field, PositiveInt, root_validator
 
 from censys.cloud_connectors.aws_connector.enums import AwsResourceTypes
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.settings import ProviderSpecificSettings
 
 
-class AwsAccountNumber(ConstrainedInt):
+class AwsAccountNumber(PositiveInt):
     """Account Number."""
 
-    gt = 1
     lt = 10**12
+
+
+class AwsAccount(BaseModel):
+    """AWS Account."""
+
+    account_number: AwsAccountNumber = Field()
+    access_key: Optional[str] = Field(min_length=1)
+    secret_key: Optional[str] = Field(min_length=1)
+    role_name: Optional[str] = Field(min_length=1)
 
 
 class AwsSpecificSettings(ProviderSpecificSettings):
     """AWS specific settings."""
 
     provider = ProviderEnum.AWS
-    ignore: Optional[list[AwsResourceTypes]] = None
-    account_number: list[AwsAccountNumber] = Field(min_items=1)
+    ignore: Optional[List[AwsResourceTypes]] = None
 
-    # User Account Access
+    account_number: Optional[AwsAccountNumber] = Field()
     access_key: Optional[str] = Field(min_length=1)
     secret_key: Optional[str] = Field(min_length=1)
+    role_name: Optional[str] = Field(min_length=1)
+
     session_token: Optional[str] = Field(min_length=1)
-
-    # Role Account Access
-    primary_access_id: Optional[str] = Field(min_length=1)
-    primary_access_secret_id: Optional[str] = Field(min_length=1)
-    role_to_assume: Optional[str] = Field(min_length=1)
-
-    regions: list[str] = Field(min_items=1)
-
     role_session_name: Optional[str] = Field(min_length=1)
     external_id: Optional[str] = Field(min_length=1)
 
+    accounts: Optional[List[AwsAccount]] = None
+
+    regions: list[str] = Field(min_items=1)
+
     @root_validator
-    def validate_one_access_type(cls, values: dict[str, Any]) -> dict:
-        """Validate either User or Role access type is used.
+    def validate_account_numbers(cls, values: dict[str, Any]) -> dict:
+        """Validate.
 
         Args:
             values (dict): Settings
 
         Raises:
-            ValueError: only one access type is allowed
+            ValueError: Invalid settings.
 
         Returns:
             dict: Settings
         """
-        has_user = values["access_key"] is not None and values["secret_key"] is not None
-        has_role = (
-            values["primary_access_id"] is not None
-            and values["primary_access_secret_id"] is not None
-        )
-        if not (has_user or has_role):
-            raise ValueError("user or role access type required")
-
-        if has_user and has_role:
-            raise ValueError("only one access type is allowed")
+        if values["accounts"] is not None and values["account_number"] is not None:
+            raise ValueError("Cannot specify both account_number and accounts")
 
         return values
 
@@ -70,22 +67,54 @@ class AwsSpecificSettings(ProviderSpecificSettings):
         Returns:
             tuple: [str, str]: Provider key.
         """
-        accounts = "_".join(
-            [str(account_number) for account_number in sorted(self.account_number)]
-        )
-        regions = "_".join(self.regions)
-        return accounts, regions
+        accounts = []
+        if self.accounts:
+            for account in self.accounts:
+                accounts.append(str(account.account_number))
+        else:
+            accounts.append(str(self.account_number))
 
-    @validator("account_number", pre=True, allow_reuse=True)
-    def validate_account_number(cls, v: Union[str, list[str]]) -> list[str]:
-        """Validate and ensure account number is a list of strings.
+        return ("_".join(sorted(accounts)), "_".join(self.regions))
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        """Create a ProviderSpecificSettings object from a dictionary.
 
         Args:
-            v (Union[str, list[str]]): Value as string or list of strings
+            data (dict): The dictionary to use.
 
         Returns:
-            list[str]: Account Numbers
+            ProviderSpecificSettings: The settings.
         """
-        if not isinstance(v, list):
-            return [v]
-        return v
+        if provider_name := data.get("provider"):
+            data["provider"] = provider_name.title()
+
+        if "accounts" in data:
+            for index, account in enumerate(data["accounts"]):
+                data["accounts"][index] = AwsAccount(**account)
+
+        return cls(**data)
+
+    def get_credentials(self):
+        """Creates an iterator for all configured credentials. Any values within the accounts block will take precedence over the overall values.
+
+        Yields:
+            dict
+        """
+        if self.accounts:
+            for account in self.accounts:
+                creds = {
+                    "account_number": (account.account_number or self.account_number),
+                    "access_key": (account.access_key or self.access_key),
+                    "secret_key": (account.secret_key or self.secret_key),
+                    "role_name": (account.role_name or self.role_name),
+                }
+                yield creds
+
+        else:
+            yield {
+                "account_number": self.account_number,
+                "access_key": self.access_key,
+                "secret_key": self.secret_key,
+                "role_name": self.role_name,
+            }

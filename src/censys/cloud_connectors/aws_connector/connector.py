@@ -79,15 +79,16 @@ class AwsCloudConnector(CloudConnector):
 
         for provider_setting in provider_settings.values():
             self.provider_settings = provider_setting
-            for account_number in self.provider_settings.account_number:
-                self.account_number = account_number
+
+            for credential in self.provider_settings.get_credentials():
+                self.credential = credential
 
                 for region in self.provider_settings.regions:
                     self.region = region
                     self.scan()
                     self.region = None
 
-                self.account_number = None
+                self.credential = None
 
     def format_label(self, service: AwsServices, region: Optional[str] = None) -> str:
         """Format AWS label.

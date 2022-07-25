@@ -1,20 +1,30 @@
 {
   "TEST_CREDS": {
-    "account_number": [
-      999999999999,
-      999999999998
-    ],
+    "account_number": 999999999999,
     "access_key": "xxxxxxxxxxxxxxxxxxxx",
     "secret_key": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
     "regions": [
       "test-region-1"
     ]
   },
-  "TEST_CREDS_USER": {
-    "TODO": "fake-user-access-type"
-  },
-  "TEST_CREDS_ROLE": {
-    "TODO": "fake-assumed-role-access-type"
+  "TEST_ACCOUNTS": {
+    "access_key": "xxxxxxxxxxxxxxxxxxxx",
+    "secret_key": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "accounts": [
+      {
+        "account_number": 999999999998,
+        "access_key": "xxxxxxxxxxxxxxxxxxxX",
+        "secret_key": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxX"
+      },
+      {
+        "account_number": 999999999997,
+        "access_key": "xxxxxxxxxxxxxxxxxxxY",
+        "secret_key": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxY"
+      }
+    ],
+    "regions": [
+      "test-region-1"
+    ]
   },
   "TEST_API_GATEWAY_DOMAINS_V1": {
     "items": [
