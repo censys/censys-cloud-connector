@@ -1489,8 +1489,8 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "boto3-stubs"
-version = "1.24.23"
-description = "Type annotations for boto3 1.24.23 generated with mypy-boto3-builder 7.7.2"
+version = "1.24.24"
+description = "Type annotations for boto3 1.24.24 generated with mypy-boto3-builder 7.7.2"
 category = "main"
 optional = true
 python-versions = ">=3.6"
@@ -1507,6 +1507,7 @@ mypy-boto3-rds = {version = ">=1.24.0,<1.25.0", optional = true, markers = "extr
 mypy-boto3-route53 = {version = ">=1.24.0,<1.25.0", optional = true, markers = "extra == \"route53\""}
 mypy-boto3-route53domains = {version = ">=1.24.0,<1.25.0", optional = true, markers = "extra == \"route53domains\""}
 mypy-boto3-s3 = {version = ">=1.24.0,<1.25.0", optional = true, markers = "extra == \"s3\""}
+mypy-boto3-sts = {version = ">=1.24.0,<1.25.0", optional = true, markers = "extra == \"sts\""}
 typing-extensions = ">=4.1.0"
 
 [package.extras]
@@ -2718,6 +2719,17 @@ python-versions = ">=3.6"
 typing-extensions = ">=4.1.0"
 
 [[package]]
+name = "mypy-boto3-sts"
+version = "1.24.0"
+description = "Type annotations for boto3.STS 1.24.0 service generated with mypy-boto3-builder 7.6.1"
+category = "main"
+optional = true
+python-versions = ">=3.6"
+
+[package.dependencies]
+typing-extensions = ">=4.1.0"
+
+[[package]]
 name = "mypy-extensions"
 version = "0.4.3"
 description = "Experimental type system extensions for programs checked with the mypy typechecker."
@@ -3605,7 +3617,7 @@ gcp = ["google-auth", "google-cloud-resource-manager", "google-cloud-securitycen
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "83dae52abf01af5a441fb4bc387b071b85a39209280b6ede31970b22cd797805"
+content-hash = "c92ace007a960b83bd7b867a1edddf656b3717de418ed20d0025f153b84124c1"
 
 [metadata.files]
 adal = [
@@ -4072,8 +4084,8 @@ boto3 = [
     {file = "boto3-1.24.3.tar.gz", hash = "sha256:7625c5ed92bb7a953e03d2541bcbfcb66c3495f8d7b9421e47b4e2c280dc9162"},
 ]
 boto3-stubs = [
-    {file = "boto3-stubs-1.24.23.tar.gz", hash = "sha256:48edcc12b7c66ef1c8deb77766c61d1d328dff75e2e576257b618f1fb00e92dc"},
-    {file = "boto3_stubs-1.24.23-py3-none-any.whl", hash = "sha256:f3a9e0efdcea7181cfb238b52cdafa972c0df54c6958f92f69daff8ea1a1bf47"},
+    {file = "boto3-stubs-1.24.24.tar.gz", hash = "sha256:0a4e34856f5e531054aa9e934b97bc74a36905321336a3155dc306eac3c0ad0b"},
+    {file = "boto3_stubs-1.24.24-py3-none-any.whl", hash = "sha256:617b8edb952f9c77298dfb90b5e1af95f346ff163e17919aaaf6f378e5aa7761"},
 ]
 botocore = [
     {file = "botocore-1.27.3-py3-none-any.whl", hash = "sha256:2d48f4ed77220d4cb6f1b1abbb1b782d1b12260645f6ba3f3cd9ae5c98546297"},
@@ -4543,6 +4555,10 @@ mypy-boto3-route53domains = [
 mypy-boto3-s3 = [
     {file = "mypy-boto3-s3-1.24.0.tar.gz", hash = "sha256:213648b5c2d9fc89bfb56a6d90a5c673e1f5953e26d662259634cfff0fbaa4da"},
     {file = "mypy_boto3_s3-1.24.0-py3-none-any.whl", hash = "sha256:5df806f8d3a8ab536af46e9ae4d9d0f471184eb4e33911d43bc87049c8188005"},
+]
+mypy-boto3-sts = [
+    {file = "mypy-boto3-sts-1.24.0.tar.gz", hash = "sha256:2ba696d6edc65218521eef1de91f1695366771cae0ebf7c51c7694013a7dd69e"},
+    {file = "mypy_boto3_sts-1.24.0-py3-none-any.whl", hash = "sha256:d11b183d8582ecb51b4932463c2842eaadf9c6c0b967c0dd511bb8165228fed4"},
 ]
 mypy-extensions = [
     {file = "mypy_extensions-0.4.3-py2.py3-none-any.whl", hash = "sha256:090fedd75945a69ae91ce1303b5824f428daf5a028d2f6ab8a299250a846f15d"},

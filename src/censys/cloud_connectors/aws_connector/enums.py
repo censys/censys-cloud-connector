@@ -34,6 +34,7 @@ class AwsServices(str, Enum):
     ROUTE53_DOMAINS = "route53domains"
     ROUTE53_ZONES = "route53"
     STORAGE_BUCKET = "s3"
+    SECURE_TOKEN_SERVICE = "sts"
 
 
 # ServiceName is necessary for boto types; string literal is required
@@ -48,6 +49,7 @@ ServiceName = Literal[
     "route53",
     "route53domains",
     "s3",
+    "sts",
 ]
 
 

@@ -1,5 +1,5 @@
 """AWS Cloud Connector."""
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 import boto3
 import botocore
@@ -14,6 +14,7 @@ from mypy_boto3_rds import RDSClient
 from mypy_boto3_route53 import Route53Client
 from mypy_boto3_route53domains import Route53DomainsClient
 from mypy_boto3_s3 import S3Client
+from mypy_boto3_sts import STSClient
 
 from censys.cloud_connectors.common.cloud_asset import AwsStorageBucketAsset
 from censys.cloud_connectors.common.connector import CloudConnector
@@ -36,14 +37,13 @@ class AwsCloudConnector(CloudConnector):
     """
 
     provider = ProviderEnum.AWS
-
-    account_number: int
-    region: Optional[str]
-
     provider_settings: AwsSpecificSettings
-
     seed_scanners: dict[AwsResourceTypes, Callable[[], None]]
     cloud_asset_scanners: dict[AwsResourceTypes, Callable[[], None]]
+
+    _sts_credentials: Optional[dict] = None
+    account_number: int
+    region: Optional[str]
 
     def __init__(self, settings: Settings):
         """Initialize AWS Cloud Connectors.
@@ -82,6 +82,7 @@ class AwsCloudConnector(CloudConnector):
 
             for credential in self.provider_settings.get_credentials():
                 self.credential = credential
+                self.account_number = credential.get("account_number")
 
                 for region in self.provider_settings.regions:
                     self.region = region
@@ -89,6 +90,7 @@ class AwsCloudConnector(CloudConnector):
                     self.region = None
 
                 self.credential = None
+                self.account_number = None
 
     def format_label(self, service: AwsServices, region: Optional[str] = None) -> str:
         """Format AWS label.
@@ -129,41 +131,137 @@ class AwsCloudConnector(CloudConnector):
             self.logger.debug(f"Scanning {cloud_asset_type}")
             cloud_asset_scanner()
 
-    def user_credentials(self) -> dict:
-        """Generate required user credentials for AWS.
+    def credentials(self) -> dict:
+        """Generate required credentials for AWS.
 
         Returns:
-            dict: credentials
+            dict: Credentials.
         """
-        return {
-            "region_name": self.region,
-            "aws_access_key_id": self.provider_settings.access_key,
-            "aws_secret_access_key": self.provider_settings.secret_key,
-            "aws_session_token": self.provider_settings.session_token,
-        }
+        if role_name := self.credential.get("role_name"):
+            return self.get_assume_role_credentials(role_name)
+
+        return self._boto_cred(
+            self.region,
+            self.provider_settings.access_key,
+            self.provider_settings.secret_key,
+            self.provider_settings.session_token,
+        )
 
     def get_aws_client(
-        self,
-        service: ServiceName,
-    ) -> Optional[botocore.client.BaseClient]:
+        self, service: ServiceName, credentials: Optional[dict] = None
+    ) -> botocore.client.BaseClient:
         """Creates an AWS client for the provided service.
 
         Args:
             service (ServiceName): The AWS service name.
+            credentials (dict): Override credentials instead of using the default.
 
         Raises:
             Exception: If the client could not be created.
 
         Returns:
-            Optional[botocore.client.BaseClient]: An AWS boto3 client.
+            botocore.client.BaseClient: An AWS boto3 client.
         """
         try:
-            return boto3.client(service, **self.user_credentials())
+            credentials = credentials or self.credentials()
+            return boto3.client(service, **credentials)
         except Exception as e:
             self.logger.error(
                 f"Could not connect with client type '{service}'. Error: {e}"
             )
             raise
+
+    def get_assume_role_credentials(self, role_name: Optional[str] = None) -> dict:
+        """Generate and cache STS credentials.
+
+        Args:
+            role_name (str): Role name.
+
+        Returns:
+            dict: STS credentials.
+
+        Raises:
+            Exception: If the credentials could not be created.
+        """
+        if self._sts_credentials is not None:  # TODO and time > creds['Expiration']:
+            return self._sts_credentials
+
+        try:
+            creds = self.assume_role(role_name)
+            self._sts_credentials = self._boto_cred(
+                self.region,
+                creds["AccessKeyId"],
+                creds["SecretAccessKey"],
+                creds["SessionToken"],
+            )
+            return self._sts_credentials
+        except Exception as e:
+            self.logger.error(f"Failed to assume role: {e}")
+            raise
+
+    def _boto_cred(
+        self,
+        region_name: str = None,
+        access_key: str = None,
+        secret_key: str = None,
+        session_token: str = None,
+    ) -> dict[str, Any]:
+        """Create a boto3 credential dict. Only params with values are included.
+
+        Args:
+            region_name (str): AWS region.
+            access_key (str): AWS access key.
+            secret_key (str): AWS secret key.
+            session_token (str): AWS session token.
+
+        Returns:
+            dict: boto3 credential dict.
+        """
+        cred = {}
+
+        if region_name:
+            cred["region_name"] = region_name
+
+        if access_key:
+            cred["aws_access_key_id"] = access_key
+
+        if secret_key:
+            cred["aws_secret_access_key"] = secret_key
+
+        if session_token:
+            cred["aws_session_token"] = session_token
+
+        return cred
+
+    def assume_role(self, role_name: Optional[str] = "CensysCloudConnectorRole"):
+        """Acquire temporary credentials generated by Secure Token Service (STS).
+
+        Args:
+            role_name (str, optional): Role name to assume. Defaults to "CensysCloudConnectorRole".
+
+        Returns:
+            dict: Temporary credentials.
+        """
+        credentials = self._boto_cred(
+            self.region,
+            self.provider_settings.access_key,
+            self.provider_settings.secret_key,
+            self.provider_settings.session_token,
+        )
+
+        client: STSClient = self.get_aws_client(
+            service=AwsServices.SECURE_TOKEN_SERVICE,  # type: ignore
+            credentials=credentials,
+        )
+
+        role: dict[str, Any] = {
+            "RoleArn": f"arn:aws:iam::{self.account_number}:role/{role_name}"
+        }
+        if role_session_name := self.credential.get("role_session_name"):
+            role["RoleSessionName"] = role_session_name
+
+        assumed_role = client.assume_role(**role)
+        return assumed_role.get("Credentials", {})
 
     def get_api_gateway_domains_v1(self):
         """Retrieve all API Gateway V1 domains and emit seeds."""
@@ -255,7 +353,7 @@ class AwsCloudConnector(CloudConnector):
         try:
             data = client.describe_db_instances()
             for instance in data.get("DBInstances", []):
-                if value := instance.get("Endpoint").get("Address"):
+                if value := instance.get("Endpoint", {}).get("Address"):
                     self.add_seed(DomainSeed(value=value, label=label))
         except ClientError as e:
             self.logger.error(f"Could not connect to RDS Service. Error: {e}")

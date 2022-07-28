@@ -22,6 +22,7 @@ class AwsAccount(BaseModel):
     access_key: Optional[str] = Field(min_length=1)
     secret_key: Optional[str] = Field(min_length=1)
     role_name: Optional[str] = Field(min_length=1)
+    role_session_name: Optional[str] = Field(min_length=1)
 
 
 class AwsSpecificSettings(ProviderSpecificSettings):
@@ -34,9 +35,9 @@ class AwsSpecificSettings(ProviderSpecificSettings):
     access_key: Optional[str] = Field(min_length=1)
     secret_key: Optional[str] = Field(min_length=1)
     role_name: Optional[str] = Field(min_length=1)
+    role_session_name: Optional[str] = Field(min_length=1)
 
     session_token: Optional[str] = Field(min_length=1)
-    role_session_name: Optional[str] = Field(min_length=1)
     external_id: Optional[str] = Field(min_length=1)
 
     accounts: Optional[List[AwsAccount]] = None
@@ -96,20 +97,22 @@ class AwsSpecificSettings(ProviderSpecificSettings):
         return cls(**data)
 
     def get_credentials(self):
-        """Creates an iterator for all configured credentials. Any values within the accounts block will take precedence over the overall values.
+        """Generator for all configured credentials. Any values within the accounts block will take precedence over the overall values.
 
         Yields:
-            dict
+            dict[str, Any]
         """
         if self.accounts:
             for account in self.accounts:
-                creds = {
+                yield {
                     "account_number": (account.account_number or self.account_number),
                     "access_key": (account.access_key or self.access_key),
                     "secret_key": (account.secret_key or self.secret_key),
                     "role_name": (account.role_name or self.role_name),
+                    "role_session_name": (
+                        account.role_session_name or self.role_session_name
+                    ),
                 }
-                yield creds
 
         else:
             yield {
@@ -117,4 +120,5 @@ class AwsSpecificSettings(ProviderSpecificSettings):
                 "access_key": self.access_key,
                 "secret_key": self.secret_key,
                 "role_name": self.role_name,
+                "role_session_name": self.role_session_name,
             }
