@@ -15,7 +15,7 @@ class AwsResourceTypes(str, Enum):
     API_GATEWAY = "AWS::ApiGateway"  # Represents AWS::ApiGateway & AWS::ApiGatewayV2
     ECS = "AWS::ECS"
     LOAD_BALANCER = "AWS::ElasticLoadBalancing"
-    NETWORK_INTERFACE = "EC2::NetworkInterface"
+    NETWORK_INTERFACE = "AWS::NetworkInterface"
     RDS = "AWS::RDS"
     ROUTE53 = "AWS::Route53"
     STORAGE_BUCKET = "AWS::S3"

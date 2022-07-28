@@ -1,5 +1,19 @@
 - # name of cloud service provider
-  provider: azure
+- provider: aws
+  account_number: xxxxxxxxxxxx
+  access_key: xxxxxxxxxxxxxxxxxxxx
+  secret_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  regions:
+    - xxxxxxxxx
+  # ignore:
+  #   - AWS::ApiGateway
+  #   - AWS::ECS
+  #   - AWS::ElasticLoadBalancing
+  #   - AWS::NetworkInterface
+  #   - AWS::RDS
+  #   - AWS::Route53
+  #   - AWS::S3
+- provider: azure
   tenant_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
   client_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
   client_secret: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx

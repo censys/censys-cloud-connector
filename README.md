@@ -26,6 +26,19 @@ Seeds (IP Addresses, Domain Names, CIDRs, and ASNs) as well as Cloud Assets
 - [Google Cloud Storage](https://cloud.google.com/products/storage)
   - [Cloud Storage](https://cloud.google.com/storage)
 
+### Amazon Web Services
+
+- [Compute](https://aws.amazon.com/products/compute/)
+  - [Elastic Container Service (ECS)](https://aws.amazon.com/ecs/)
+  - [Elastic Compute Cloud (EC2)](https://aws.amazon.com/ec2/)
+- [Database](https://aws.amazon.com/products/databases/)
+  - [Relational Database Service (RDS)](https://aws.amazon.com/rds/)
+- [Network & Content Delivery](https://aws.amazon.com/products/networking)
+  - [API Gateway](https://aws.amazon.com/api-gateway)
+  - [Elastic Load Balancing (ELB)](https://aws.amazon.com/elasticloadbalancing/)
+  - [Route53](https://aws.amazon.com/route53/)
+- [Simple Storage Service (S3)](https://aws.amazon.com/s3/features/)
+
 ### Azure Cloud
 
 - [Azure Networking](https://azure.microsoft.com/en-us/product-categories/networking/)
@@ -130,6 +143,8 @@ Log in to your cloud provider's CLI tool using the following commands:
 
 - [Google's gcloud CLI][gcloud-cli]: `gcloud auth login`
 
+- [AWS CLI][aws-cli]: `aws configure`
+
 - [Azure CLI][azure-cli]: `az login`
 
 #### providers.yml
@@ -141,6 +156,27 @@ The file is a YAML file and is structured as follows:
 > `censys-cc config` command before you can run the connector.
 
 ```yaml
+- provider: aws
+  account_number: xxxxxxxxxxxx
+  access_key: xxxxxxxxxxxxxxxxxxxx
+  secret_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  regions:
+    - xxxxxxxxx
+  # The ignore field takes a list of Azure resource types to ignore during scanning.
+  # ignore:
+  #   - AWS::ApiGateway
+  #   - AWS::ECS
+  #   - AWS::ElasticLoadBalancing
+  #   - AWS::NetworkInterface
+  #   - AWS::RDS
+  #   - AWS::Route53
+  #   - AWS::S3
+  # It is also possible to define roles to assume for multiple accounts.
+  # accounts:
+  # - account_number: xxxxxxxxxxxx
+  #   access_key: xxxxxxxxxxxxxxxxxxxx
+  #   secret_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  #   role_name: xxxxxxxxxxxxxxxxxxxx
 - provider: azure
   tenant_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
   client_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
@@ -215,7 +251,11 @@ cloud.
 
 This option deploys the connector to GCP as a Google Cloud Function.
 
-#### Option 2: Deploy to Azure [](./terraform/azure-scheduled-function/README.md)
+#### [Option 2: Deploy to Azure](./terraform/azure-scheduled-function/README.md)
+
+> Coming Soon!
+
+#### [Option 3: Deploy to AWS](./terraform/aws-scheduled-function/README.md)
 
 > Coming Soon!
 
@@ -346,6 +386,23 @@ It is highly recommended that a Python version shim like
 Once installed, Poetry will make a virtualenv using the
 correct version of Python automatically.
 
+### AWS Policy Actions
+
+The following permissions are required to scan:
+
+- `route53:ListHostedZones`,
+- `elasticloadbalancing:DescribeLoadBalancers`,
+- `route53domains:ListDomains`,
+- `ec2:DescribeNetworkInterfaces`,
+- `rds:DescribeDBInstances`,
+- `route53:ListResourceRecordSets`,
+- `ecs:ListContainerInstances`,
+- `apigateway:GET`,
+- `s3:GetBucketLocation`,
+- `s3:ListBucket`,
+- `s3:ListAllMyBuckets`,
+- `ecs:ListClusters`
+
 ### Azure Roles
 
 Ensure the account's Access control (IAM) role has the following permission to create a service principal with a Reader role:
@@ -391,6 +448,7 @@ information on the CI/CD pipeline.
 [poetry-install]: https://python-poetry.org/docs/
 [pyenv-install]: https://github.com/pyenv/pyenv#installation
 [censys-asm-integrations]: https://app.censys.io/integrations
+[aws-cli]: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
 [azure-cli]: https://docs.microsoft.com/en-us/cli/azure/install-azure-cli
 [gcloud-cli]: https://cloud.google.com/sdk/docs/install
 [seed-data]: https://app.censys.io/seeds
