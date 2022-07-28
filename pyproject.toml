@@ -23,7 +23,7 @@ requests = "^2.27.1"
 rich = "^12.4.4"
 # AWS
 boto3 = {version = "^1.24.2", optional = true}
-boto3-stubs = {extras = ["apigateway", "apigatewayv2", "ecs", "ec2", "elb", "elbv2", "rds", "route53", "route53domains", "s3"], version = "^1.24.11", optional = true}
+boto3-stubs = {extras = ["apigateway", "apigatewayv2", "ecs", "ec2", "elb", "elbv2", "rds", "route53", "route53domains", "s3", "sts"], version = "^1.24.24", optional = true}
 # Azure
 azure-cli = { version = "^2.34.1", optional = true }
 azure-common = { version = "^1.1.28", optional = true }

@@ -26,6 +26,13 @@
       "test-region-1"
     ]
   },
+  "TEST_STS": {
+    "Credentials": {
+      "AccessKeyId": "sts-access-key-value",
+      "SecretAccessKey": "sts-secret-access-key-value",
+      "SessionToken": "sts-session-token-value"
+    }
+  },
   "TEST_API_GATEWAY_DOMAINS_V1": {
     "items": [
       {

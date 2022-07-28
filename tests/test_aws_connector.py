@@ -44,6 +44,9 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
         self.connector.provider_settings = test_aws_settings
 
         self.connector.account_number = self.data["TEST_CREDS"]["account_number"]
+        creds = test_aws_settings.get_credentials()
+        cred = next(creds)
+        self.connector.credential = cred
 
         self.region = self.data["TEST_CREDS"]["regions"][0]
         self.connector.region = self.region
@@ -83,7 +86,6 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
             region_name=self.connector.region,
             aws_access_key_id=self.connector.provider_settings.access_key,
             aws_secret_access_key=self.connector.provider_settings.secret_key,
-            aws_session_token=self.connector.provider_settings.session_token,
         )
 
     def test_scan_all(self):
@@ -391,6 +393,22 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
         # Assertions
         mock_add_seed.assert_has_calls(expected_calls)
         assert mock_add_seed.call_count == 2
+
+    def test_assume_role(self):
+        # Test data
+        data = self.data["TEST_STS"].copy()
+
+        # Mock
+        mock = self.mock_api_response("assume_role", data)
+
+        # Actual call
+        result = self.connector.assume_role()
+
+        # Assertions
+        assert result["AccessKeyId"] == "sts-access-key-value"
+        mock.assert_called_with(
+            RoleArn="arn:aws:iam::999999999999:role/CensysCloudConnectorRole"
+        )
 
     def test_format_label_without_region(self):
         # Test data

@@ -181,6 +181,7 @@ class TestAwsSpecificSettings(BaseCase):
             "access_key": "first-access-key",
             "secret_key": "first-secret-key",
             "role_name": None,
+            "role_session_name": None,
         }
 
         cred2 = {
@@ -188,6 +189,7 @@ class TestAwsSpecificSettings(BaseCase):
             "access_key": "second-access-key",
             "secret_key": "second-secret-key",
             "role_name": None,
+            "role_session_name": None,
         }
 
         settings = AwsSpecificSettings(
@@ -213,11 +215,17 @@ class TestAwsSpecificSettings(BaseCase):
             "access_key": "override-access-key",
             "secret_key": "override-secret-key",
             "role_name": "override-role-name",
+            "role_session_name": "override-role-session-name",
         }
 
         expected_cred1 = cred1.copy()
         expected_cred1.update(
-            {"access_key": access_key, "secret_key": secret_key, "role_name": None}
+            {
+                "access_key": access_key,
+                "secret_key": secret_key,
+                "role_name": None,
+                "role_session_name": None,
+            }
         )
 
         expected_cred2 = cred2.copy()
