@@ -162,7 +162,7 @@ class GcpCloudConnector(CloudConnector):
                     or len(network_interfaces) == 0
                 ):
                     continue
-                access_configs = network_interfaces[0].get("accessConfigs")
+                access_configs = network_interfaces[0].get("accessConfigs", [])
                 external_ip_addresses = [
                     ip_address
                     for access_config in access_configs
