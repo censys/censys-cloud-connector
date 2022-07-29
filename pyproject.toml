@@ -1,10 +1,39 @@
 [tool.poetry]
 name = "censys-cloud-connectors"
-version = "3.0.1b1"
+version = "3.0.1b2"
 description = "The Censys Unified Cloud Connector is a standalone connector that gathers assets from various cloud providers and stores them in Censys ASM."
 authors = ["Censys, Inc. <support@censys.io>"]
 license = "Apache-2.0"
+readme = "README.md"
 packages = [{ include = "censys/cloud_connectors", from = "src" }]
+keywords = ["censys", "cloud", "connector", "attack surface management"]
+classifiers = [
+    "Typing :: Typed",
+    "Topic :: Internet",
+    "Topic :: Security",
+    "Topic :: System :: Networking",
+    "Topic :: System :: Networking :: Monitoring",
+    "Topic :: Utilities",
+    "Environment :: Console",
+    "Natural Language :: English",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "Operating System :: OS Independent",
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+]
+
+[tool.poetry.urls]
+"Censys Homepage" = "https://censys.io/"
+"Discussions" = "https://github.com/censys/censys-cloud-connector/discussions"
+"Changelog" = "https://github.com/censys/censys-cloud-connector/releases"
+"Tracker" = "https://github.com/censys/censys-cloud-connector/issues"
+"Source" = "https://github.com/censys/censys-cloud-connector"
 
 [tool.poetry.scripts]
 censys-cc = "censys.cloud_connectors.common.cli:main"
@@ -16,7 +45,6 @@ backoff = "^2.1.2"
 censys = "^2.1.2"
 importlib-metadata = { version = "*", python = "<=3.8" }
 inquirerpy = "^0.3.3"
-polling2 = "^0.5.0"
 pydantic = {extras = ["dotenv", "email"], version = "^1.9.0"}
 PyYAML = "^6.0"
 requests = "^2.27.1"
@@ -131,20 +159,18 @@ python_version = "3.9"
 strict_optional = true
 warn_redundant_casts = true
 warn_unused_configs = true
-warn_unused_ignores = true
 
 [[tool.mypy.overrides]]
 module = [
     # Common
     "InquirerPy.*",
+    "importlib_metadata",
     # Tests
     "parameterized",
     # GCP
     "google.oauth2",
     # Azure
     "azure.*",
-    # Polling
-    "polling2",
 ]
 ignore_missing_imports = true
 
