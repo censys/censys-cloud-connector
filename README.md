@@ -272,7 +272,7 @@ This method assumes you have Docker installed and running on your server.
 2. Pull the Docker image <!-- markdownlint-disable -->
 
 ```sh
-docker pull ghcr.io/censys/censys-cloud-connector:latest
+docker pull gcr.io/censys-io/censys-cloud-connector:latest
 ```
 
 - If your environment does not allow you to pull the Docker image, you can
@@ -280,7 +280,7 @@ docker pull ghcr.io/censys/censys-cloud-connector:latest
   push the image to a Docker registry.
 
   ```sh
-  docker build -t ghcr.io/censys/censys-cloud-connector:latest .
+  docker build -t gcr.io/censys-io/censys-cloud-connector:latest .
   ```
 
 3. Run the Docker container <!-- markdownlint-disable -->
@@ -302,14 +302,14 @@ docker run -d --rm \
   -e "CENSYS_API_KEY=$CENSYS_API_KEY" \
   -v $(pwd)/providers.yml:/app/providers.yml \
   -v $(pwd)/secrets:/app/secrets \
-  ghcr.io/censys/censys-cloud-connector:latest \
+  gcr.io/censys-io/censys-cloud-connector:latest \
   scan --daemon 4
 
 # Alternatively if you do not need the secrets volume
 docker run -d --rm \
   -e "CENSYS_API_KEY=$CENSYS_API_KEY" \
   -v $(pwd)/providers.yml:/app/providers.yml \
-  ghcr.io/censys/censys-cloud-connector:latest \
+  gcr.io/censys-io/censys-cloud-connector:latest \
   scan --daemon 4
 
 # Additionally if you only need to scan once
@@ -317,7 +317,7 @@ docker run --rm \
   -e "CENSYS_API_KEY=$CENSYS_API_KEY" \
   -v $(pwd)/providers.yml:/app/providers.yml \
   -v $(pwd)/secrets:/app/secrets \
-  ghcr.io/censys/censys-cloud-connector:latest
+  gcr.io/censys-io/censys-cloud-connector:latest
 ```
 
 > More information about the `--daemon` flag is found
@@ -431,16 +431,19 @@ If you encounter the following error while configuring your GCP Cloud Connector,
 Failed to enable service account. ERROR: (gcloud.iam.service-accounts.keys.create) FAILED_PRECONDITION: Precondition check failed.
 ```
 
-Go to https://console.cloud.google.com/iam-admin/serviceaccounts to manage your service account keys.
+Go to <https://console.cloud.google.com/iam-admin/serviceaccounts> to manage your service account keys.
 
 ## Developer Documentation
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) to change or test the code or for
-information on the CI/CD pipeline.
+All contributions (no matter how small) are always welcome. See
+[Contributing to the Cloud Connector](https://github.com/censys/censys-cloud-connector/tree/main/.github/CONTRIBUTING.md) to change or
+test the code or for information on the CI/CD pipeline.
 
 ## License
 
-[![Apache 2](https://img.shields.io/badge/license-Apache%202.0-orange.svg?style=flat-square)](./LICENSE)
+This software is licensed under [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0)
+
+- Copyright (C) 2022 Censys, Inc.
 
 <!-- References -->
 

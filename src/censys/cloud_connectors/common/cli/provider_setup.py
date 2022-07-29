@@ -10,7 +10,7 @@ from InquirerPy.validator import PathValidator
 from prompt_toolkit.validation import Document, ValidationError, Validator
 from pydantic.fields import ModelField
 from pydantic.utils import lenient_issubclass
-from rich.progress import Progress, TaskID, TimeElapsedColumn
+from rich.progress import BarColumn, Progress, TaskID, TextColumn, TimeElapsedColumn
 
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.logger import get_logger
@@ -141,13 +141,16 @@ def backoff_wrapper(
             }
             default_kwargs.update(bo_kwargs)
 
-            with Progress(
-                *Progress.get_default_columns(), TimeElapsedColumn()
-            ) as progress:
+            # columns = Progress.get_default_columns()
+            columns = (
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TimeElapsedColumn(),
+            )
+            with Progress(*columns) as progress:
                 _progress = progress
                 task = progress.add_task(
-                    task_description or "[red]Loading...",
-                    transient=True,
+                    task_description or "[red]Loading...", transient=True, total=None
                 )
                 progress.start_task(task)
                 _task = task

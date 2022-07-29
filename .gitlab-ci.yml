@@ -2,12 +2,15 @@ default:
   tags:
     - search
 
-stages:
-  - require
-  - test
-
 variables:
   PIP_REQUIREMENTS_FILE: "requirements.txt"
+
+.ssh:
+  script:
+    - mkdir ~/.ssh/
+    - ssh-keyscan gitlab.com > ~/.ssh/known_hosts
+    - eval $(ssh-agent)
+    # - ssh-add
 
 .poetry:
   image: python:3.9
@@ -30,7 +33,8 @@ variables:
 
 make_requirements_txt:
   extends: .poetry
-  stage: require
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
   script:
     - pip install poetry
     - poetry export -o "$PIP_REQUIREMENTS_FILE" -E azure -E gcp -E aws
@@ -38,20 +42,44 @@ make_requirements_txt:
     paths:
       - "$PIP_REQUIREMENTS_FILE"
 
+.build-image-buildah:
+  image: gcr.io/censys-internal/censys.io/buildah:2022-01-08_21-43-42
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+  variables:
+    KUBERNETES_CPU_REQUEST: 4
+  before_script:
+    - dnf install -y openssh-clients
+    - !reference [ .ssh, script ]
+    - mkdir -p ~/.docker && cp "${DOCKER_AUTH_CONFIG}" ~/.docker/config.json
+    - export STORAGE_DRIVER="overlay"
+    - buildah info || export STORAGE_DRIVER="vfs"
+
+container image app:
+  extends: .build-image-buildah
+  variables:
+    IMAGE_NAME: gcr.io/censys-io/censys-cloud-connector
+  script:
+    - buildah bud --squash --target=app --ssh default -t ${IMAGE_NAME}:${CI_COMMIT_SHA} .
+    - buildah push ${IMAGE_NAME}:${CI_COMMIT_SHA}
+    - grype ${IMAGE_NAME}:${CI_COMMIT_SHA}
+
 lint:
   extends: .poetry
-  stage: test
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
   script:
     - flake8 src/
     - mypy -p censys.cloud_connectors
 
 .test-template:
   extends: .poetry
-  stage: test
 
 unit tests:
   extends: .test-template
   image: python:3.9
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
   script: pytest --junitxml pytest.xml --cov --cov-report xml
   artifacts:
     when: always
@@ -65,20 +93,57 @@ unit tests:
         path: coverage.xml
 
 scan helm chart - CVE:
-  stage: test
   image: gcr.io/censys-internal/censys.io/helm3-ci:2022-01-24_03-21-30
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
   needs: []
   script:
     - cd kubernetes
     - helm template censys-cloud-connectors ./censys-cloud-connectors --dry-run |  kubescape scan framework nsa -
 
 scan helm chart - Deprecation:
-  stage: test
   image: gcr.io/censys-internal/censys.io/helm3-ci:2022-01-24_03-21-30
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
   needs: []
   script:
     - cd kubernetes
     - helm template censys-cloud-connectors ./censys-cloud-connectors --dry-run | kubent --helm2=false --helm3=false --cluster=false -f -
+
+release production:
+  image: gcr.io/censys-internal/censys.io/default-ci-slim:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE != "schedule"
+      when: manual
+      allow_failure: true
+  needs:
+    - job: container image app
+      optional: true
+    - job: unit tests
+      optional: false
+  variables:
+    GIT_DEPTH: "0"
+  script:
+    - git config --global user.email ${GITLAB_USER_EMAIL}
+    - git config --global user.name ${GITLAB_USER_NAME}
+    - git remote set-url origin git@gitlab.com:censys/integrations/cloud-connectors-unified.git
+    - mkdir ~/.ssh/
+    - ssh-keyscan -t ed25519 gitlab.com > ~/.ssh/known_hosts
+    - echo "${GITLAB_SSH_KEY}" > ~/.ssh/id_ed25519 && chmod 0600 ~/.ssh/id_ed25519
+    - TAG=production-$(date -u +%F_%H-%M)
+    - git tag --annotate ${TAG} --message="Deployed at $(date -u)" ${CI_COMMIT_SHA}
+    - git push origin ${TAG}
+
+deploy production image:
+  extends: .build-image-buildah
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /production.*/'
+  variables:
+    IMAGE_NAME: gcr.io/censys-io/censys-cloud-connector
+  script:
+    - gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
+    - buildah bud --squash --target=app --ssh default -t ${IMAGE_NAME}:${CI_COMMIT_TAG} .
+    - buildah push ${IMAGE_NAME}:${CI_COMMIT_TAG}
 
 include:
   - template: Security/Dependency-Scanning.gitlab-ci.yml
@@ -88,24 +153,17 @@ include:
   - template: Security/Secret-Detection.gitlab-ci.yml
 
 sast:
-  stage: test
   variables:
     SEARCH_MAX_DEPTH: "10"
 
-kics-iac-sast:
-  stage: test
-
 secret_detection:
-  stage: test
   variables:
     SECRET_DETECTION_HISTORIC_SCAN: "true"
 
 license_scanning:
-  stage: test
   dependencies: ["make_requirements_txt"]
 
 gemnasium-python-dependency_scanning:
-  stage: test
   dependencies: ["make_requirements_txt"]
   before_script:
     - rm poetry.lock pyproject.toml
