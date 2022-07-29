@@ -80,6 +80,7 @@ unit tests:
   image: python:3.9
   rules:
     - if: $CI_MERGE_REQUEST_ID
+    - if: $CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE != "schedule"
   script: pytest --junitxml pytest.xml --cov --cov-report xml
   artifacts:
     when: always
