@@ -460,31 +460,35 @@ class AwsCloudConnector(CloudConnector):
         ec2: EC2Client = self.get_aws_client(AwsServices.EC2)
         label = self.format_label(SeedLabel.ECS)
 
-        clusters = ecs.list_clusters()
-        for cluster in clusters.get("clusterArns", []):
-            cluster_instances = ecs.list_container_instances(cluster=cluster)
-            containers = cluster_instances.get("containerInstanceArns", [])
-            if len(containers) == 0:
-                continue
+        try:
+            clusters = ecs.list_clusters()
+            for cluster in clusters.get("clusterArns", []):
+                cluster_instances = ecs.list_container_instances(cluster=cluster)
+                containers = cluster_instances.get("containerInstanceArns", [])
+                if len(containers) == 0:
+                    continue
 
-            instances = ecs.describe_container_instances(
-                cluster=cluster, containerInstances=containers
-            )
+                instances = ecs.describe_container_instances(
+                    cluster=cluster, containerInstances=containers
+                )
 
-            instance_ids = [
-                i.get("ec2InstanceId") for i in instances.get("containerInstances", [])
-            ]
-            if not instance_ids:
-                continue
+                instance_ids = [
+                    i.get("ec2InstanceId")
+                    for i in instances.get("containerInstances", [])
+                ]
+                if not instance_ids:
+                    continue
 
-            descriptions = ec2.describe_instances(InstanceIds=instance_ids)
-            for reservation in descriptions.get("Reservations", []):
-                for instance in reservation.get("Instances", []):
-                    value = instance.get("PublicIpAddress")
-                    if not value:
-                        continue
+                descriptions = ec2.describe_instances(InstanceIds=instance_ids)
+                for reservation in descriptions.get("Reservations", []):
+                    for instance in reservation.get("Instances", []):
+                        value = instance.get("PublicIpAddress")
+                        if not value:
+                            continue
 
-                    self.add_seed(IpSeed(value=value, label=label))
+                        self.add_seed(IpSeed(value=value, label=label))
+        except ClientError as e:
+            self.logger.error(f"Could not connect to ECS. Error: {e}")
 
     def _get_s3_region(self, client: S3Client, bucket: str) -> str:
         """Lookup S3 bucket location.
