@@ -143,7 +143,7 @@ Log in to your cloud provider's CLI tool using the following commands:
 
 - [Google's gcloud CLI][gcloud-cli]: `gcloud auth login`
 
-- [AWS CLI][aws-cli]: `aws configure`
+- [AWS CLI][aws-cli]: `aws configure` or `aws sso login`
 
 - [Azure CLI][azure-cli]: `az login`
 
@@ -162,7 +162,7 @@ The file is a YAML file and is structured as follows:
   secret_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
   regions:
     - xxxxxxxxx
-  # The ignore field takes a list of Azure resource types to ignore during scanning.
+  # The ignore field takes a list of AWS resource types to ignore during scanning.
   # ignore:
   #   - AWS::ApiGateway
   #   - AWS::ECS
@@ -267,9 +267,7 @@ This option deploys the connector to Azure as a Azure Function.
 
 This method assumes you have Docker installed and running on your server.
 
-1. Authenticate to the [GitHub Container Registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-to-the-container-registry)
-
-2. Pull the Docker image <!-- markdownlint-disable -->
+1. Pull the Docker image <!-- markdownlint-disable -->
 
 ```sh
 docker pull gcr.io/censys-io/censys-cloud-connector:latest
@@ -283,7 +281,7 @@ docker pull gcr.io/censys-io/censys-cloud-connector:latest
   docker build -t gcr.io/censys-io/censys-cloud-connector:latest .
   ```
 
-3. Run the Docker container <!-- markdownlint-disable -->
+2. Run the Docker container <!-- markdownlint-disable -->
 
 The following command will run the Docker container. You can specify the
 environment variables you want to pass to the container using the `-e` flag.
