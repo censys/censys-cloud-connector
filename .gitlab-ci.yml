@@ -31,7 +31,7 @@ variables:
     - poetry install -E azure -E gcp -E aws --no-ansi --no-interaction -vv
     - source `poetry env info --path`/bin/activate
 
-make_requirements_txt:
+make requirements txt:
   extends: .poetry
   rules:
     - if: $CI_MERGE_REQUEST_ID
@@ -50,7 +50,7 @@ make_requirements_txt:
     KUBERNETES_CPU_REQUEST: 4
   before_script:
     - dnf install -y openssh-clients
-    - !reference [ .ssh, script ]
+    - !reference [.ssh, script]
     - mkdir -p ~/.docker && cp "${DOCKER_AUTH_CONFIG}" ~/.docker/config.json
     - export STORAGE_DRIVER="overlay"
     - buildah info || export STORAGE_DRIVER="vfs"
@@ -58,7 +58,7 @@ make_requirements_txt:
 container image app:
   extends: .build-image-buildah
   variables:
-    IMAGE_NAME: gcr.io/censys-io/censys-cloud-connector
+    IMAGE_NAME: gcr.io/censys-internal/censys.io/censys-cloud-connector
   script:
     - buildah bud --squash --target=app --ssh default -t ${IMAGE_NAME}:${CI_COMMIT_SHA} .
     - buildah push ${IMAGE_NAME}:${CI_COMMIT_SHA}
@@ -131,20 +131,29 @@ release production:
     - mkdir ~/.ssh/
     - ssh-keyscan -t ed25519 gitlab.com > ~/.ssh/known_hosts
     - echo "${GITLAB_SSH_KEY}" > ~/.ssh/id_ed25519 && chmod 0600 ~/.ssh/id_ed25519
-    - TAG=production-$(date -u +%F_%H-%M)
+    - TAG=v$(cat pyproject.toml | grep "^version = \"*\"" | cut -d'"' -f2)
     - git tag --annotate ${TAG} --message="Deployed at $(date -u)" ${CI_COMMIT_SHA}
     - git push origin ${TAG}
 
 deploy production image:
   extends: .build-image-buildah
   rules:
-    - if: '$CI_COMMIT_TAG =~ /production.*/'
+    - if: "$CI_COMMIT_TAG =~ /v.*/"
   variables:
     IMAGE_NAME: gcr.io/censys-io/censys-cloud-connector
   script:
     - buildah bud --squash --target=app --ssh default -t ${IMAGE_NAME}:${CI_COMMIT_TAG} -t ${IMAGE_NAME}:latest .
     - buildah push ${IMAGE_NAME}:${CI_COMMIT_TAG}
     - buildah push ${IMAGE_NAME}:latest
+
+deploy python package:
+  extends: .poetry
+  rules:
+    - if: "$CI_COMMIT_TAG =~ /v.*/"
+  script:
+    - poetry build -n
+    - poetry config pypi-token.pypi ${PYPI_TOKEN}
+    - poetry publish
 
 include:
   - template: Security/Dependency-Scanning.gitlab-ci.yml
@@ -162,10 +171,10 @@ secret_detection:
     SECRET_DETECTION_HISTORIC_SCAN: "true"
 
 license_scanning:
-  dependencies: ["make_requirements_txt"]
+  dependencies: ["make requirements txt"]
 
 gemnasium-python-dependency_scanning:
-  dependencies: ["make_requirements_txt"]
+  dependencies: ["make requirements txt"]
   before_script:
     - rm poetry.lock pyproject.toml
   # Triggers artifacts download, until https://gitlab.com/gitlab-org/gitlab/-/issues/249569 is implemented
