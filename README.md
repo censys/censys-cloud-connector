@@ -1,17 +1,47 @@
 # Censys Unified Cloud Connector
 
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/censys/censys-cloud-connector)][github]
+[![PyPI - License](https://img.shields.io/pypi/l/censys-cloud-connectors)][license]
+[![AWS Supported](https://img.shields.io/badge/-Supported-orange?logo=amazonaws)](#amazon-web-services)
+[![Azure Supported](https://img.shields.io/badge/-Supported-green?logo=microsoftazure)](#azure-cloud)
+[![GCP Supported](https://img.shields.io/badge/-Supported-blue?logo=googlecloud&logoColor=white)](#google-cloud-platform)
+
 The Censys Unified Cloud Connector is a standalone connector that gathers
 assets from various cloud providers and stores them in Censys ASM. This
 Connector offers users the ability to supercharge our ASM Platform with total
 cloud visibility. This connector currently supports the following cloud
-providers: Azure and GCP. Support for AWS and other cloud providers will be
-added in the future.
+providers: AWS, Azure, and GCP.
 
 ## Supported Platforms and Services
 
 The following platforms and services are supported and will be used to import
 Seeds (IP Addresses, Domain Names, CIDRs, and ASNs) as well as Cloud Assets
 (Object Storage Buckets) into the Censys ASM platform.
+
+### Amazon Web Services
+
+- [Compute](https://aws.amazon.com/products/compute/)
+  - [Elastic Container Service (ECS)](https://aws.amazon.com/ecs/)
+  - [Elastic Compute Cloud (EC2)](https://aws.amazon.com/ec2/)
+- [Database](https://aws.amazon.com/products/databases/)
+  - [Relational Database Service (RDS)](https://aws.amazon.com/rds/)
+- [Network & Content Delivery](https://aws.amazon.com/products/networking)
+  - [API Gateway](https://aws.amazon.com/api-gateway)
+  - [Elastic Load Balancing (ELB)](https://aws.amazon.com/elasticloadbalancing/)
+  - [Route53](https://aws.amazon.com/route53/)
+- [Cloud Storage](https://aws.amazon.com/products/storage/)
+  - [Simple Storage Service (S3)](https://aws.amazon.com/s3/features/)
+
+### Azure Cloud
+
+- [Azure Networking](https://azure.microsoft.com/en-us/product-categories/networking/)
+  - [Azure DNS](https://azure.microsoft.com/en-us/services/dns/)
+- [Azure Container Services](https://azure.microsoft.com/en-us/product-categories/containers/)
+  - [Container Instances](https://azure.microsoft.com/en-us/services/container-instances/)
+- [Azure Databases](https://azure.microsoft.com/en-us/product-categories/databases/)
+  - [Azure SQL](https://azure.microsoft.com/en-us/products/azure-sql/)
+- [Azure Storage](https://azure.microsoft.com/en-us/product-categories/storage/)
+  - [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/)
 
 ### Google Cloud Platform
 
@@ -25,30 +55,6 @@ Seeds (IP Addresses, Domain Names, CIDRs, and ASNs) as well as Cloud Assets
   - [Cloud SQL](https://cloud.google.com/sql)
 - [Google Cloud Storage](https://cloud.google.com/products/storage)
   - [Cloud Storage](https://cloud.google.com/storage)
-
-### Amazon Web Services
-
-- [Compute](https://aws.amazon.com/products/compute/)
-  - [Elastic Container Service (ECS)](https://aws.amazon.com/ecs/)
-  - [Elastic Compute Cloud (EC2)](https://aws.amazon.com/ec2/)
-- [Database](https://aws.amazon.com/products/databases/)
-  - [Relational Database Service (RDS)](https://aws.amazon.com/rds/)
-- [Network & Content Delivery](https://aws.amazon.com/products/networking)
-  - [API Gateway](https://aws.amazon.com/api-gateway)
-  - [Elastic Load Balancing (ELB)](https://aws.amazon.com/elasticloadbalancing/)
-  - [Route53](https://aws.amazon.com/route53/)
-- [Simple Storage Service (S3)](https://aws.amazon.com/s3/features/)
-
-### Azure Cloud
-
-- [Azure Networking](https://azure.microsoft.com/en-us/product-categories/networking/)
-  - [Azure DNS](https://azure.microsoft.com/en-us/services/dns/)
-- [Azure Container Services](https://azure.microsoft.com/en-us/product-categories/containers/)
-  - [Container Instances](https://azure.microsoft.com/en-us/services/container-instances/)
-- [Azure Databases](https://azure.microsoft.com/en-us/product-categories/databases/)
-  - [Azure SQL](https://azure.microsoft.com/en-us/products/azure-sql/)
-- [Azure Storage](https://azure.microsoft.com/en-us/product-categories/storage/)
-  - [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/)
 
 ## Getting Started
 
@@ -89,9 +95,10 @@ cd censys-cloud-connector
 pip install --upgrade poetry
 
 # Recommended installation
-poetry install -E azure -E gcp  # All dependencies (This is recommended)
+poetry install -E aws -E azure -E gcp  # All dependencies (This is recommended)
 
 # Other installations
+# poetry install -E aws # Only AWS dependencies
 # poetry install -E azure  # Only Azure dependencies
 # poetry install -E gcp  # Only GCP dependencies
 
@@ -141,11 +148,11 @@ You can optionally specify a provider in the command line with the flag
 
 Log in to your cloud provider's CLI tool using the following commands:
 
-- [Google's gcloud CLI][gcloud-cli]: `gcloud auth login`
-
 - [AWS CLI][aws-cli]: `aws configure`
 
 - [Azure CLI][azure-cli]: `az login`
+
+- [Google's gcloud CLI][gcloud-cli]: `gcloud auth login`
 
 #### providers.yml
 
@@ -441,12 +448,14 @@ test the code or for information on the CI/CD pipeline.
 
 ## License
 
-This software is licensed under [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0)
+This software is licensed under [Apache License, Version 2.0][license].
 
 - Copyright (C) 2022 Censys, Inc.
 
 <!-- References -->
 
+[license]: http://www.apache.org/licenses/LICENSE-2.0
+[github]: https://github.com/censys/censys-cloud-connector
 [python-install]: https://www.python.org/downloads/
 [poetry-install]: https://python-poetry.org/docs/
 [pyenv-install]: https://github.com/pyenv/pyenv#installation
