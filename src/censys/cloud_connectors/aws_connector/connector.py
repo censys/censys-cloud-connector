@@ -164,7 +164,11 @@ class AwsCloudConnector(CloudConnector):
         """
         try:
             credentials = credentials or self.credentials()
-            return boto3.client(service, **credentials)
+            if credentials.get("aws_access_key_id", None):
+                return boto3.client(service, **credentials)
+            # calling client without credentials follows the standard
+            # credential import path to source creds from the environment
+            return boto3.client(service)
         except Exception as e:
             self.logger.error(
                 f"Could not connect with client type '{service}'. Error: {e}"
