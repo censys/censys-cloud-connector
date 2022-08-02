@@ -23,8 +23,14 @@ Censys Cloud Connector.
 ## Setup
 
 1. Ensure you are in the root directory of the project.
-2. Run `poetry install -E azure -E gcp` to install the dependencies.
-3. Ensure your `providers.yml` file contains your cloud provider credentials.
+2. Source your environment variables as set in the main [README](../../README.md#environment-variables)
+   
+   ```sh
+   source .env
+   ```
+   
+3. Run `poetry install -E aws -E azure -E gcp` to install the dependencies.
+4. Ensure your `providers.yml` file contains your cloud provider credentials.
 
    If you have not already done so, you can create a `providers.yml` file by
    running the following command:
@@ -33,19 +39,19 @@ Censys Cloud Connector.
    poetry run censys-cc config
    ```
 
-4. Change the working directory to the `google-scheduled-function` directory
+5. Change the working directory to the `google-scheduled-function` directory
    with the following command:
 
     ```sh
     cd ./terraform/google-scheduled-function
     ```
 
-5. Copy `terraform.tfvars.example` to `terraform.tfvars` and update the values
+6. Copy `terraform.tfvars.example` to `terraform.tfvars` and update the values
    to match your environment.
-6. Run `terraform init` to initialize the project.
-7. Run `terraform plan -var-file terraform.tfvars` to see what resources will
+7. Run `terraform init` to initialize the project.
+8. Run `terraform plan -var-file terraform.tfvars` to see what resources will
    be created.
-8. Run `terraform apply -var-file terraform.tfvars` to create the resources.
+9. Run `terraform apply -var-file terraform.tfvars` to create the resources.
 
 ## Cleanup
 
