@@ -30,25 +30,29 @@ class BaseConnectorCase(BaseCase):
         for cloud_asset_key in list(self.connector.cloud_assets.keys()):
             del self.connector.cloud_assets[cloud_asset_key]
 
-    def assert_seeds_with_values(self, seeds: list[Seed], values: list[str]):
+    def assert_seeds_with_values(self, seeds: set[Seed], values: list[str]):
         """Assert that the seeds have the expected values.
 
         Each Seed type has a value property which is compared against the values array in order.
 
         Args:
-            seeds (list[Seed]): The seeds.
+            seeds (set[Seed]): The seeds.
             values (list[str]): The expected values.
 
         Raises:
             AssertionError: If the seeds do not have the expected values.
         """
-        assert len(seeds) == len(
-            values
-        ), "The number of seeds and values must be the same."
-        for seed in seeds:
-            assert (
-                seed.value in values
-            ), f"The seed {seed.value} is not in the expected values."
+        # seeds_len = len(seeds)
+        # values_len = len(values)
+        # assert seeds_len == values_len, f"Expected {values_len} seeds, got {seeds_len}"
+        seed_values = [seed.value for seed in seeds]
+        seed_values.sort()
+        values.sort()
+        assert values == seed_values, f"Expected {values}, got {seed_values}"
+        # for seed in seeds:
+        #     assert (
+        #         seed.value in values
+        #     ), f"The seed {seed.value} is not in the expected values {values}"
 
     def test_init(self) -> None:
         # Assert that the connector is initialized correctly

@@ -58,6 +58,7 @@ class ProviderSpecificSettings(BaseSettings):
     """Base class for all provider-specific settings."""
 
     provider: str
+    ignore: Optional[list] = None
 
     def as_dict(self) -> OrderedDict[str, Union[str, list[str]]]:
         """Return the settings as a dictionary.

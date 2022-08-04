@@ -60,8 +60,8 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
         seed = Seed(type="TEST", value="test-value", label="test-label")
         self.connector.add_seed(seed)
         test_label = self.connector.label_prefix + "test-label"
-        assert self.connector.seeds[test_label][0] == seed
         assert len(self.connector.seeds[test_label]) == 1
+        assert self.connector.seeds[test_label].pop() == seed
 
     def test_add_cloud_asset(self):
         asset = CloudAsset(
@@ -69,8 +69,8 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
         )
         self.connector.add_cloud_asset(asset)
         test_uid = self.connector.label_prefix + "test-uid"
-        assert self.connector.cloud_assets[test_uid][0] == asset
         assert len(self.connector.cloud_assets[test_uid]) == 1
+        assert self.connector.cloud_assets[test_uid].pop() == asset
 
     def test_submit_seeds(self):
         seed = Seed(type="TEST", value="test-value", label="test-label")

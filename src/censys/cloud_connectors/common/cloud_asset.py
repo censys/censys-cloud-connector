@@ -1,12 +1,13 @@
 """Cloud Asset Objects."""
 import json
 
-from pydantic import AnyUrl, BaseModel, parse_obj_as, validator
+from pydantic import AnyUrl, parse_obj_as, validator
 
-from censys.cloud_connectors.common.enums import ProviderEnum
+from .enums import ProviderEnum
+from .models import HashableBaseModel
 
 
-class CloudAsset(BaseModel):
+class CloudAsset(HashableBaseModel):
     """Base class for all cloud assets."""
 
     type: str
