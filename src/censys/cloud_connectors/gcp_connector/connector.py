@@ -1,7 +1,7 @@
 """Gcp Cloud Connector."""
 import json
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Optional
 
 from google.api_core import exceptions
 from google.cloud import securitycenter_v1
@@ -13,6 +13,7 @@ from google.oauth2 import service_account
 
 from censys.cloud_connectors.common.cloud_asset import GcpStorageBucketAsset
 from censys.cloud_connectors.common.connector import CloudConnector
+from censys.cloud_connectors.common.context import SuppressValidationError
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.seed import DomainSeed, IpSeed
 from censys.cloud_connectors.common.settings import Settings
@@ -31,9 +32,6 @@ class GcpCloudConnector(CloudConnector):
     credentials: service_account.Credentials
     provider_settings: GcpSpecificSettings
     security_center_client: securitycenter_v1.SecurityCenterClient
-
-    seed_scanners: dict[GcpSecurityCenterResourceTypes, Callable[[], None]]
-    cloud_asset_scanners: dict[GcpSecurityCenterResourceTypes, Callable[[], None]]
 
     def __init__(self, settings: Settings):
         """Initialize Gcp Cloud Connector.
@@ -170,12 +168,12 @@ class GcpCloudConnector(CloudConnector):
                     and access_config.get("name") == "External NAT"
                 ]
                 for ip_address in external_ip_addresses:
-                    self.add_seed(
-                        IpSeed(
+                    with SuppressValidationError():
+                        ip_seed = IpSeed(
                             value=ip_address,
                             label=self.format_label(list_assets_result),
                         )
-                    )
+                        self.add_seed(ip_seed)
 
     def get_compute_addresses(self):
         """Get Gcp ip address assets."""
@@ -186,11 +184,11 @@ class GcpCloudConnector(CloudConnector):
             if ip_address := list_assets_result.asset.resource_properties.get(
                 "address"
             ):
-                self.add_seed(
-                    IpSeed(
+                with SuppressValidationError():
+                    ip_seed = IpSeed(
                         value=ip_address, label=self.format_label(list_assets_result)
                     )
-                )
+                    self.add_seed(ip_seed)
 
     def get_container_clusters(self):
         """Get Gcp container clusters."""
@@ -201,8 +199,8 @@ class GcpCloudConnector(CloudConnector):
             if private_cluster_config := list_assets_result.asset.resource_properties.get(
                 "privateClusterConfig"
             ):
-                # private_cluster_config is a json string that needs to be parsed
                 try:
+                    # private_cluster_config is a json string that needs to be parsed
                     private_cluster_config = json.loads(private_cluster_config)
                 except json.decoder.JSONDecodeError:  # pragma: no cover
                     self.logger.debug(
@@ -210,12 +208,12 @@ class GcpCloudConnector(CloudConnector):
                     )
                     continue
                 if ip_address := private_cluster_config.get("publicEndpoint"):
-                    self.add_seed(
-                        IpSeed(
+                    with SuppressValidationError():
+                        ip_seed = IpSeed(
                             value=ip_address,
                             label=self.format_label(list_assets_result),
                         )
-                    )
+                        self.add_seed(ip_seed)
 
     def get_cloud_sql_instances(self):
         """Get Gcp cloud sql instances."""
@@ -231,12 +229,12 @@ class GcpCloudConnector(CloudConnector):
                 for ip_address in [
                     address for ip in ip_addresses if (address := ip.get("ipAddress"))
                 ]:
-                    self.add_seed(
-                        IpSeed(
+                    with SuppressValidationError():
+                        ip_seed = IpSeed(
                             value=ip_address,
                             label=self.format_label(list_assets_result),
                         )
-                    )
+                        self.add_seed(ip_seed)
 
     def get_dns_records(self):
         """Get Gcp dns records."""
@@ -248,23 +246,11 @@ class GcpCloudConnector(CloudConnector):
             if resource_properties.get("visibility") == "PUBLIC" and (
                 domain := resource_properties.get("dnsName")
             ):
-                self.add_seed(
-                    DomainSeed(
+                with SuppressValidationError():
+                    domain_seed = DomainSeed(
                         value=domain, label=self.format_label(list_assets_result)
                     )
-                )
-
-    def get_seeds(self):
-        """Get Gcp seeds."""
-        for seed_type, seed_scanner in self.seed_scanners.items():
-            if (
-                self.provider_settings.ignore
-                and seed_type in self.provider_settings.ignore
-            ):
-                self.logger.debug(f"Skipping {seed_type}")
-                continue
-            self.logger.debug(f"Scanning {seed_type}")
-            seed_scanner()
+                    self.add_seed(domain_seed)
 
     def get_storage_buckets(self):
         """Get Gcp storage buckets."""
@@ -285,24 +271,12 @@ class GcpCloudConnector(CloudConnector):
                     scan_data["location"] = location
                 if self_link := resource_properties.get("selfLink"):
                     scan_data["selfLink"] = self_link
-                self.add_cloud_asset(
-                    GcpStorageBucketAsset(
+                with SuppressValidationError():
+                    bucket_asset = GcpStorageBucketAsset(
                         # TODO: Update when API can accept other urls
                         value=f"https://storage.googleapis.com/{bucket_name}",
                         uid=self.format_label(list_assets_result),
                         # Cast project_number to int from float
                         scan_data=scan_data,
                     )
-                )
-
-    def get_cloud_assets(self):
-        """Get Gcp cloud assets."""
-        for cloud_asset_type, cloud_asset_scanner in self.cloud_asset_scanners.items():
-            if (
-                self.provider_settings.ignore
-                and cloud_asset_type in self.provider_settings.ignore
-            ):
-                self.logger.debug(f"Skipping {cloud_asset_type}")
-                continue
-            self.logger.debug(f"Scanning {cloud_asset_type}")
-            cloud_asset_scanner()
+                    self.add_cloud_asset(bucket_asset)

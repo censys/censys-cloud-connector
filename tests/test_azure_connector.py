@@ -145,10 +145,13 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
             self.data["TEST_CREDS_IGNORE"]
         )
         seed_scanners = {
-            AzureResourceTypes.PUBLIC_IP_ADDRESSES: self.mocker.Mock(),
-            AzureResourceTypes.CONTAINER_GROUPS: self.mocker.Mock(),
-            AzureResourceTypes.SQL_SERVERS: self.mocker.Mock(),
-            AzureResourceTypes.DNS_ZONES: self.mocker.Mock(),
+            resource_type: self.mocker.Mock()
+            for resource_type in [
+                AzureResourceTypes.PUBLIC_IP_ADDRESSES,
+                AzureResourceTypes.CONTAINER_GROUPS,
+                AzureResourceTypes.SQL_SERVERS,
+                AzureResourceTypes.DNS_ZONES,
+            ]
         }
 
         # Mock
@@ -203,14 +206,17 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
         # Test data
         test_list_response = []
         test_seed_values = []
+        base_domain = ".eastus.azurecontainer.io"
         for i in range(3):
             test_container_response = self.data["TEST_CONTAINER_ASSET"].copy()
-            ip_address = test_container_response["ip_address"]["ip"][:-1] + str(i)
-            test_container_response["ip_address"]["ip"] = ip_address
+            ip_address_copy = test_container_response["ip_address"].copy()
+            ip_address = ip_address_copy["ip"][:-1] + str(i)
+            ip_address_copy["ip"] = ip_address
             test_seed_values.append(ip_address)
-            domain = f"test-{i}" + test_container_response["ip_address"]["fqdn"]
-            test_container_response["ip_address"]["fqdn"] = domain
+            domain = f"test-{i}" + base_domain
+            ip_address_copy["fqdn"] = domain
             test_seed_values.append(domain)
+            test_container_response["ip_address"] = ip_address_copy
             test_list_response.append(self.mock_asset(test_container_response))
         test_label = self.connector.format_label(test_list_response[0])
 
@@ -374,7 +380,10 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
             test_storage_account = self.data["TEST_STORAGE_ACCOUNT"].copy()
             test_storage_account["name"] = f"test-{i}"
             if custom_domain := test_storage_account.get("custom_domain"):
-                test_seed_values.append(custom_domain["name"])
+                custom_domain_copy = custom_domain.copy()
+                custom_domain_copy["name"] = f"test-{i}.blobs.censys.io"
+                test_seed_values.append(custom_domain_copy["name"])
+                test_storage_account["custom_domain"] = custom_domain_copy
             test_storage_accounts.append(self.mock_asset(test_storage_account))
             test_container = self.data["TEST_STORAGE_CONTAINER"].copy()
             test_container["name"] = f"test-{i}"

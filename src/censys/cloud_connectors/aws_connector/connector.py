@@ -1,5 +1,5 @@
 """AWS Cloud Connector."""
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 import boto3
 import botocore
@@ -18,6 +18,7 @@ from mypy_boto3_sts import STSClient
 
 from censys.cloud_connectors.common.cloud_asset import AwsStorageBucketAsset
 from censys.cloud_connectors.common.connector import CloudConnector
+from censys.cloud_connectors.common.context import SuppressValidationError
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.seed import DomainSeed, IpSeed
 from censys.cloud_connectors.common.settings import Settings
@@ -38,8 +39,6 @@ class AwsCloudConnector(CloudConnector):
 
     provider = ProviderEnum.AWS
     provider_settings: AwsSpecificSettings
-    seed_scanners: dict[AwsResourceTypes, Callable[[], None]]
-    cloud_asset_scanners: dict[AwsResourceTypes, Callable[[], None]]
 
     _sts_credentials: Optional[dict] = None
     account_number: int
@@ -105,31 +104,6 @@ class AwsCloudConnector(CloudConnector):
         region = region or self.region
         region_label = f"/{region}" if region != "" else ""
         return f"AWS: {service} - {self.account_number}{region_label}"
-
-    def get_seeds(self) -> None:
-        """Gather seeds."""
-        for seed_type, seed_scanner in self.seed_scanners.items():
-            if (
-                self.provider_settings.ignore
-                and seed_type in self.provider_settings.ignore
-            ):
-                self.logger.debug(f"Skipping {seed_type}")
-                continue
-
-            self.logger.debug(f"Scanning {seed_type}")
-            seed_scanner()
-
-    def get_cloud_assets(self) -> None:
-        """Gather cloud assets."""
-        for cloud_asset_type, cloud_asset_scanner in self.cloud_asset_scanners.items():
-            if (
-                self.provider_settings.ignore
-                and cloud_asset_type in self.provider_settings.ignore
-            ):
-                self.logger.debug(f"Skipping {cloud_asset_type}")
-                continue
-            self.logger.debug(f"Scanning {cloud_asset_type}")
-            cloud_asset_scanner()
 
     def credentials(self) -> dict:
         """Generate required credentials for AWS.
@@ -276,7 +250,9 @@ class AwsCloudConnector(CloudConnector):
             apis = client.get_rest_apis()
             for domain in apis.get("items", []):
                 domain_name = f"{domain['id']}.execute-api.{self.region}.amazonaws.com"
-                self.add_seed(DomainSeed(value=domain_name, label=label))
+                with SuppressValidationError():
+                    domain_seed = DomainSeed(value=domain_name, label=label)
+                    self.add_seed(domain_seed)
         except ClientError as e:
             self.logger.error(f"Could not connect to API Gateway V1. Error: {e}")
 
@@ -291,7 +267,9 @@ class AwsCloudConnector(CloudConnector):
             apis = client.get_apis()
             for domain in apis.get("Items", []):
                 domain_name = domain["ApiEndpoint"].split("//")[1]
-                self.add_seed(DomainSeed(value=domain_name, label=label))
+                with SuppressValidationError():
+                    domain_seed = DomainSeed(value=domain_name, label=label)
+                    self.add_seed(domain_seed)
         except ClientError as e:
             self.logger.error(f"Could not connect to API Gateway V2. Error: {e}")
 
@@ -311,7 +289,9 @@ class AwsCloudConnector(CloudConnector):
             data = client.describe_load_balancers()
             for elb in data.get("LoadBalancerDescriptions", []):
                 if value := elb.get("DNSName"):
-                    self.add_seed(DomainSeed(value=value, label=label))
+                    with SuppressValidationError():
+                        domain_seed = DomainSeed(value=value, label=label)
+                        self.add_seed(domain_seed)
         except ClientError as e:
             self.logger.error(f"Could not connect to ELB V1. Error: {e}")
 
@@ -326,7 +306,9 @@ class AwsCloudConnector(CloudConnector):
             data = client.describe_load_balancers()
             for elb in data.get("LoadBalancers", []):
                 if value := elb.get("DNSName"):
-                    self.add_seed(DomainSeed(value=value, label=label))
+                    with SuppressValidationError():
+                        domain_seed = DomainSeed(value=value, label=label)
+                        self.add_seed(domain_seed)
         except ClientError as e:
             self.logger.error(f"Could not connect to ELB V2. Error: {e}")
 
@@ -344,8 +326,10 @@ class AwsCloudConnector(CloudConnector):
             data = client.describe_network_interfaces()
             for networks in data.get("NetworkInterfaces", []):
                 for addresses in networks.get("PrivateIpAddresses", []):
-                    if value := addresses.get("Association", {}).get("PublicIp"):
-                        self.add_seed(IpSeed(value=value, label=label))
+                    if ip_address := addresses.get("Association", {}).get("PublicIp"):
+                        with SuppressValidationError():
+                            ip_seed = IpSeed(value=ip_address, label=label)
+                            self.add_seed(ip_seed)
         except ClientError as e:
             self.logger.error(f"Could not connect to ENI Service. Error: {e}")
 
@@ -357,8 +341,10 @@ class AwsCloudConnector(CloudConnector):
         try:
             data = client.describe_db_instances()
             for instance in data.get("DBInstances", []):
-                if value := instance.get("Endpoint", {}).get("Address"):
-                    self.add_seed(DomainSeed(value=value, label=label))
+                if domain_name := instance.get("Endpoint", {}).get("Address"):
+                    with SuppressValidationError():
+                        domain_seed = DomainSeed(value=domain_name, label=label)
+                        self.add_seed(domain_seed)
         except ClientError as e:
             self.logger.error(f"Could not connect to RDS Service. Error: {e}")
 
@@ -382,9 +368,7 @@ class AwsCloudConnector(CloudConnector):
 
                 yield data
 
-                if data.get("NextPageMarker"):
-                    next_page_marker = data.get("NextPageMarker")
-                else:
+                if not (next_page_marker := data.get("NextPageMarker")):
                     break
             except ClientError as e:
                 self.logger.error(f"Could not connect to Route 53 Domains. Error: {e}")
@@ -396,8 +380,10 @@ class AwsCloudConnector(CloudConnector):
 
         for data in self._get_route53_domains():
             for domain in data.get("Domains", []):
-                if value := domain.get("DomainName"):
-                    self.add_seed(DomainSeed(value=value, label=label))
+                if domain_name := domain.get("DomainName"):
+                    with SuppressValidationError():
+                        domain_seed = DomainSeed(value=domain_name, label=label)
+                        self.add_seed(domain_seed)
 
     def _get_route53_zone_hosts(self, client: botocore.client.BaseClient) -> dict:
         """Retrieve Route 53 Zone hosts.
@@ -448,8 +434,10 @@ class AwsCloudConnector(CloudConnector):
                     if resource_set.get("Type") not in VALID_RECORD_TYPES:
                         continue
 
-                    value = resource_set.get("Name").rstrip(".")
-                    self.add_seed(DomainSeed(value=value, label=label))
+                    domain_name = resource_set.get("Name").rstrip(".")
+                    with SuppressValidationError():
+                        domain_seed = DomainSeed(value=domain_name, label=label)
+                        self.add_seed(domain_seed)
         except ClientError as e:
             self.logger.error(f"Could not connect to Route 53 Zones. Error: {e}")
 
@@ -486,11 +474,13 @@ class AwsCloudConnector(CloudConnector):
                 descriptions = ec2.describe_instances(InstanceIds=instance_ids)
                 for reservation in descriptions.get("Reservations", []):
                     for instance in reservation.get("Instances", []):
-                        value = instance.get("PublicIpAddress")
-                        if not value:
+                        ip_address = instance.get("PublicIpAddress")
+                        if not ip_address:
                             continue
 
-                        self.add_seed(IpSeed(value=value, label=label))
+                        with SuppressValidationError():
+                            ip_seed = IpSeed(value=ip_address, label=label)
+                            self.add_seed(ip_seed)
         except ClientError as e:
             self.logger.error(f"Could not connect to ECS. Error: {e}")
 
@@ -518,17 +508,17 @@ class AwsCloudConnector(CloudConnector):
                 if not bucket_name:
                     continue
 
-                region = self._get_s3_region(client, bucket.get("Name"))
+                region = self._get_s3_region(client, bucket_name)
                 label = self.format_label(SeedLabel.STORAGE_BUCKET, region)
 
-                self.add_cloud_asset(
-                    AwsStorageBucketAsset(
+                with SuppressValidationError():
+                    bucket_asset = AwsStorageBucketAsset(
                         value=AwsStorageBucketAsset.url(bucket_name, self.region),
                         uid=label,
                         scan_data={
                             "accountNumber": self.account_number,
                         },
                     )
-                )
+                    self.add_cloud_asset(bucket_asset)
         except ClientError as e:
             self.logger.error(f"Could not connect to S3. Error: {e}")

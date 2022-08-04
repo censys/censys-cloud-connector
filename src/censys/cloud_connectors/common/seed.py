@@ -1,19 +1,21 @@
 """Seed Objects."""
 from ipaddress import IPv4Address, IPv4Network
+from typing import Union
 
-from pydantic import AnyUrl, BaseModel, parse_obj_as, validator
+from pydantic import AnyUrl, parse_obj_as, validator
 
 from .ignore_list import IGNORED_DOMAINS, IGNORED_IPS
+from .models import HashableBaseModel
 
 
-class Seed(BaseModel):
+class Seed(HashableBaseModel):
     """Base class for all seeds."""
 
     type: str
-    value: str
+    value: Union[str, int]
     label: str
 
-    def to_dict(self) -> dict[str, str]:
+    def to_dict(self) -> dict[str, Union[str, int]]:
         """Convert the seed to a dictionary.
 
         Please note that the label should not be included.
@@ -28,8 +30,7 @@ class AsnSeed(Seed):
     """ASN seed."""
 
     type: str = "ASN"
-
-    # TODO: It would be nice to know what format the ASN should be in.
+    value: int
 
 
 class IpSeed(Seed):
@@ -76,6 +77,8 @@ class DomainSeed(Seed):
         Raises:
             ValueError: If the domain is invalid or in the ignore list.
         """
+        if v.endswith("."):
+            v = v[:-1]
         if not ("http://" in v or "https://" in v):
             v = f"http://{v}"
         try:
@@ -83,8 +86,6 @@ class DomainSeed(Seed):
         except ValueError:
             raise ValueError("Domain is not valid")
         host = url.host.lower()
-        if host.endswith("."):
-            host = host[:-1]
         if host in IGNORED_DOMAINS:
             raise ValueError("Domain is in the ignore list")
         return host

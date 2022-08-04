@@ -42,7 +42,7 @@ censys-cc = "censys.cloud_connectors.common.cli:main"
 python = "^3.9"
 # Common
 backoff = "^2.1.2"
-censys = "^2.1.2"
+censys = "^2.1.6"
 importlib-metadata = { version = "*", python = "<=3.8" }
 inquirerpy = "^0.3.3"
 pydantic = {extras = ["dotenv", "email"], version = "^1.9.0"}

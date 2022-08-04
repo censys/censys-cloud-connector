@@ -1,6 +1,6 @@
 """AWS specific settings."""
 
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field, PositiveInt, root_validator
 
@@ -29,7 +29,7 @@ class AwsSpecificSettings(ProviderSpecificSettings):
     """AWS specific settings."""
 
     provider = ProviderEnum.AWS
-    ignore: Optional[List[AwsResourceTypes]] = None
+    ignore: Optional[list[AwsResourceTypes]] = None
 
     account_number: Optional[AwsAccountNumber] = Field()
     access_key: Optional[str] = Field(min_length=1)
@@ -40,7 +40,7 @@ class AwsSpecificSettings(ProviderSpecificSettings):
     session_token: Optional[str] = Field(min_length=1)
     external_id: Optional[str] = Field(min_length=1)
 
-    accounts: Optional[List[AwsAccount]] = None
+    accounts: Optional[list[AwsAccount]] = None
 
     regions: list[str] = Field(min_items=1)
 

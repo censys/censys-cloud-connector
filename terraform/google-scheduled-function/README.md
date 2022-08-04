@@ -24,11 +24,11 @@ Censys Cloud Connector.
 
 1. Ensure you are in the root directory of the project.
 2. Source your environment variables as set in the main [README](../../README.md#environment-variables)
-   
+
    ```sh
    source .env
    ```
-   
+
 3. Run `poetry install -E aws -E azure -E gcp` to install the dependencies.
 4. Ensure your `providers.yml` file contains your cloud provider credentials.
 

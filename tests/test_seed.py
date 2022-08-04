@@ -1,9 +1,11 @@
+from typing import Union
 from unittest import TestCase
 
 import pytest
 from parameterized import parameterized
 from pydantic import ValidationError
 
+from censys.cloud_connectors.common.context import SuppressValidationError
 from censys.cloud_connectors.common.seed import (
     AsnSeed,
     CidrSeed,
@@ -26,15 +28,16 @@ class SeedTest(TestCase):
         }
 
     def test_asn_seed(self):
-        test_value = "AS1234"
+        test_value = 123
         seed = AsnSeed(value=test_value, label=TEST_LABEL)
         assert seed.type == "ASN"
         assert seed.value == test_value
         assert seed.label == TEST_LABEL
 
-    def test_asn_seed_validation(self):
-        # TODO: Implement ASN validation?
-        pass
+    @parameterized.expand([("AS123", "value is not a valid integer")])
+    def test_asn_seed_validation(self, test_value: str, exception_message: str):
+        with pytest.raises(ValidationError, match=exception_message):
+            AsnSeed(value=test_value, label=TEST_LABEL)
 
     def test_ip_seed(self):
         test_value = "192.35.168.0"
@@ -49,7 +52,7 @@ class SeedTest(TestCase):
             ("8.8.8.8", "IP address is in the ignore list"),
         ]
     )
-    def test_ip_seed_validation(self, value, exception_message):
+    def test_ip_seed_validation(self, value: str, exception_message: str):
         with pytest.raises(ValidationError, match=exception_message):
             IpSeed(value=value, label=TEST_LABEL)
 
@@ -59,7 +62,7 @@ class SeedTest(TestCase):
             ("https://search.censys.io.", "search.censys.io"),
         ]
     )
-    def test_domain_seed(self, test_value, expected_value):
+    def test_domain_seed(self, test_value: str, expected_value: str):
         seed = DomainSeed(value=test_value, label=TEST_LABEL)
         assert seed.type == "DOMAIN_NAME"
         assert seed.value == expected_value
@@ -71,7 +74,7 @@ class SeedTest(TestCase):
             ("google.com", "Domain is in the ignore list"),
         ]
     )
-    def test_domain_seed_validation(self, value, exception_message):
+    def test_domain_seed_validation(self, value: str, exception_message: str):
         with pytest.raises(ValidationError, match=exception_message):
             DomainSeed(value=value, label=TEST_LABEL)
 
@@ -88,6 +91,22 @@ class SeedTest(TestCase):
             ("10.0.0.0/8", "CIDR is private"),
         ]
     )
-    def test_cidr_validation(self, value, exception_message):
+    def test_cidr_validation(self, value: str, exception_message: str):
         with pytest.raises(ValidationError, match=exception_message):
             CidrSeed(value=value, label=TEST_LABEL)
+
+    @parameterized.expand(
+        [
+            ("8.8.8.8", IpSeed),
+            ("aws.com", DomainSeed),
+            ("10.0.0.0/8", CidrSeed),
+            ("AS1234", AsnSeed),
+        ]
+    )
+    def test_with_suppress_validation_error(
+        self, value: str, seed_cls: type[Union[IpSeed, DomainSeed, CidrSeed, AsnSeed]]
+    ):
+        seed = None
+        with SuppressValidationError():
+            seed = seed_cls(value=value, label=TEST_LABEL)
+        assert seed is None, "Seed should have failed validation"

@@ -1,6 +1,7 @@
 """Base class for all cloud connectors."""
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from typing import Callable
 
 from requests.exceptions import JSONDecodeError
 
@@ -11,16 +12,19 @@ from .cloud_asset import CloudAsset
 from .enums import ProviderEnum
 from .logger import get_logger
 from .seed import Seed
-from .settings import Settings
+from .settings import ProviderSpecificSettings, Settings
 
 
 class CloudConnector(ABC):
     """Base class for Cloud Connectors."""
 
     provider: ProviderEnum
+    provider_settings: ProviderSpecificSettings
     label_prefix: str
-    seeds: dict[str, list[Seed]]
-    cloud_assets: dict[str, list[CloudAsset]]
+    seeds: dict[str, set[Seed]]
+    cloud_assets: dict[str, set[CloudAsset]]
+    seed_scanners: dict[str, Callable[[], None]]
+    cloud_asset_scanners: dict[str, Callable[[], None]]
 
     def __init__(self, settings: Settings):
         """Initialize the Cloud Connector.
@@ -45,18 +49,32 @@ class CloudConnector(ABC):
             f"{settings.censys_beta_url}/cloudConnector/addCloudAssets"
         )
 
-        self.seeds = defaultdict(list)
-        self.cloud_assets = defaultdict(list)
+        self.seeds = defaultdict(set)
+        self.cloud_assets = defaultdict(set)
 
-    @abstractmethod
     def get_seeds(self) -> None:
         """Gather seeds."""
-        pass
+        for seed_type, seed_scanner in self.seed_scanners.items():
+            if (
+                self.provider_settings.ignore
+                and seed_type in self.provider_settings.ignore
+            ):
+                self.logger.debug(f"Skipping {seed_type}")
+                continue
+            self.logger.debug(f"Scanning {seed_type}")
+            seed_scanner()
 
-    @abstractmethod
     def get_cloud_assets(self) -> None:
         """Gather cloud assets."""
-        pass
+        for cloud_asset_type, cloud_asset_scanner in self.cloud_asset_scanners.items():
+            if (
+                self.provider_settings.ignore
+                and cloud_asset_type in self.provider_settings.ignore
+            ):
+                self.logger.debug(f"Skipping {cloud_asset_type}")
+                continue
+            self.logger.debug(f"Scanning {cloud_asset_type}")
+            cloud_asset_scanner()
 
     def add_seed(self, seed: Seed):
         """Add a seed.
@@ -66,7 +84,7 @@ class CloudConnector(ABC):
         """
         if not seed.label.startswith(self.label_prefix):
             seed.label = self.label_prefix + seed.label
-        self.seeds[seed.label].append(seed)
+        self.seeds[seed.label].add(seed)
         self.logger.debug(f"Found Seed: {seed.to_dict()}")
 
     def add_cloud_asset(self, cloud_asset: CloudAsset):
@@ -77,7 +95,7 @@ class CloudConnector(ABC):
         """
         if not cloud_asset.uid.startswith(self.label_prefix):
             cloud_asset.uid = self.label_prefix + cloud_asset.uid
-        self.cloud_assets[cloud_asset.uid].append(cloud_asset)
+        self.cloud_assets[cloud_asset.uid].add(cloud_asset)
         self.logger.debug(f"Found Cloud Asset: {cloud_asset.to_dict()}")
 
     def submit_seeds(self):

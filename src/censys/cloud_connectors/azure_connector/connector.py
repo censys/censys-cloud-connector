@@ -1,6 +1,6 @@
 """Azure Cloud Connector."""
 import contextlib
-from typing import Callable, Optional
+from typing import Optional
 
 from azure.core.exceptions import (
     ClientAuthenticationError,
@@ -18,6 +18,7 @@ from msrest.serialization import Model as AzureModel
 
 from censys.cloud_connectors.common.cloud_asset import AzureContainerAsset
 from censys.cloud_connectors.common.connector import CloudConnector
+from censys.cloud_connectors.common.context import SuppressValidationError
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.seed import DomainSeed, IpSeed
 from censys.cloud_connectors.common.settings import Settings
@@ -33,9 +34,6 @@ class AzureCloudConnector(CloudConnector):
     subscription_id: str
     credentials: ClientSecretCredential
     provider_settings: AzureSpecificSettings
-
-    seed_scanners: dict[AzureResourceTypes, Callable[[], None]]
-    cloud_asset_scanners: dict[AzureResourceTypes, Callable[[], None]]
 
     def __init__(self, settings: Settings):
         """Initialize Azure Cloud Connector.
@@ -99,7 +97,9 @@ class AzureCloudConnector(CloudConnector):
         for asset in network_client.public_ip_addresses.list_all():
             asset_dict = asset.as_dict()
             if ip_address := asset_dict.get("ip_address"):
-                self.add_seed(IpSeed(value=ip_address, label=self.format_label(asset)))
+                with SuppressValidationError():
+                    ip_seed = IpSeed(value=ip_address, label=self.format_label(asset))
+                    self.add_seed(ip_seed)
 
     def get_clusters(self):
         """Get Azure clusters."""
@@ -113,11 +113,15 @@ class AzureCloudConnector(CloudConnector):
                 and (ip_address_dict.get("type") == "Public")
                 and (ip_address := ip_address_dict.get("ip"))
             ):
-                self.add_seed(IpSeed(value=ip_address, label=self.format_label(asset)))
+                with SuppressValidationError():
+                    ip_seed = IpSeed(value=ip_address, label=self.format_label(asset))
+                    self.add_seed(ip_seed)
                 if domain := ip_address_dict.get("fqdn"):
-                    self.add_seed(
-                        DomainSeed(value=domain, label=self.format_label(asset))
-                    )
+                    with SuppressValidationError():
+                        domain_seed = DomainSeed(
+                            value=domain, label=self.format_label(asset)
+                        )
+                        self.add_seed(domain_seed)
 
     def get_sql_servers(self):
         """Get Azure SQL servers."""
@@ -128,7 +132,11 @@ class AzureCloudConnector(CloudConnector):
             if (
                 domain := asset_dict.get("fully_qualified_domain_name")
             ) and asset_dict.get("public_network_access") == "Enabled":
-                self.add_seed(DomainSeed(value=domain, label=self.format_label(asset)))
+                with SuppressValidationError():
+                    domain_seed = DomainSeed(
+                        value=domain, label=self.format_label(asset)
+                    )
+                    self.add_seed(domain_seed)
 
     def get_dns_records(self):
         """Get Azure DNS records."""
@@ -153,34 +161,28 @@ class AzureCloudConnector(CloudConnector):
                 zone_resource_group, zone_dict.get("name")
             ):
                 asset_dict = asset.as_dict()
-                if domain := asset_dict.get("fqdn"):
-                    self.add_seed(
-                        DomainSeed(value=domain, label=self.format_label(zone))
-                    )
-                    if a_records := asset_dict.get("a_records"):
-                        for a_record in a_records:
-                            if ip := a_record.get("ipv4_address"):
-                                self.add_seed(
-                                    IpSeed(value=ip, label=self.format_label(zone))
-                                )
-                    if (cname_record := asset_dict.get("cname_record")) and (
-                        cname := cname_record.get("cname")
-                    ):
-                        self.add_seed(
-                            DomainSeed(value=cname, label=self.format_label(zone))
+                if domain_name := asset_dict.get("fqdn"):
+                    with SuppressValidationError():
+                        domain_seed = DomainSeed(
+                            value=domain_name, label=self.format_label(zone)
                         )
+                        self.add_seed(domain_seed)
+                if cname := asset_dict.get("cname_record", {}).get("cname"):
+                    with SuppressValidationError():
+                        domain_seed = DomainSeed(
+                            value=cname, label=self.format_label(zone)
+                        )
+                        self.add_seed(domain_seed)
+                for a_record in asset_dict.get("a_records", []):
+                    ip_address = a_record.get("ipv4_address")
+                    if not ip_address:
+                        continue
 
-    def get_seeds(self):
-        """Get Azure seeds."""
-        for seed_type, seed_scanner in self.seed_scanners.items():
-            if (
-                self.provider_settings.ignore
-                and seed_type in self.provider_settings.ignore
-            ):
-                self.logger.debug(f"Skipping {seed_type}")
-                continue
-            self.logger.debug(f"Scanning {seed_type}")
-            seed_scanner()
+                    with SuppressValidationError():
+                        ip_seed = IpSeed(
+                            value=ip_address, label=self.format_label(zone)
+                        )
+                        self.add_seed(ip_seed)
 
     def get_storage_containers(self):
         """Get Azure containers."""
@@ -191,20 +193,21 @@ class AzureCloudConnector(CloudConnector):
                 f"https://{account.name}.blob.core.windows.net/", self.credentials
             )
             account_dict = account.as_dict()
-            if custom_domain := account_dict.get("custom_domain"):
-                self.add_seed(
-                    DomainSeed(
-                        value=custom_domain.get("name"),
-                        label=self.format_label(account),
+            if (custom_domain := account_dict.get("custom_domain")) and (
+                domain := custom_domain.get("name")
+            ):
+                with SuppressValidationError():
+                    domain_seed = DomainSeed(
+                        value=domain, label=self.format_label(account)
                     )
-                )
+                    self.add_seed(domain_seed)
             uid = f"{self.subscription_id}/{self.credentials._tenant_id}/{account.name}"
             for container in bucket_client.list_containers():
                 try:
                     container_client = bucket_client.get_container_client(container)
                     container_url = container_client.url
-                    self.add_cloud_asset(
-                        AzureContainerAsset(
+                    with SuppressValidationError():
+                        container_asset = AzureContainerAsset(
                             value=container_url,
                             uid=uid,
                             scan_data={
@@ -213,21 +216,9 @@ class AzureCloudConnector(CloudConnector):
                                 "location": account.location,
                             },
                         )
-                    )
+                        self.add_cloud_asset(container_asset)
                 except ServiceRequestError as error:  # pragma: no cover
                     self.logger.error(
                         f"Failed to get Azure container {container} for {account.name}: {error.message}",
                         exc_info=True,
                     )
-
-    def get_cloud_assets(self):
-        """Get Azure cloud assets."""
-        for cloud_asset_type, cloud_asset_scanner in self.cloud_asset_scanners.items():
-            if (
-                self.provider_settings.ignore
-                and cloud_asset_type in self.provider_settings.ignore
-            ):
-                self.logger.debug(f"Skipping {cloud_asset_type}")
-                continue
-            self.logger.debug(f"Scanning {cloud_asset_type}")
-            cloud_asset_scanner()

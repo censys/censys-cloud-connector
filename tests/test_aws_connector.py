@@ -1,6 +1,7 @@
 import json
+from typing import Any
 from unittest import TestCase
-from unittest.mock import Mock, call
+from unittest.mock import MagicMock, Mock, call
 
 import pytest
 from parameterized import parameterized
@@ -51,21 +52,42 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
         self.region = self.data["TEST_CREDS"]["regions"][0]
         self.connector.region = self.region
 
-    def mock_client(self):
-        # client service is irrelevant for integration tests
+    def mock_client(self) -> MagicMock:
+        """Mock the client creator.
+
+        Returns:
+            MagicMock: mocked client
+        """
         return self.mocker.patch.object(self.connector, "get_aws_client")
 
-    def mock_client_api_response(self, client, method_name, data):
-        mock_method = self.mocker.patch.object(client.return_value, method_name)
-        mock_method.return_value = data
-        return mock_method
+    def mock_client_api_response(
+        self, client: MagicMock, method_name: str, data: Any
+    ) -> MagicMock:
+        """Mock the boto3 client API response.
 
-    def mock_api_response(self, method_name, data):
-        # Create a client and mock the API call
+        Args:
+            client (MagicMock): mocked client
+            method_name (str): method name
+            data (Any): data to return
+
+        Returns:
+            MagicMock: mocked client
+        """
+        return self.mocker.patch.object(
+            client.return_value, method_name, return_value=data
+        )
+
+    def mock_api_response(self, method_name: str, data: Any) -> MagicMock:
+        """Create a client and mock the API response.
+
+        Args:
+            method_name (str): method name
+            data (Any): data to return
+
+        Returns:
+            MagicMock: mocked client
+        """
         return self.mock_client_api_response(self.mock_client(), method_name, data)
-
-    def test_init(self):
-        self.skipTest("TODO")  # TODO
 
     def test_get_aws_client(self):
         # Test data
@@ -117,7 +139,7 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
     # TODO test_scan_clears_account_and_region
 
     @parameterized.expand([(ClientError,)])
-    def test_scan_fail(self, exception):
+    def test_scan_fail(self, exception: Exception):
         self.skipTest("TODO")  # TODO
 
     def test_get_seeds(self):
@@ -143,12 +165,20 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
         for scanner in self.connector.seed_scanners.values():
             scanner.assert_called_once()
 
-    def test_get_seeds_ignore(self):
-        self.skipTest("TODO")  # TODO
-
     def test_get_api_gateway_domains(self):
-        # TODO ensure v1 & v2 are called
-        self.skipTest("TODO")
+        # Mock
+        mocked_scanners = self.mocker.patch.multiple(
+            self.connector,
+            get_api_gateway_domains_v1=self.mocker.Mock(),
+            get_api_gateway_domains_v2=self.mocker.Mock(),
+        )
+
+        # Actual call
+        self.connector.get_api_gateway_domains()
+
+        # Assertions
+        for mocked_scanner in mocked_scanners.values():
+            mocked_scanner.assert_called_once_with()
 
     def test_get_api_gateway_domains_v1_creates_seeds(self):
         # Test data
@@ -188,7 +218,19 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
         )
 
     def test_get_load_balancers(self):
-        self.skipTest("TODO")  # TODO ensure v1 & v2 called
+        # Mock
+        mocked_scanners = self.mocker.patch.multiple(
+            self.connector,
+            get_load_balancers_v1=self.mocker.Mock(),
+            get_load_balancers_v2=self.mocker.Mock(),
+        )
+
+        # Actual call
+        self.connector.get_load_balancers()
+
+        # Assertions
+        for mocked_scanner in mocked_scanners.values():
+            mocked_scanner.assert_called_once_with()
 
     def test_get_elbv1_instances_creates_seeds(self):
         # Test data
@@ -259,9 +301,19 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
         )
 
     def test_route53_instances(self):
-        self.skipTest(
-            "TODO ensure get_route53_domains and get_route53_zones are called"
+        # Mock
+        mocked_scanners = self.mocker.patch.multiple(
+            self.connector,
+            get_route53_domains=self.mocker.Mock(),
+            get_route53_zones=self.mocker.Mock(),
         )
+
+        # Actual call
+        self.connector.get_route53_instances()
+
+        # Assertions
+        for mocked_scanner in mocked_scanners.values():
+            mocked_scanner.assert_called_once_with()
 
     def test_route53_domains_create_seeds(self):
         # Test data
