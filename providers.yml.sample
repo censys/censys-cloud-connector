@@ -1,4 +1,3 @@
-- # name of cloud service provider
 - provider: aws
   account_number: xxxxxxxxxxxx
   access_key: xxxxxxxxxxxxxxxxxxxx
