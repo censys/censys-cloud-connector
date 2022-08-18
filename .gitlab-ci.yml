@@ -94,7 +94,7 @@ unit tests:
         path: coverage.xml
 
 scan helm chart - CVE:
-  image: gcr.io/censys-internal/censys.io/helm3-ci:2022-01-24_03-21-30
+  image: gcr.io/censys-internal/censys.io/helm3-ci:2022-06-16_19-14-37
   rules:
     - if: $CI_MERGE_REQUEST_ID
   needs: []
@@ -103,7 +103,7 @@ scan helm chart - CVE:
     - helm template censys-cloud-connectors ./censys-cloud-connectors --dry-run |  kubescape scan framework nsa -
 
 scan helm chart - Deprecation:
-  image: gcr.io/censys-internal/censys.io/helm3-ci:2022-01-24_03-21-30
+  image: gcr.io/censys-internal/censys.io/helm3-ci:2022-06-16_19-14-37
   rules:
     - if: $CI_MERGE_REQUEST_ID
   needs: []
