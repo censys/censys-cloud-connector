@@ -6,7 +6,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, DefaultDict, Optional, OrderedDict, Union
 
 import yaml
-from pydantic import BaseSettings, Field, HttpUrl, validate_arguments, validator
+from pydantic import BaseSettings, Field, validate_arguments, validator
 
 from .enums import ProviderEnum
 
@@ -128,7 +128,7 @@ class Settings(BaseSettings):
     validation_timeout: int = Field(default=120, env="VALIDATION_TIMEOUT")
 
     # Censys
-    censys_beta_url: HttpUrl = Field(
+    censys_beta_url: str = Field(
         default="https://app.censys.io/api/beta", env="CENSYS_BETA_URL"
     )
 
