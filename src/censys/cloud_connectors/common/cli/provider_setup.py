@@ -1,8 +1,9 @@
 """Base for all provider-specific setup cli commands."""
 import logging
+from collections.abc import Iterable
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable, Iterable, Optional, Union, get_origin
+from typing import Any, Callable, Optional, Union, get_origin
 
 import backoff
 from InquirerPy import prompt

@@ -3,9 +3,6 @@ ARG BASE_IMAGE=python:${PYTHON_VERSION}-alpine
 
 FROM ${BASE_IMAGE} as builder
 
-# Default extras to support all cloud providers
-ARG EXTRAS="aws azure gcp"
-
 # Environment variables for efficient builds
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -13,17 +10,19 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=off \
     PIP_DISABLE_PIP_VERSION_CHECK=on \
     PIP_DEFAULT_TIMEOUT=100 \
-    POETRY_VERSION=1.1.13 \
-    POETRY_NO_INTERACTION=1
+    POETRY_NO_INTERACTION=1 \
+    POETRY_VERSION=1.2.0 \
+    PIP_VERSION=22.2.2 \
+    SETUPTOOLS_VERSION=65.3.0
 
 WORKDIR /app
 COPY src/ /app/src/
 COPY pyproject.toml poetry.lock poetry.toml README.md /app/
 
 # Get dependencies (Rust must be installed for the cryptography package)
-RUN apk add --update --no-cache make g++ openssl-dev libffi-dev rust cargo && \
-                                pip3 install --upgrade pip setuptools "poetry==$POETRY_VERSION" && \
-                                poetry install --no-dev --extras "${EXTRAS}"
+RUN apk add --update --no-cache make g++ openssl-dev libffi-dev rust cargo
+# Get Python dependencies
+RUN pip3 install --upgrade --ignore-installed "pip==$PIP_VERSION" "setuptools==$SETUPTOOLS_VERSION" "poetry==$POETRY_VERSION" && poetry install
 
 
 FROM ${BASE_IMAGE} as app

@@ -17,6 +17,7 @@ variables:
 
   variables:
     PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+    POETRY_VERSION: 1.2.0
 
   cache:
     key:
@@ -26,9 +27,9 @@ variables:
       - .cache/pip
 
   before_script:
-    - pip install poetry
+    - pip install "poetry==$POETRY_VERSION"
     - poetry config virtualenvs.in-project true
-    - poetry install -E azure -E gcp -E aws --no-ansi --no-interaction -vv
+    - poetry install --with dev,test --no-ansi --no-interaction -vv
     - source `poetry env info --path`/bin/activate
 
 make requirements txt:
@@ -37,7 +38,7 @@ make requirements txt:
     - if: $CI_MERGE_REQUEST_ID
   script:
     - pip install poetry
-    - poetry export -o "$PIP_REQUIREMENTS_FILE" -E azure -E gcp -E aws
+    - poetry export -o "$PIP_REQUIREMENTS_FILE"
   artifacts:
     paths:
       - "$PIP_REQUIREMENTS_FILE"

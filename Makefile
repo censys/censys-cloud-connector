@@ -7,24 +7,25 @@ DOCKER_IMG      := ${REGISTRY_NAME}/${APP_NAME}
 
 REQUIREMENTS	:= requirements.txt
 VENV 			:= .venv
-INSTALL_STAMP 	:= ${VENV}/.install.stamp
 POETRY 			:= $(shell command -v poetry 2> /dev/null)
-EXTRAS 			:= -E azure -E gcp -E aws
-VERSION			:= $(shell ${POETRY} version -s)
 
 .PHONY: all
 all: help
 
-install: $(INSTALL_STAMP)  ## Install the application
-$(INSTALL_STAMP): pyproject.toml poetry.lock
+.PHONY: install
+install:  ## Install the connector dependencies
 	@if [ -z $(POETRY) ]; then echo "Poetry could not be found. See https://python-poetry.org/docs/"; exit 2; fi
-	$(POETRY) install $(EXTRAS)
-	touch $(INSTALL_STAMP)
+	$(POETRY) install
+
+.PHONY: dev
+dev:  ## Install the connector development dependencies
+	@if [ -z $(POETRY) ]; then echo "Poetry could not be found. See https://python-poetry.org/docs/"; exit 2; fi
+	$(POETRY) install --with dev,test
 
 .PHONY: clean
 clean:
 	find . -type d -name "__pycache__" | xargs rm -rf {};
-	rm -rf $(INSTALL_STAMP) .coverage .mypy_cache
+	rm -rf .coverage .mypy_cache
 
 .PHONY: lock
 lock:
@@ -33,7 +34,7 @@ lock:
 .PHONY: requirements
 requirements: $(REQUIREMENTS)  ## Builds python requirements.txt
 ${REQUIREMENTS}: $(INSTALL_STAMP)
-	$(POETRY) export -f $(REQUIREMENTS) -o $(REQUIREMENTS) $(EXTRAS) --without-hashes
+	$(POETRY) export -f $(REQUIREMENTS) -o $(REQUIREMENTS) --without-hashes
 
 .PHONY: format
 format:
@@ -46,11 +47,11 @@ lint:
 	$(POETRY) run mypy -p censys.cloud_connectors
 
 .PHONY: test
-test: $(INSTALL_STAMP)  ## Runs tests
+test:  ## Runs tests
 	$(POETRY) run pytest --no-cov
 
 .PHONY: test-cov
-test-cov: $(INSTALL_STAMP)  ## Runs tests and generates coverage report
+test-cov:  ## Runs tests and generates coverage report
 	$(POETRY) run pytest --cov --cov-report html
 
 .PHONY: build-image

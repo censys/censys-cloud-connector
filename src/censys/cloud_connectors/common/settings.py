@@ -3,7 +3,8 @@ import collections
 import importlib
 import pathlib
 from abc import abstractmethod
-from typing import TYPE_CHECKING, DefaultDict, Optional, OrderedDict, Union
+from collections import OrderedDict
+from typing import TYPE_CHECKING, DefaultDict, Optional, Union
 
 import yaml
 from pydantic import BaseSettings, Field, validate_arguments, validator

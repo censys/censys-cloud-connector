@@ -1,6 +1,7 @@
 """With-statement Contexts for the Cloud Connectors."""
 import contextlib
-from typing import Iterable, Optional
+from collections.abc import Iterable
+from typing import Optional
 
 from pydantic import ValidationError
 

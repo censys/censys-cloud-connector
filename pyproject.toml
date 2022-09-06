@@ -40,7 +40,6 @@ censys-cc = "censys.cloud_connectors.common.cli:main"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-# Common
 backoff = "^2.1.2"
 censys = "^2.1.6"
 importlib-metadata = { version = "*", python = "<=3.8" }
@@ -49,31 +48,11 @@ pydantic = {extras = ["dotenv", "email"], version = "^1.9.0"}
 PyYAML = "^6.0"
 requests = "^2.27.1"
 rich = "^12.4.4"
-# AWS
-boto3 = {version = "^1.24.2", optional = true}
-boto3-stubs = {extras = ["apigateway", "apigatewayv2", "ecs", "ec2", "elb", "elbv2", "rds", "route53", "route53domains", "s3", "sts"], version = "^1.24.24", optional = true}
-# Azure
-azure-cli = { version = "^2.34.1", optional = true }
-azure-common = { version = "^1.1.28", optional = true }
-azure-core = { version = "^1.22.0", optional = true }
-azure-identity = { version = "^1.7.1", optional = true }
-azure-mgmt-compute = { version = ">=25.0.0,<25.1.0", optional = true }
-azure-mgmt-containerinstance = { version = "^9.1.0", optional = true }
-azure-mgmt-core = { version = "^1.3.0", optional = true }
-azure-mgmt-dns = { version = "^8.0.0", optional = true }
-azure-mgmt-network = { version = "^19.3.0", optional = true }
-azure-mgmt-resource = { version = "20.0.0", optional = true }
-azure-mgmt-sql = { version = "^3.0.1", optional = true }
-azure-mgmt-storage = { version = "^19.1.0", optional = true }
-azure-storage-blob = { version = "^12.9.0", optional = true }
-# Specified sys_platform to avoid issues with platform_system
-pywin32 = {version = "^303", optional = true, markers = "sys_platform == \"win32\""}
-# GCP
-google-auth = { version = "^2.6.0", optional = true }
-google-cloud-resource-manager = { version = "^1.4.1", optional = true }
-google-cloud-securitycenter = { version = "^1.9.0", optional = true }
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
 # Debug
 ipython = "^8.1.0"
 # Linting
@@ -92,43 +71,46 @@ isort = "^5.10.1"
 pep8-naming = "^0.12.1"
 pre-commit = "^2.17.0"
 pyupgrade = "^2.31.1"
-# Testing
-parameterized = "^0.8.1"
-pytest = "^7.1.1"
-pytest-cov = "^3.0.0"
-pytest-datadir = "^1.3.1"
-pytest-mock = "^3.7.0"
 # Typing
 mypy = "^0.942"
 types-PyYAML = "^6.0.5"
 types-requests = "^2.27.14"
 
-[tool.poetry.extras]
-aws = [
-    "boto3",
-    "boto3-stubs",
-]
-azure = [
-    "azure-cli",
-    "azure-common",
-    "azure-core",
-    "azure-identity",
-    "azure-mgmt-compute",
-    "azure-mgmt-containerinstance",
-    "azure-mgmt-core",
-    "azure-mgmt-dns",
-    "azure-mgmt-network",
-    "azure-mgmt-resource",
-    "azure-mgmt-resource",
-    "azure-mgmt-sql",
-    "azure-mgmt-storage",
-    "azure-storage-blob"
-]
-gcp = [
-    "google-auth",
-    "google-cloud-resource-manager",
-    "google-cloud-securitycenter"
-]
+[tool.poetry.group.test]
+optional = true
+
+[tool.poetry.group.test.dependencies]
+parameterized = "^0.8.1"
+pytest = "^7.1.1"
+pytest-cov = "^3.0.0"
+pytest-datadir = "^1.3.1"
+pytest-mock = "^3.7.0"
+
+[tool.poetry.group.aws.dependencies]
+boto3 = "^1.24.63"
+boto3-stubs = {extras = ["apigateway", "apigatewayv2", "ec2", "ecs", "elb", "elbv2", "rds", "route53", "route53domains", "s3", "sts"], version = "^1.24.63"}
+
+[tool.poetry.group.azure.dependencies]
+azure-cli = "^2.34.1"
+azure-common = "^1.1.28"
+azure-core = "^1.22.0"
+azure-identity = "^1.7.1"
+azure-mgmt-compute = ">=25.0.0,<25.1.0"
+azure-mgmt-containerinstance = "^9.1.0"
+azure-mgmt-core = "^1.3.0"
+azure-mgmt-dns = "^8.0.0"
+azure-mgmt-network = "^19.3.0"
+azure-mgmt-resource = "20.0.0"
+azure-mgmt-sql = "^3.0.1"
+azure-mgmt-storage = "^19.1.0"
+azure-storage-blob = "^12.9.0"
+# Specified sys_platform to avoid issues with platform_system
+pywin32 = {version = "^303", markers = "sys_platform == 'win32'"}
+
+[tool.poetry.group.gcp.dependencies]
+google-auth = "^2.6.0"
+google-cloud-resource-manager = "^1.4.1"
+google-cloud-securitycenter = "^1.9.0"
 
 [tool.black]
 target-version = ["py39"]
@@ -179,5 +161,5 @@ module = "azure.*"
 ignore_errors = true
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry>=1.2.0", "poetry-core>=1.1.0"]
 build-backend = "poetry.core.masonry.api"

@@ -3,6 +3,7 @@
 ## Helpful Commands
 
 ```sh
+poetry install --with dev,test
 poetry run flake8 .  # Run linter
 poetry run black .  # Run formatter
 poetry run isort .  # Run import formatter
@@ -11,7 +12,7 @@ poetry run pytest  # Run tests
 poetry run pytest --cov --cov-report html  # Run tests with coverage report
 poetry update  # Update dependencies
 pre-commit run --all-files  # Run pre-commit hooks (lint, type check, etc.)
-pre-commit pre-commit autoupdate  # Update pre-commit hooks
+pre-commit autoupdate  # Update pre-commit hooks
 ```
 
 ## Committing

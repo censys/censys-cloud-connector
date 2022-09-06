@@ -86,10 +86,6 @@ def poetry_export(file_name: str = "requirements.txt") -> str:
         "--output",
         file_name,
         "--without-hashes",
-        "-E",
-        "azure",
-        "-E",
-        "gcp",
     ]
     try:
         subprocess.check_output(cmd)

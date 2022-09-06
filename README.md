@@ -95,12 +95,7 @@ cd censys-cloud-connector
 pip install --upgrade poetry
 
 # Recommended installation
-poetry install -E aws -E azure -E gcp  # All dependencies (This is recommended)
-
-# Other installations
-# poetry install -E aws # Only AWS dependencies
-# poetry install -E azure  # Only Azure dependencies
-# poetry install -E gcp  # Only GCP dependencies
+poetry install
 
 # Copy .env file
 cp .env.sample .env
