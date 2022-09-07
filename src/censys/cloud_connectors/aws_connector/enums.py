@@ -64,3 +64,9 @@ class SeedLabel(str, Enum):
     ROUTE53_DOMAINS = "Route53/Domains"
     ROUTE53_ZONES = "Route53/Zones"
     STORAGE_BUCKET = "S3"
+
+
+class AwsMessages(str, Enum):
+    """AWS messages."""
+
+    ORGANIZATIONS_NOT_IN_USE = "AWS Organizations is not enabled in this account."

@@ -7,7 +7,7 @@ Censys Cloud Connector.
 ## Prerequisites
 
 - Install [Poetry](https://python-poetry.org/docs/).
-
+- Install [Terraform](https://www.terraform.io/downloads).
 - Install the [Cloud SDK](https://cloud.google.com/sdk) for your operating
   system.
 
@@ -17,8 +17,6 @@ Censys Cloud Connector.
     ```sh
     gcloud auth application-default login
     ```
-
-- Install [Terraform](https://www.terraform.io/downloads).
 
 ## Setup
 

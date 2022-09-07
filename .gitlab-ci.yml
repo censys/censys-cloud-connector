@@ -45,8 +45,6 @@ make requirements txt:
 
 .build-image-buildah:
   image: gcr.io/censys-internal/censys.io/buildah:2022-01-08_21-43-42
-  rules:
-    - if: $CI_MERGE_REQUEST_ID
   variables:
     KUBERNETES_CPU_REQUEST: 4
   before_script:
@@ -56,13 +54,30 @@ make requirements txt:
     - export STORAGE_DRIVER="overlay"
     - buildah info || export STORAGE_DRIVER="vfs"
 
-container image app:
+build mr image:
   extends: .build-image-buildah
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+      when: manual
+      allow_failure: true
   variables:
     IMAGE_NAME: gcr.io/censys-internal/censys.io/censys-cloud-connector
   script:
-    - buildah bud --squash --target=app --ssh default -t ${IMAGE_NAME}:${CI_COMMIT_SHA} .
+    - buildah bud --squash --target=app --ssh default -t ${IMAGE_NAME}:${CI_COMMIT_SHA} -t ${IMAGE_NAME}:${CI_COMMIT_REF_SLUG} .
     - buildah push ${IMAGE_NAME}:${CI_COMMIT_SHA}
+    - buildah push ${IMAGE_NAME}:${CI_COMMIT_REF_SLUG}
+    - grype ${IMAGE_NAME}:${CI_COMMIT_SHA}
+
+build main image:
+  extends: .build-image-buildah
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+  variables:
+    IMAGE_NAME: gcr.io/censys-io/censys-cloud-connector
+  script:
+    - buildah bud --squash --target=app --ssh default -t ${IMAGE_NAME}:${CI_COMMIT_SHA} -t ${IMAGE_NAME}:main .
+    - buildah push ${IMAGE_NAME}:${CI_COMMIT_SHA}
+    - buildah push ${IMAGE_NAME}:main
     - grype ${IMAGE_NAME}:${CI_COMMIT_SHA}
 
 lint:
@@ -119,8 +134,6 @@ release production:
       when: manual
       allow_failure: true
   needs:
-    - job: container image app
-      optional: true
     - job: unit tests
       optional: false
   variables:

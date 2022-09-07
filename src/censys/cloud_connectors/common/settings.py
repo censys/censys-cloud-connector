@@ -4,7 +4,7 @@ import importlib
 import pathlib
 from abc import abstractmethod
 from collections import OrderedDict
-from typing import TYPE_CHECKING, DefaultDict, Optional, Union
+from typing import TYPE_CHECKING, Any, DefaultDict, Optional, Union
 
 import yaml
 from pydantic import BaseSettings, Field, validate_arguments, validator
@@ -55,6 +55,25 @@ for type_, representer in type_to_representer.items():
     yaml.representer.SafeRepresenter.add_representer(type_, representer)  # type: ignore
 
 
+def remove_none_values(data: Any) -> Any:
+    """Remove all keys with a value of None.
+
+    Args:
+        data (Any): The data to remove the keys from.
+
+    Returns:
+        Any: The data with the keys removed.
+    """
+    if not isinstance(data, dict):
+        return data
+    for key, value in data.items():
+        if isinstance(value, dict):
+            data[key] = remove_none_values(value)
+        if isinstance(value, list):
+            data[key] = [remove_none_values(item) for item in value]
+    return {key: value for key, value in data.items() if value is not None}
+
+
 class ProviderSpecificSettings(BaseSettings):
     """Base class for all provider-specific settings."""
 
@@ -71,9 +90,7 @@ class ProviderSpecificSettings(BaseSettings):
         settings_as_dict = self.dict()
         if provider_name := settings_as_dict.pop("provider", None):
             res["provider"] = provider_name.lower()
-        if ignore := settings_as_dict.pop("ignore", None):
-            res["ignore"] = ignore
-        res.update(settings_as_dict)
+        res.update(remove_none_values(settings_as_dict))
         return res
 
     @classmethod

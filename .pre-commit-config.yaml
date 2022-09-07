@@ -7,7 +7,7 @@
 # fail_fast: true
 repos:
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.74.1
+    rev: v1.75.0
     hooks:
       - id: terraform_fmt
         name: terraform-fmt
@@ -21,6 +21,14 @@ repos:
             "-c",
             "./.terraform-docs.yml",
             "./terraform/google-scheduled-function",
+          ]
+      - id: terraform-docs-go
+        name: terraform-docs for aws task
+        args:
+          [
+            "-c",
+            "./.terraform-docs.yml",
+            "./terraform/aws-ecs-task",
           ]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.3.0

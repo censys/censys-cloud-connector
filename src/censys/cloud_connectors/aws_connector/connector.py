@@ -15,16 +15,21 @@ from mypy_boto3_route53 import Route53Client
 from mypy_boto3_route53domains import Route53DomainsClient
 from mypy_boto3_s3 import S3Client
 from mypy_boto3_sts import STSClient
+from mypy_boto3_sts.type_defs import CredentialsTypeDef
 
+from censys.cloud_connectors.aws_connector.enums import (
+    AwsResourceTypes,
+    AwsServices,
+    SeedLabel,
+    ServiceName,
+)
+from censys.cloud_connectors.aws_connector.settings import AwsSpecificSettings
 from censys.cloud_connectors.common.cloud_asset import AwsStorageBucketAsset
 from censys.cloud_connectors.common.connector import CloudConnector
 from censys.cloud_connectors.common.context import SuppressValidationError
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.seed import DomainSeed, IpSeed
 from censys.cloud_connectors.common.settings import Settings
-
-from .enums import AwsResourceTypes, AwsServices, SeedLabel, ServiceName
-from .settings import AwsSpecificSettings
 
 VALID_RECORD_TYPES = ["A", "CNAME"]
 
@@ -40,7 +45,13 @@ class AwsCloudConnector(CloudConnector):
     provider = ProviderEnum.AWS
     provider_settings: AwsSpecificSettings
 
-    _sts_credentials: Optional[dict] = None
+    # Temporary STS credentials created with Assume Role will be stored here during
+    # a connector scan.
+    temp_sts_cred: Optional[dict] = None
+
+    # When scanning, the current loaded credential will be set here.
+    credential: dict = {}
+
     account_number: int
     region: Optional[str]
 
@@ -80,15 +91,24 @@ class AwsCloudConnector(CloudConnector):
             self.provider_settings = provider_setting
 
             for credential in self.provider_settings.get_credentials():
+                self.detect_credential_change(credential)
+
+                # assign the current account credential to the connector
                 self.credential = credential
                 self.account_number = credential.get("account_number")
 
                 for region in self.provider_settings.regions:
                     self.region = region
-                    self.scan()
+                    try:
+                        self.scan()
+                    except Exception as e:
+                        self.logger.error(
+                            f"Unable to scan account {self.account_number} in region {self.region}. Error: {e}"
+                        )
                     self.region = None
 
-                self.credential = None
+                self.credential = {}
+                self.temp_sts_cred = None
                 self.account_number = None
 
     def format_label(self, service: AwsServices, region: Optional[str] = None) -> str:
@@ -108,12 +128,20 @@ class AwsCloudConnector(CloudConnector):
     def credentials(self) -> dict:
         """Generate required credentials for AWS.
 
+        This method will attempt to use any active STS sessions before falling
+        back on the regular provider settings.
+
         Returns:
             dict: Credentials.
         """
+        # Role name is the credential field which causes STS to activate.
+        # Once activated the temporary STS creds will be used by all
+        # subsequent AWS service client calls.
         if role_name := self.credential.get("role_name"):
+            self.logger.debug(f"Using STS for role {role_name}")
             return self.get_assume_role_credentials(role_name)
 
+        self.logger.debug("Using provider settings credentials")
         return self._boto_cred(
             self.region,
             self.provider_settings.access_key,
@@ -138,16 +166,38 @@ class AwsCloudConnector(CloudConnector):
         """
         try:
             credentials = credentials or self.credentials()
-            if credentials.get("aws_access_key_id", None):
+            if credentials.get("aws_access_key_id"):
+                self.logger.debug(f"AWS Service {service} using access key credentials")
                 return boto3.client(service, **credentials)
+
             # calling client without credentials follows the standard
             # credential import path to source creds from the environment
+            self.logger.debug(
+                f"AWS Service {service} using external boto configuration"
+            )
             return boto3.client(service)
         except Exception as e:
             self.logger.error(
                 f"Could not connect with client type '{service}'. Error: {e}"
             )
             raise
+
+    def detect_credential_change(self, credential: dict):
+        """Detects and clears temporary STS credentials when a new role is detected.
+
+        Args:
+            credential (dict): The new credential.
+        """
+        # TODO: theres a bug here where if role_name changes, sts needs to change, otherwise reuse
+        # TODO: extract method
+        # invalidate any previous STS creds if role name changed
+        new_role = credential.get("role_name")
+        old_role = self.credential and self.credential.get("role_name")
+        if new_role != old_role:
+            self.logger.debug(
+                f"Invalidating STS creds due to role mismatch. Old: {old_role} New: {new_role}."
+            )
+            self.temp_sts_cred = None
 
     def get_assume_role_credentials(self, role_name: Optional[str] = None) -> dict:
         """Generate and cache STS credentials.
@@ -161,21 +211,25 @@ class AwsCloudConnector(CloudConnector):
         Raises:
             Exception: If the credentials could not be created.
         """
-        if self._sts_credentials is not None:  # TODO and time > creds['Expiration']:
-            return self._sts_credentials
+        if self.temp_sts_cred:
+            self.logger.debug("Using cached temporary STS credentials")
+        else:
+            try:
+                temp_creds = self.assume_role(role_name)
+                self.temp_sts_cred = self._boto_cred(
+                    self.region,
+                    temp_creds["AccessKeyId"],
+                    temp_creds["SecretAccessKey"],
+                    temp_creds["SessionToken"],
+                )
+                self.logger.debug(
+                    f"Created temporary STS credentials for role {role_name}"
+                )
+            except Exception as e:
+                self.logger.error(f"Failed to assume role: {e}")
+                raise
 
-        try:
-            creds = self.assume_role(role_name)
-            self._sts_credentials = self._boto_cred(
-                self.region,
-                creds["AccessKeyId"],
-                creds["SecretAccessKey"],
-                creds["SessionToken"],
-            )
-            return self._sts_credentials
-        except Exception as e:
-            self.logger.error(f"Failed to assume role: {e}")
-            raise
+        return self.temp_sts_cred
 
     def _boto_cred(
         self,
@@ -211,14 +265,19 @@ class AwsCloudConnector(CloudConnector):
 
         return cred
 
-    def assume_role(self, role_name: Optional[str] = "CensysCloudConnectorRole"):
+    def assume_role(
+        self, role_name: Optional[str] = "CensysCloudConnectorRole"
+    ) -> CredentialsTypeDef:
         """Acquire temporary credentials generated by Secure Token Service (STS).
+
+        This will always use the top level AWS account credentials when querying
+        the STS service.
 
         Args:
             role_name (str, optional): Role name to assume. Defaults to "CensysCloudConnectorRole".
 
         Returns:
-            dict: Temporary credentials.
+            CredentialsTypeDef: Temporary credentials.
         """
         credentials = self._boto_cred(
             self.region,
@@ -227,6 +286,7 @@ class AwsCloudConnector(CloudConnector):
             self.provider_settings.session_token,
         )
 
+        # pass in explicit boto creds to force a new STS session
         client: STSClient = self.get_aws_client(
             service=AwsServices.SECURE_TOKEN_SERVICE,  # type: ignore
             credentials=credentials,
@@ -238,8 +298,12 @@ class AwsCloudConnector(CloudConnector):
         if role_session_name := self.credential.get("role_session_name"):
             role["RoleSessionName"] = role_session_name
 
-        assumed_role = client.assume_role(**role)
-        return assumed_role.get("Credentials", {})
+        temp_creds = client.assume_role(**role)
+
+        self.logger.debug(
+            f"Assume role acquired temporary credentials for role {role_name}"
+        )
+        return temp_creds["Credentials"]
 
     def get_api_gateway_domains_v1(self):
         """Retrieve all API Gateway V1 domains and emit seeds."""

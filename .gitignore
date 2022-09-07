@@ -182,12 +182,14 @@ terraform.rc
 
 # IDE-maintained configuration
 .idea/
+.vscode/launch.json
 
 # Builds
 *.zip
 
 # Censys Config
 providers.yml
+providers.*.yml
 
 # GCP Config
 *-key.json

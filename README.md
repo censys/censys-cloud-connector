@@ -386,7 +386,7 @@ It is highly recommended that a Python version shim like
 Once installed, Poetry will make a virtualenv using the
 correct version of Python automatically.
 
-### AWS Policy Actions
+### AWS Cloud Connector Role
 
 The following permissions are required to scan:
 

@@ -179,6 +179,27 @@ def prompt_select_one(
     return answers.get("choice")
 
 
+def prompt_confirm(question: Optional[str] = None, default: bool = False) -> bool:
+    """Prompt the user for confirmation.
+
+    Args:
+        question (str): Question to ask.
+        default (bool): Default selection. Defaults to False.
+
+    Returns:
+        bool: Proceed?
+    """
+    answer = prompt(
+        {
+            "type": "confirm",
+            "name": "answer",
+            "message": question or "Proceed?",
+            "default": default,
+        }
+    )
+    return bool(answer.get("answer"))
+
+
 def run_command(command: str, **kwargs) -> subprocess.CompletedProcess:
     """Run a command.
 
@@ -212,4 +233,5 @@ class BaseCli:
     print_json = staticmethod(print_json)
     prompt = staticmethod(prompt)
     prompt_select_one = staticmethod(prompt_select_one)
+    prompt_confirm = staticmethod(prompt_confirm)
     run_command = staticmethod(run_command)

@@ -156,14 +156,6 @@ class TestAwsSpecificSettings(BaseCase):
 
         assert settings.get_provider_key() == ("7_8", "us-east-1")
 
-    def test_account_number_or_accounts_validation(self):
-        with pytest.raises(ValueError, match=r"Cannot specify both.*"):
-            AwsSpecificSettings(
-                account_number=123,
-                accounts=[AwsAccount(account_number=345)],
-                regions=["us-east-1"],
-            )
-
     def test_parse_provider(self):
         self.settings = Settings(
             censys_api_key="fake-key-xxxxxxxxxxxxxxxxxxxxxxxxxxx",

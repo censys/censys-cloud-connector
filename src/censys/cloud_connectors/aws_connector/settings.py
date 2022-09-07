@@ -1,8 +1,8 @@
 """AWS specific settings."""
 
-from typing import Any, Optional
+from typing import Optional
 
-from pydantic import BaseModel, Field, PositiveInt, root_validator
+from pydantic import BaseModel, Field, PositiveInt
 
 from censys.cloud_connectors.aws_connector.enums import AwsResourceTypes
 from censys.cloud_connectors.common.enums import ProviderEnum
@@ -44,24 +44,6 @@ class AwsSpecificSettings(ProviderSpecificSettings):
 
     regions: list[str] = Field(min_items=1)
 
-    @root_validator
-    def validate_account_numbers(cls, values: dict[str, Any]) -> dict:
-        """Validate.
-
-        Args:
-            values (dict): Settings
-
-        Raises:
-            ValueError: Invalid settings.
-
-        Returns:
-            dict: Settings
-        """
-        if values["accounts"] is not None and values["account_number"] is not None:
-            raise ValueError("Cannot specify both account_number and accounts")
-
-        return values
-
     def get_provider_key(self) -> tuple:
         """Get provider key.
 
@@ -90,9 +72,8 @@ class AwsSpecificSettings(ProviderSpecificSettings):
         if provider_name := data.get("provider"):
             data["provider"] = provider_name.title()
 
-        if "accounts" in data:
-            for index, account in enumerate(data["accounts"]):
-                data["accounts"][index] = AwsAccount(**account)
+        for index, account in enumerate(data.get("accounts") or []):
+            data["accounts"][index] = AwsAccount(**account)
 
         return cls(**data)
 

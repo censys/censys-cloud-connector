@@ -7,13 +7,12 @@ from azure.mgmt.network import NetworkManagementClient
 from pydantic import validate_arguments
 
 from censys.cloud_connectors.azure_connector.enums import AzureMessages
+from censys.cloud_connectors.azure_connector.settings import AzureSpecificSettings
 from censys.cloud_connectors.common.cli.provider_setup import (
     ProviderSetupCli,
     backoff_wrapper,
 )
 from censys.cloud_connectors.common.enums import ProviderEnum
-
-from .settings import AzureSpecificSettings
 
 
 class AzureSetupCli(ProviderSetupCli):

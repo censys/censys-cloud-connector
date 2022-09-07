@@ -87,6 +87,7 @@
     "secretmanager",
     "securitycenter",
     "sendgrid",
+    "stackset",
     "tfvars",
     "todos",
     "tolerations",

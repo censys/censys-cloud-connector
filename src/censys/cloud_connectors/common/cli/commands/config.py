@@ -41,8 +41,6 @@ def cli_config(args: argparse.Namespace):
                         "value": provider,
                     }
                     for provider in ProviderEnum
-                    # TODO: Remove this once AWS is supported
-                    if provider != ProviderEnum.AWS
                 ],
             }
         ]
