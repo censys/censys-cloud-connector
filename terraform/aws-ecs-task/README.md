@@ -8,7 +8,13 @@ This module allows Terraform to manage
 - Install [Poetry](https://python-poetry.org/docs/).
 - Install [Terraform](https://www.terraform.io/downloads).
 - Install [AWS CLI](https://aws.amazon.com/cli/).
-<!-- TODO: Add login instructions -->
+
+## Login Instructions
+
+Use the [AWS CLI][aws-cli] tool to configure a
+[named profile][aws-cli-named-profile]. You can set the profile to use with the
+variable `aws_profile`. This can be defined using a Terraform
+[variable definition file][terraform-var-def-file].
 
 ## Setup
 
@@ -114,3 +120,8 @@ Run `terraform destroy -var-file terraform.tfvars` to destroy the resources.
 | <a name="output_eventbridge_rule_ids"></a> [eventbridge\_rule\_ids](#output\_eventbridge\_rule\_ids) | The EventBridge Rule IDs |
 <!-- END_TF_DOCS -->
 <!-- markdownlint-enable -->
+
+<!-- References -->
+[aws-cli]: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html
+[aws-cli-named-profile]: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html
+[terraform-var-def-file]: https://www.terraform.io/language/values/variables#variable-definitions-tfvars-files
