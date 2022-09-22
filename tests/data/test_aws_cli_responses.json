@@ -1,0 +1,61 @@
+{
+  "TEST_ASK_ROLE_PROMPT": { "answer": "test-role" },
+  "TEST_DETECT_ACCOUNTS": {
+    "provider": "AWS",
+    "ignore": null,
+    "account_number": 123456789012,
+    "access_key": "test-access-key",
+    "secret_key": "test-secret-key",
+    "role_name": "test-role",
+    "role_session_name": "test-session-name",
+    "session_token": null,
+    "external_id": null,
+    "accounts": [
+      {
+        "account_number": 3,
+        "access_key": null,
+        "secret_key": null,
+        "role_name": "test-role",
+        "role_session_name": "test-session-name"
+      }
+    ],
+    "regions": ["test-region"]
+  },
+  "TEST_LIST_ACCOUNTS": [
+    {
+      "Id": "123",
+      "Name": "test-account-name"
+    }
+  ],
+  "TEST_LIST_ACCOUNTS_ERROR": {
+    "Error": {
+      "Code": "AWSOrganizationsNotInUseException"
+    }
+  },
+  "TEST_PROVIDER_ACCOUNTS": [
+    {
+      "account_number": "1",
+      "role_name": "test-role",
+      "role_session_name": "test-role-session-name"
+    },
+    {
+      "account_number": "2",
+      "role_name": "test-role",
+      "role_session_name": "test-role-session-name"
+    }
+  ],
+  "TEST_REGIONS": {
+    "regions": ["test-region-1"]
+  },
+  "TEST_VERIFY_SETTINGS": {
+    "access_key": "test-access-key",
+    "secret_key": "test-secret-key",
+    "session_token": "test-session-token",
+    "regions": ["test-region"]
+  },
+  "TEST_VERIFY_SETTINGS_PRIMARY": {
+    "aws_access_key_id": "test-access-key",
+    "aws_secret_access_key": "test-secret-key",
+    "aws_session_token": "test-session-token"
+  }
+}
