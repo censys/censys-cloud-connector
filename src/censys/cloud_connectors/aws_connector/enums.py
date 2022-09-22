@@ -1,6 +1,5 @@
 """Enums for AWS."""
 from enum import Enum
-from typing import Literal
 
 
 class AwsResourceTypes(str, Enum):
@@ -35,22 +34,6 @@ class AwsServices(str, Enum):
     ROUTE53_ZONES = "route53"
     STORAGE_BUCKET = "s3"
     SECURE_TOKEN_SERVICE = "sts"
-
-
-# ServiceName is necessary for boto types; string literal is required
-ServiceName = Literal[
-    "apigateway",
-    "apigatewayv2",
-    "ec2",
-    "ecr",
-    "elb",
-    "elbv2",
-    "rds",
-    "route53",
-    "route53domains",
-    "s3",
-    "sts",
-]
 
 
 class SeedLabel(str, Enum):

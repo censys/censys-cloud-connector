@@ -174,6 +174,7 @@ class TestAwsSpecificSettings(BaseCase):
             "secret_key": "first-secret-key",
             "role_name": None,
             "role_session_name": None,
+            "ignore_tags": None,
         }
 
         cred2 = {
@@ -182,6 +183,7 @@ class TestAwsSpecificSettings(BaseCase):
             "secret_key": "second-secret-key",
             "role_name": None,
             "role_session_name": None,
+            "ignore_tags": None,
         }
 
         settings = AwsSpecificSettings(
@@ -195,45 +197,81 @@ class TestAwsSpecificSettings(BaseCase):
 
         assert creds == [cred1, cred2]
 
-    def test_get_credentials_overrides(self):
-        access_key = "base-access-key"
-        secret_key = "base-secret-key"
-        cred1 = {
+    def test_get_credentials_with_minimum_fields(self):
+        expected = {
             "account_number": 123,
         }
 
-        cred2 = {
+        settings = AwsSpecificSettings(
+            accounts=[AwsAccount(**expected)],
+            regions=["us-east-1"],
+        )
+
+        cred = next(settings.get_credentials())
+        assert type(cred) is dict
+        assert cred["account_number"] == expected["account_number"]
+
+    def test_get_credentials_with_provider_fields(self):
+        expected = {
+            "account_number": 456,
+            "access_key": "base-access-key",
+            "secret_key": "base-secret-key",
+            "role_name": "base-role-name",
+            "role_session_name": "base-role-session-name",
+            "ignore_tags": ["base-ignore-tag"],
+        }
+
+        account2 = AwsAccount(**expected)
+        settings = AwsSpecificSettings(
+            access_key=expected["access_key"],
+            secret_key=expected["secret_key"],
+            accounts=[account2],
+            regions=["us-east-1"],
+        )
+
+        cred = next(settings.get_credentials())
+        assert cred == expected
+
+    def test_get_credentials_with_account_overrides(self):
+        expected = {
             "account_number": 456,
             "access_key": "override-access-key",
             "secret_key": "override-secret-key",
             "role_name": "override-role-name",
             "role_session_name": "override-role-session-name",
+            "ignore_tags": ["override-ignore-tag"],
         }
 
-        expected_cred1 = cred1.copy()
-        expected_cred1.update(
-            {
-                "access_key": access_key,
-                "secret_key": secret_key,
-                "role_name": None,
-                "role_session_name": None,
-            }
-        )
-
-        expected_cred2 = cred2.copy()
-
-        account1 = AwsAccount(**cred1)
-        account2 = AwsAccount(**cred2)
+        account2 = AwsAccount(**expected)
         settings = AwsSpecificSettings(
-            access_key=access_key,
-            secret_key=secret_key,
-            accounts=[account1, account2],
+            access_key=expected["access_key"],
+            secret_key=expected["secret_key"],
+            accounts=[account2],
+            ignore_tags=["base-ignore-tag-that-should-be-overridden"],
             regions=["us-east-1"],
         )
 
-        creds = []
-        for cred in settings.get_credentials():
-            creds.append(cred)
+        cred = next(settings.get_credentials())
+        assert cred == expected
 
-        expected_creds = [expected_cred1, expected_cred2]
-        assert creds == expected_creds
+    def test_ignore_tags_provider_level(self):
+        settings = AwsSpecificSettings(
+            accounts=[AwsAccount(account_number=123)],
+            regions=["us-east-1"],
+            ignore_tags=["test-provider-ignore-tag"],
+        )
+        creds = next(settings.get_credentials())
+        assert creds["ignore_tags"] == ["test-provider-ignore-tag"]
+
+    def test_ignore_tags_account_level(self):
+        account1 = AwsAccount(
+            account_number=123,
+            ignore_tags=["test-account-ignore-tag"],
+        )
+        settings = AwsSpecificSettings(
+            accounts=[account1],
+            regions=["us-east-1"],
+            ignore_tags=["test-provider-ignore-tag"],
+        )
+        creds = next(settings.get_credentials())
+        assert creds["ignore_tags"] == ["test-account-ignore-tag"]

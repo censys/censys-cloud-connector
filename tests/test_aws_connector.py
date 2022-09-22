@@ -283,6 +283,60 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
             self.connector.seeds[test_label], test_seed_values
         )
 
+    def test_get_network_interfaces_ignores_tags(self):
+        data = self.data["TEST_NETWORK_INTERFACES_IGNORES_TAGS"].copy()
+        self.mock_api_response("describe_network_interfaces", data)
+
+        add_seed = self.mocker.patch.object(self.connector, "add_seed")
+
+        self.connector.ignored_tags = ["test-ignore-tag-name"]
+        self.connector.get_network_interfaces()
+        add_seed.assert_not_called()
+
+    def test_ignore_tags_on_ec2_and_eni(self):
+        pass
+
+    def test_describe_network_interfaces_ignores_tags(self):
+        expected = {
+            "3.87.58.15": {
+                "NetworkInterfaceId": "eni-0754a4d9b25b09f20",
+                "InstanceId": "i-0a9a18cd985cf3dcf",
+            },
+        }
+
+        data = self.data["TEST_DESCRIBE_NETWORK_INTERFACES_IGNORES_TAGS"].copy()
+        self.mock_api_response("describe_network_interfaces", data)
+        self.connector.ignored_tags = ["eni-ignore-tag-test"]
+
+        assert self.connector.describe_network_interfaces() == expected
+
+    def test_get_network_interfaces_ignores_instance_tags(self):
+        data = self.data["TEST_DESCRIBE_NETWORK_INTERFACES_RESULT"].copy()
+        self.mocker.patch.object(
+            self.connector, "describe_network_interfaces", return_value=data
+        )
+
+        resource_tags = self.data["TEST_INSTANCE_RESOURCE_TAGS"].copy()
+        self.mocker.patch.object(
+            self.connector, "get_resource_tags_paginated", return_value=resource_tags
+        )
+
+        add_seed = self.mocker.patch.object(self.connector, "add_seed")
+
+        self.connector.ignored_tags = ["test-ignore-instance-tag-name"]
+        self.connector.get_network_interfaces()
+        add_seed.assert_not_called()
+
+    def test_get_resource_tags_handles_multiple_formats(self):
+        expected = {
+            "test-resource-id-1": ["resource-tag-in-key", "resource-tag-in-value"]
+        }
+        data = self.data["TEST_RESOURCE_TAGS_MULTIPLE_FORMATS"].copy()
+        self.mocker.patch.object(
+            self.connector, "get_resource_tags_paginated", return_value=data
+        )
+        assert self.connector.get_resource_tags() == expected
+
     def test_rds_instances_creates_seeds(self):
         # Test data
         data = self.data["TEST_RDS_INSTANCES"].copy()
@@ -493,3 +547,23 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
 
         # Assertions
         assert label == expected
+
+    def test_generate_ignore_tags(self):
+        tags = ["tag-2", "tag-3"]
+        actual = self.connector.get_ignored_tags(tags)
+        assert "censys-cloud-connector-ignore" in actual
+        assert "tag-2" in actual
+        assert "tag-3" in actual
+
+    def test_has_ignored_tag(self):
+        self.connector.ignored_tags = ["tag-name"]
+        assert self.connector.has_ignored_tag(["tag-name"])
+
+    def test_no_ignored_tag(self):
+        self.connector.ignored_tags = ["non-existent-tag"]
+        assert not self.connector.has_ignored_tag(["tag-name"])
+
+    def test_extract_tags_from_tagset(self):
+        tag_set = [{"Key": "tag-1"}, {"Key": "tag-2"}]
+        tags = self.connector.extract_tags_from_tagset(tag_set)
+        assert tags == ["tag-1", "tag-2"]

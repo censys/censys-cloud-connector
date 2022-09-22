@@ -1,5 +1,7 @@
 """AWS Cloud Connector."""
-from typing import Any, Optional
+import contextlib
+from collections.abc import Generator
+from typing import Any, Optional, TypeVar
 
 import boto3
 import botocore
@@ -7,6 +9,11 @@ from botocore.exceptions import ClientError
 from mypy_boto3_apigateway import APIGatewayClient
 from mypy_boto3_apigatewayv2 import ApiGatewayV2Client
 from mypy_boto3_ec2 import EC2Client
+from mypy_boto3_ec2.type_defs import (
+    NetworkInterfaceTypeDef,
+    TagDescriptionTypeDef,
+    TagTypeDef,
+)
 from mypy_boto3_ecs import ECSClient
 from mypy_boto3_elb import ElasticLoadBalancingClient
 from mypy_boto3_elbv2 import ElasticLoadBalancingv2Client
@@ -21,7 +28,6 @@ from censys.cloud_connectors.aws_connector.enums import (
     AwsResourceTypes,
     AwsServices,
     SeedLabel,
-    ServiceName,
 )
 from censys.cloud_connectors.aws_connector.settings import AwsSpecificSettings
 from censys.cloud_connectors.common.cloud_asset import AwsStorageBucketAsset
@@ -31,7 +37,10 @@ from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.seed import DomainSeed, IpSeed
 from censys.cloud_connectors.common.settings import Settings
 
+T = TypeVar("T", bound="botocore.client.BaseClient")
+
 VALID_RECORD_TYPES = ["A", "CNAME"]
+IGNORED_TAGS = ["censys-cloud-connector-ignore"]
 
 
 class AwsCloudConnector(CloudConnector):
@@ -55,6 +64,10 @@ class AwsCloudConnector(CloudConnector):
     account_number: int
     region: Optional[str]
 
+    # Current set of ignored tags (combined set of user settings + overall settings)
+    ignored_tags: list[str]
+    global_ignored_tags: set[str]
+
     def __init__(self, settings: Settings):
         """Initialize AWS Cloud Connectors.
 
@@ -74,6 +87,9 @@ class AwsCloudConnector(CloudConnector):
             AwsResourceTypes.STORAGE_BUCKET: self.get_s3_instances,
         }
 
+        self.ignored_tags = []
+        self.global_ignored_tags: set[str] = set(IGNORED_TAGS)
+
     def scan(self):
         """Scan AWS."""
         self.logger.info(
@@ -92,10 +108,9 @@ class AwsCloudConnector(CloudConnector):
 
             for credential in self.provider_settings.get_credentials():
                 self.detect_credential_change(credential)
-
-                # assign the current account credential to the connector
                 self.credential = credential
-                self.account_number = credential.get("account_number")
+                self.account_number = credential["account_number"]
+                self.ignored_tags = self.get_ignored_tags(credential["ignore_tags"])
 
                 for region in self.provider_settings.regions:
                     self.region = region
@@ -110,6 +125,7 @@ class AwsCloudConnector(CloudConnector):
                 self.credential = {}
                 self.temp_sts_cred = None
                 self.account_number = None
+                self.ignored_tags = None
 
     def format_label(self, service: AwsServices, region: Optional[str] = None) -> str:
         """Format AWS label.
@@ -150,32 +166,32 @@ class AwsCloudConnector(CloudConnector):
         )
 
     def get_aws_client(
-        self, service: ServiceName, credentials: Optional[dict] = None
-    ) -> botocore.client.BaseClient:
+        self, service: AwsServices, credentials: Optional[dict] = None
+    ) -> T:
         """Creates an AWS client for the provided service.
 
         Args:
-            service (ServiceName): The AWS service name.
+            service (AwsServices): The AWS service name.
             credentials (dict): Override credentials instead of using the default.
 
         Raises:
             Exception: If the client could not be created.
 
         Returns:
-            botocore.client.BaseClient: An AWS boto3 client.
+            T: An AWS boto3 client.
         """
         try:
             credentials = credentials or self.credentials()
             if credentials.get("aws_access_key_id"):
                 self.logger.debug(f"AWS Service {service} using access key credentials")
-                return boto3.client(service, **credentials)
+                return boto3.client(service, **credentials)  # type: ignore
 
             # calling client without credentials follows the standard
             # credential import path to source creds from the environment
             self.logger.debug(
                 f"AWS Service {service} using external boto configuration"
             )
-            return boto3.client(service)
+            return boto3.client(service)  # type: ignore
         except Exception as e:
             self.logger.error(
                 f"Could not connect with client type '{service}'. Error: {e}"
@@ -188,15 +204,9 @@ class AwsCloudConnector(CloudConnector):
         Args:
             credential (dict): The new credential.
         """
-        # TODO: theres a bug here where if role_name changes, sts needs to change, otherwise reuse
-        # TODO: extract method
-        # invalidate any previous STS creds if role name changed
         new_role = credential.get("role_name")
         old_role = self.credential and self.credential.get("role_name")
         if new_role != old_role:
-            self.logger.debug(
-                f"Invalidating STS creds due to role mismatch. Old: {old_role} New: {new_role}."
-            )
             self.temp_sts_cred = None
 
     def get_assume_role_credentials(self, role_name: Optional[str] = None) -> dict:
@@ -383,19 +393,120 @@ class AwsCloudConnector(CloudConnector):
 
     def get_network_interfaces(self):
         """Retrieve EC2 Elastic Network Interfaces (ENI) data and emit seeds."""
-        client: EC2Client = self.get_aws_client(service=AwsServices.EC2)
         label = self.format_label(SeedLabel.NETWORK_INTERFACE)
 
+        interfaces = self.describe_network_interfaces()
+        instance_tags = self.get_resource_tags()
+
+        for ip_address, record in interfaces.items():
+            instance_id = record["InstanceId"]
+            tags = instance_tags.get(instance_id)
+            if tags and self.has_ignored_tag(tags):
+                self.logger.debug(
+                    f"Skipping ignored tag for network instance {ip_address}"
+                )
+                continue
+
+            with SuppressValidationError():
+                ip_seed = IpSeed(value=ip_address, label=label)
+                self.add_seed(ip_seed)
+
+    def describe_network_interfaces(self) -> dict:
+        """Retrieve EC2 Elastic Network Interfaces (ENI) data.
+
+        Returns:
+            dict: Network Interfaces.
+        """
+        ec2: EC2Client = self.get_aws_client(AwsServices.EC2)
+        interfaces = {}
+
         try:
-            data = client.describe_network_interfaces()
-            for networks in data.get("NetworkInterfaces", []):
-                for addresses in networks.get("PrivateIpAddresses", []):
+            data = ec2.describe_network_interfaces()
+            for network in data.get("NetworkInterfaces", {}):
+                network_interface_id = network.get("NetworkInterfaceId")
+                instance_id = network.get("Attachment", {}).get("InstanceId")
+
+                if self.network_interfaces_ignored_tags(network):
+                    self.logger.debug(
+                        f"Skipping ignored tag for network interface {network_interface_id}"
+                    )
+                    continue
+
+                for addresses in network.get("PrivateIpAddresses", []):
                     if ip_address := addresses.get("Association", {}).get("PublicIp"):
-                        with SuppressValidationError():
-                            ip_seed = IpSeed(value=ip_address, label=label)
-                            self.add_seed(ip_seed)
+                        interfaces[ip_address] = {
+                            "NetworkInterfaceId": network_interface_id,
+                            "InstanceId": instance_id,
+                        }
         except ClientError as e:
             self.logger.error(f"Could not connect to ENI Service. Error: {e}")
+
+        return interfaces
+
+    def get_resource_tags_paginated(
+        self, resource_types: list[str] = None
+    ) -> Generator[TagDescriptionTypeDef, None, None]:
+        """Retrieve EC2 resource tags paginated.
+
+        Args:
+            resource_types (Optional[list[str]]): Resource types. Defaults to None.
+
+        Yields:
+            Generator[TagDescriptionTypeDef]: Tags.
+        """
+        ec2: EC2Client = self.get_aws_client(AwsServices.EC2)
+        paginator = ec2.get_paginator(
+            "describe_tags",
+        )
+
+        for page in paginator.paginate(
+            Filters=[
+                {"Name": "resource-type", "Values": resource_types or ["instance"]}
+            ]
+        ):
+            tags = page.get("Tags", [])
+            yield from tags
+
+    def get_resource_tags(self, resource_types: list[str] = None) -> dict:
+        """Get EC2 resource tags based on resource types.
+
+        Args:
+            resource_types (list[str]): Resource type filter.
+
+        Returns:
+            dict: Tags grouped by resource keys.
+        """
+        resource_tags: dict = {}
+
+        for tag in self.get_resource_tags_paginated(resource_types):
+            # Tags come in two formats:
+            # 1. Tag = { Key = "Name", Value= "actual-tag-name" }
+            # 2. Tag = { Key = "actual-key-name", Value = "tag-value-that-is-unused-here"}
+            tag_name = tag.get("Key")
+            if tag_name == "Name":
+                tag_name = tag.get("Value")
+
+            # Note: resource id is instance id
+            resource_id = tag.get("ResourceId")
+            if _resource_tags := resource_tags.get(resource_id):
+                _resource_tags.append(tag_name)
+            else:
+                resource_tags[resource_id] = [tag_name]
+
+        return resource_tags
+
+    def network_interfaces_ignored_tags(self, data: NetworkInterfaceTypeDef) -> bool:
+        """Check if network interface has ignored tags.
+
+        Args:
+            data (NetworkInterfaceTypeDef): Raw AWS tag data in key value pairs.
+
+        Returns:
+            bool: True if ignore tags detected.
+        """
+        tag_set = data.get("TagSet", [])
+        tags = self.extract_tags_from_tagset(tag_set)
+        return self.has_ignored_tag(tags)
 
     def get_rds_instances(self):
         """Retrieve Relational Database Services (RDS) data and emit seeds."""
@@ -586,3 +697,52 @@ class AwsCloudConnector(CloudConnector):
                     self.add_cloud_asset(bucket_asset)
         except ClientError as e:
             self.logger.error(f"Could not connect to S3. Error: {e}")
+
+    def get_ignored_tags(self, tags: Optional[list[str]] = None):
+        """Generate ignored tags based off provider settings and global ignore list.
+
+        Args:
+            tags (Optional[list[str]]): List of tags to ignore. Defaults to None.
+
+        Returns:
+            list[str]: Ignored tags.
+        """
+        if not tags:
+            return self.global_ignored_tags
+
+        ignored = self.global_ignored_tags.copy()
+        ignored.update(tags)
+
+        return list(ignored)
+
+    def has_ignored_tag(self, tags: list[str]) -> bool:
+        """Check if a list of tags contains an ignored tag.
+
+        Args:
+            tags (list[str]): Tags on the current resource.
+
+        Returns:
+            bool: If the list contains an ignored tag.
+        """
+        return any(tag in self.ignored_tags for tag in tags)
+
+    def extract_tags_from_tagset(self, tag_set: list[TagTypeDef]) -> list[str]:
+        """Extract tags from tagset.
+
+        Args:
+            tag_set (dict): AWS TagSet data.
+
+        Returns:
+            list[str]: List of tag names.
+        """
+        tags = []
+
+        with contextlib.suppress(KeyError):
+            for tag in tag_set:
+                name = tag["Key"]
+                if name == "Name":
+                    tags.append(tag["Value"])
+                else:
+                    tags.append(name)
+
+        return tags

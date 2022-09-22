@@ -10,9 +10,7 @@
   "python.linting.mypyPath": "${workspaceFolder}/.venv/bin/mypy",
   "python.poetryPath": "poetry",
   "python.terminal.activateEnvironment": true,
-  "python.testing.pytestArgs": [
-    "--no-cov"
-  ],
+  "python.testing.pytestArgs": ["--no-cov"],
   "python.testing.pytestEnabled": true,
   "python.testing.pytestPath": "${workspaceFolder}/.venv/bin/pytest",
   "python.testing.unittestEnabled": false,
@@ -88,6 +86,7 @@
     "securitycenter",
     "sendgrid",
     "stackset",
+    "tagset",
     "tfvars",
     "todos",
     "tolerations",

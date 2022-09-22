@@ -173,12 +173,16 @@ The file is a YAML file and is structured as follows:
   #   - AWS::RDS
   #   - AWS::Route53
   #   - AWS::S3
+  # ignore_tags:
+  # - censys-provider-ignore
   # It is also possible to define roles to assume for multiple accounts.
   # accounts:
   # - account_number: xxxxxxxxxxxx
   #   access_key: xxxxxxxxxxxxxxxxxxxx
   #   secret_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
   #   role_name: xxxxxxxxxxxxxxxxxxxx
+  #   - ignore_tags:
+  #     - censys-account-ignore
 - provider: azure
   tenant_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
   client_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
@@ -394,6 +398,7 @@ The following permissions are required to scan:
 - `elasticloadbalancing:DescribeLoadBalancers`,
 - `route53domains:ListDomains`,
 - `ec2:DescribeNetworkInterfaces`,
+- `ec2:DescribeTags`,
 - `rds:DescribeDBInstances`,
 - `route53:ListResourceRecordSets`,
 - `ecs:ListContainerInstances`,
@@ -402,6 +407,8 @@ The following permissions are required to scan:
 - `s3:ListBucket`,
 - `s3:ListAllMyBuckets`,
 - `ecs:ListClusters`
+
+It is possible to also utilize AWS built-in policies to ease configuration. Both [ReadOnlyAccess][aws-policy-ec2-read-only-access] and [SecurityAudit][aws-policy-security-audit] meet the requirements with the exception of API Gateway v2, which requires  `apigateway:GET`.
 
 ### Azure Roles
 
@@ -439,6 +446,15 @@ All contributions (no matter how small) are always welcome. See
 [Contributing to the Cloud Connector](https://github.com/censys/censys-cloud-connector/tree/main/.github/CONTRIBUTING.md) to change or
 test the code or for information on the CI/CD pipeline.
 
+## Asset Deny List
+
+In certain situations it is desirable not to have assets sent to Censys. This can be accomplished by utilizing the cloud provider's tagging feature. At this time, only AWS ENI and EC2 tags are supported.
+
+Usage:
+
+- AWS supports `ignore_tags` at the provider and account levels in [providers.yml](./providers.yml).
+- Tags named `censys-cloud-connector-ignore` are ignored.
+
 ## License
 
 This software is licensed under [Apache License, Version 2.0][license].
@@ -458,3 +474,5 @@ This software is licensed under [Apache License, Version 2.0][license].
 [gcloud-cli]: https://cloud.google.com/sdk/docs/install
 [seed-data]: https://app.censys.io/seeds
 [storage-bucket]: https://app.censys.io/storage-bucket
+[aws-policy-ec2-read-only-access]: https://console.aws.amazon.com/iam/home#policies/arn:aws:iam::aws:policy/ReadOnlyAccess
+[aws-policy-security-audit]: https://console.aws.amazon.com/iam/home#policies/arn:aws:iam::aws:policy/SecurityAudit

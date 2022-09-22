@@ -23,6 +23,7 @@ class AwsAccount(BaseModel):
     secret_key: Optional[str] = Field(min_length=1)
     role_name: Optional[str] = Field(min_length=1)
     role_session_name: Optional[str] = Field(min_length=1)
+    ignore_tags: Optional[list[str]] = Field(min_length=1)
 
 
 class AwsSpecificSettings(ProviderSpecificSettings):
@@ -36,6 +37,7 @@ class AwsSpecificSettings(ProviderSpecificSettings):
     secret_key: Optional[str] = Field(min_length=1)
     role_name: Optional[str] = Field(min_length=1)
     role_session_name: Optional[str] = Field(min_length=1)
+    ignore_tags: Optional[list[str]] = Field(min_length=1)
 
     session_token: Optional[str] = Field(min_length=1)
     external_id: Optional[str] = Field(min_length=1)
@@ -93,6 +95,8 @@ class AwsSpecificSettings(ProviderSpecificSettings):
                     "role_session_name": (
                         account.role_session_name or self.role_session_name
                     ),
+                    # TODO: should this merge or override?
+                    "ignore_tags": (account.ignore_tags or self.ignore_tags),
                 }
 
         else:
@@ -102,4 +106,5 @@ class AwsSpecificSettings(ProviderSpecificSettings):
                 "secret_key": self.secret_key,
                 "role_name": self.role_name,
                 "role_session_name": self.role_session_name,
+                "ignore_tags": self.ignore_tags,
             }

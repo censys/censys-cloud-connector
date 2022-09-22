@@ -3,9 +3,7 @@
     "account_number": 999999999999,
     "access_key": "xxxxxxxxxxxxxxxxxxxx",
     "secret_key": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-    "regions": [
-      "test-region-1"
-    ]
+    "regions": ["test-region-1"]
   },
   "TEST_ACCOUNTS": {
     "access_key": "xxxxxxxxxxxxxxxxxxxx",
@@ -22,9 +20,7 @@
         "secret_key": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxY"
       }
     ],
-    "regions": [
-      "test-region-1"
-    ]
+    "regions": ["test-region-1"]
   },
   "TEST_STS": {
     "Credentials": {
@@ -84,6 +80,10 @@
   "TEST_NETWORK_INTERFACES": {
     "NetworkInterfaces": [
       {
+        "NetworkInterfaceId": "test-eni-id-hash0",
+        "Attachment": {
+          "InstanceId": "test-instance-id-1"
+        },
         "PrivateIpAddresses": [
           {
             "Association": {
@@ -94,6 +94,172 @@
       }
     ]
   },
+  "TEST_NETWORK_INTERFACES_IGNORES_TAGS": {
+    "NetworkInterfaces": [
+      {
+        "NetworkInterfaceId": "test-eni-id-hash1",
+        "TagSet": [
+          {
+            "Key": "test-ignore-tag-name",
+            "Value": "test-tag-value"
+          }
+        ],
+        "PrivateIpAddresses": [
+          {
+            "Association": {
+              "PublicIp": "108.156.117.66"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "TEST_DESCRIBE_NETWORK_INTERFACES_IGNORES_TAGS": {
+    "NetworkInterfaces": [
+      {
+        "Association": {
+          "IpOwnerId": "amazon",
+          "PublicDnsName": "ec2-54-87-174-23.compute-1.amazonaws.com",
+          "PublicIp": "54.87.174.23"
+        },
+        "Attachment": {
+          "AttachTime": "2022-09-15 20:03:51+00:00",
+          "AttachmentId": "eni-attach-048bc98308736f934",
+          "DeleteOnTermination": true,
+          "DeviceIndex": 0,
+          "NetworkCardIndex": 0,
+          "InstanceId": "i-07c60ca0336cba98c",
+          "InstanceOwnerId": "957133541405",
+          "Status": "attached"
+        },
+        "AvailabilityZone": "us-east-1a",
+        "Description": "ignore-tag-on-network-interface",
+        "Groups": [
+          { "GroupName": "default", "GroupId": "sg-0bafb9a53aed692b2" }
+        ],
+        "InterfaceType": "interface",
+        "Ipv6Addresses": [],
+        "MacAddress": "0a:94:c2:87:32:93",
+        "NetworkInterfaceId": "eni-0ae21b79f653d1bfc",
+        "OwnerId": "957133541405",
+        "PrivateDnsName": "ip-172-31-19-201.ec2.internal",
+        "PrivateIpAddress": "172.31.19.201",
+        "PrivateIpAddresses": [
+          {
+            "Association": {
+              "IpOwnerId": "amazon",
+              "PublicDnsName": "ec2-54-87-174-23.compute-1.amazonaws.com",
+              "PublicIp": "54.87.174.23"
+            },
+            "Primary": true,
+            "PrivateDnsName": "ip-172-31-19-201.ec2.internal",
+            "PrivateIpAddress": "172.31.19.201"
+          }
+        ],
+        "RequesterManaged": false,
+        "SourceDestCheck": true,
+        "Status": "in-use",
+        "SubnetId": "subnet-0895865ae82e4714c",
+        "TagSet": [
+          { "Key": "Name", "Value": "eni-ignore-tag-test" },
+          { "Key": "cc-ignore-network-interface", "Value": "1" }
+        ],
+        "VpcId": "vpc-0339de8d6e97250b5"
+      },
+      {
+        "Association": {
+          "IpOwnerId": "amazon",
+          "PublicDnsName": "ec2-3-87-58-15.compute-1.amazonaws.com",
+          "PublicIp": "3.87.58.15"
+        },
+        "Attachment": {
+          "AttachTime": "2022-09-14 14:51:13+00:00",
+          "AttachmentId": "eni-attach-09048910dcf629b2a",
+          "DeleteOnTermination": true,
+          "DeviceIndex": 0,
+          "NetworkCardIndex": 0,
+          "InstanceId": "i-0a9a18cd985cf3dcf",
+          "InstanceOwnerId": "957133541405",
+          "Status": "attached"
+        },
+        "AvailabilityZone": "us-east-1d",
+        "Description": "",
+        "Groups": [
+          { "GroupName": "default", "GroupId": "sg-0bafb9a53aed692b2" }
+        ],
+        "InterfaceType": "interface",
+        "Ipv6Addresses": [],
+        "MacAddress": "12:72:e4:1e:35:4b",
+        "NetworkInterfaceId": "eni-0754a4d9b25b09f20",
+        "OwnerId": "957133541405",
+        "PrivateDnsName": "ip-172-31-80-236.ec2.internal",
+        "PrivateIpAddress": "172.31.80.236",
+        "PrivateIpAddresses": [
+          {
+            "Association": {
+              "IpOwnerId": "amazon",
+              "PublicDnsName": "ec2-3-87-58-15.compute-1.amazonaws.com",
+              "PublicIp": "3.87.58.15"
+            },
+            "Primary": true,
+            "PrivateDnsName": "ip-172-31-80-236.ec2.internal",
+            "PrivateIpAddress": "172.31.80.236"
+          }
+        ],
+        "RequesterManaged": false,
+        "SourceDestCheck": true,
+        "Status": "in-use",
+        "SubnetId": "subnet-037d2dadc51450604",
+        "TagSet": [
+          { "Key": "Name", "Value": "ec2-ignore-tag-test-network-tag" }
+        ],
+        "VpcId": "vpc-0339de8d6e97250b5"
+      }
+    ],
+    "ResponseMetadata": {
+      "RequestId": "9a1b3e87-3310-453b-98b2-323f3a84a012",
+      "HTTPStatusCode": 200,
+      "HTTPHeaders": {
+        "x-amzn-requestid": "9a1b3e87-3310-453b-98b2-323f3a84a012",
+        "cache-control": "no-cache, no-store",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "vary": "accept-encoding",
+        "content-type": "text/xml;charset=UTF-8",
+        "content-length": "5948",
+        "date": "Fri, 16 Sep 2022 15:02:17 GMT",
+        "server": "AmazonEC2"
+      },
+      "RetryAttempts": 0
+    }
+  },
+  "TEST_DESCRIBE_NETWORK_INTERFACES_RESULT": {
+    "108.108.108.108": {
+      "NetworkInterfaceId": "test-network-interface-id",
+      "InstanceId": "test-instance-id-1"
+    }
+  },
+  "TEST_INSTANCE_RESOURCE_TAGS": [
+    {
+      "Key": "test-ignore-instance-tag-name",
+      "ResourceId": "test-instance-id-1",
+      "ResourceType": "instance",
+      "Value": "test-instance-value"
+    }
+  ],
+  "TEST_RESOURCE_TAGS_MULTIPLE_FORMATS": [
+    {
+      "Key": "resource-tag-in-key",
+      "ResourceId": "test-resource-id-1",
+      "ResourceType": "instance",
+      "Value": "test-value"
+    },
+    {
+      "Key": "Name",
+      "ResourceId": "test-resource-id-1",
+      "ResourceType": "instance",
+      "Value": "resource-tag-in-value"
+    }
+  ],
   "TEST_RDS_INSTANCES": {
     "DBInstances": [
       {
@@ -175,9 +341,7 @@
     ]
   },
   "TEST_ECS_LIST_CLUSTERS": {
-    "clusterArns": [
-      "arn:aws:ecs:us-east-1:123456789012:cluster/test-cluster"
-    ]
+    "clusterArns": ["arn:aws:ecs:us-east-1:123456789012:cluster/test-cluster"]
   },
   "TEST_ECS_LIST_CONTAINER_INSTANCES": {
     "containerInstanceArns": [
