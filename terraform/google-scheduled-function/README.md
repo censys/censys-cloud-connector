@@ -21,13 +21,18 @@ Censys Cloud Connector.
 ## Setup
 
 1. Ensure you are in the root directory of the project.
-2. Source your environment variables as set in the main [README](../../README.md#environment-variables)
+2. Source your environment variables.
 
    ```sh
    source .env
    ```
 
-3. Run `poetry install -E aws -E azure -E gcp` to install the dependencies.
+3. Install the dependencies.
+
+   ```sh
+   poetry install
+   ```
+
 4. Ensure your `providers.yml` file contains your cloud provider credentials.
 
    If you have not already done so, you can create a `providers.yml` file by
@@ -46,14 +51,36 @@ Censys Cloud Connector.
 
 6. Copy `terraform.tfvars.example` to `terraform.tfvars` and update the values
    to match your environment.
-7. Run `terraform init` to initialize the project.
-8. Run `terraform plan -var-file terraform.tfvars` to see what resources will
-   be created.
-9. Run `terraform apply -var-file terraform.tfvars` to create the resources.
+
+   ```sh
+   cp terraform.tfvars.example terraform.tfvars
+   ```
+
+7. Initialize the project with the following command:
+
+   ```sh
+   terraform init
+   ```
+
+8. To see what resources will be created or updated, run the following command:
+
+   ```sh
+   terraform plan -var-file terraform.tfvars
+   ```
+
+9. To create or update the resources, run the following command:
+
+   ```sh
+   terraform apply -var-file terraform.tfvars
+   ```
 
 ## Cleanup
 
-Run `terraform destroy -var-file terraform.tfvars` to destroy the resources.
+To clean up the resources created by this module, run the following command:
+
+```sh
+terraform destroy -var-file terraform.tfvars
+```
 
 <!-- markdownlint-disable -->
 <!-- BEGIN_TF_DOCS -->
@@ -61,25 +88,25 @@ Run `terraform destroy -var-file terraform.tfvars` to destroy the resources.
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 0.13 |
-| <a name="requirement_google"></a> [google](#requirement\_google) | >= 3.53, < 5.0 |
+| terraform | >= 0.13 |
+| google | >= 3.53, < 5.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_archive"></a> [archive](#provider\_archive) | 2.2.0 |
-| <a name="provider_external"></a> [external](#provider\_external) | 2.2.2 |
-| <a name="provider_google"></a> [google](#provider\_google) | 4.17.0 |
-| <a name="provider_local"></a> [local](#provider\_local) | 2.2.2 |
-| <a name="provider_null"></a> [null](#provider\_null) | 3.1.1 |
-| <a name="provider_random"></a> [random](#provider\_random) | 3.1.2 |
+| archive | 2.2.0 |
+| external | 2.2.2 |
+| google | 4.17.0 |
+| local | 2.2.2 |
+| null | 3.1.1 |
+| random | 3.1.2 |
 
 ## Modules
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_pubsub_topic"></a> [pubsub\_topic](#module\_pubsub\_topic) | terraform-google-modules/pubsub/google | ~> 1.0 |
+| pubsub\_topic | terraform-google-modules/pubsub/google | ~> 1.0 |
 
 ## Resources
 
@@ -109,45 +136,45 @@ Run `terraform destroy -var-file terraform.tfvars` to destroy the resources.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_bucket_force_destroy"></a> [bucket\_force\_destroy](#input\_bucket\_force\_destroy) | When deleting the GCS bucket containing the cloud function, delete all objects in the bucket first. | `bool` | `true` | no |
-| <a name="input_bucket_labels"></a> [bucket\_labels](#input\_bucket\_labels) | A set of key/value label pairs to assign to the bucket. | `map(string)` | `{}` | no |
-| <a name="input_bucket_name"></a> [bucket\_name](#input\_bucket\_name) | The name to apply to the bucket. Will default to a string of `censys-cloud-connector-bucket-XXXX` with `XXXX` being random characters. | `string` | `""` | no |
-| <a name="input_censys_api_key"></a> [censys\_api\_key](#input\_censys\_api\_key) | The Censys ASM API key | `string` | n/a | yes |
-| <a name="input_create_bucket"></a> [create\_bucket](#input\_create\_bucket) | Whether to create a new bucket or use an existing one. If false, `bucket_name` should reference the name of the alternate bucket to use. | `bool` | `true` | no |
-| <a name="input_files_to_exclude_in_source_dir"></a> [files\_to\_exclude\_in\_source\_dir](#input\_files\_to\_exclude\_in\_source\_dir) | Specify files to ignore when reading the source\_dir | `list(string)` | <pre>[<br>  ".gitignore"<br>]</pre> | no |
-| <a name="input_function_available_memory_mb"></a> [function\_available\_memory\_mb](#input\_function\_available\_memory\_mb) | The amount of memory in megabytes allotted for the function to use. | `number` | `256` | no |
-| <a name="input_function_description"></a> [function\_description](#input\_function\_description) | The description of the function. | `string` | `"Cloud Function to run the Censys Cloud Connector."` | no |
-| <a name="input_function_labels"></a> [function\_labels](#input\_function\_labels) | A set of key/value label pairs to assign to the function. | `map(string)` | `{}` | no |
-| <a name="input_function_name"></a> [function\_name](#input\_function\_name) | The name to apply to the function. Will default to a string of `censys-cloud-connector-function-XXXX` with `XXXX` being random characters. | `string` | `""` | no |
-| <a name="input_function_source_dir"></a> [function\_source\_dir](#input\_function\_source\_dir) | The directory containing the source code for the function. | `string` | `"function_source"` | no |
-| <a name="input_function_timeout_s"></a> [function\_timeout\_s](#input\_function\_timeout\_s) | The amount of time in seconds allotted for the execution of the function. (Can be up to 540 seconds) | `number` | `540` | no |
-| <a name="input_gcp_service_list"></a> [gcp\_service\_list](#input\_gcp\_service\_list) | The list of apis necessary for the project | `list(string)` | <pre>[<br>  "cloudbuild.googleapis.com",<br>  "cloudfunctions.googleapis.com",<br>  "cloudresourcemanager.googleapis.com",<br>  "cloudscheduler.googleapis.com",<br>  "pubsub.googleapis.com",<br>  "secretmanager.googleapis.com",<br>  "securitycenter.googleapis.com"<br>]</pre> | no |
-| <a name="input_job_description"></a> [job\_description](#input\_job\_description) | Addition text to describe the job | `string` | `"Scheduled time to run the Censys Cloud Connector function"` | no |
-| <a name="input_job_name"></a> [job\_name](#input\_job\_name) | The name of the scheduled job to run | `string` | `"censys-cloud-connector-job"` | no |
-| <a name="input_job_schedule"></a> [job\_schedule](#input\_job\_schedule) | The cron schedule for triggering the cloud function | `string` | `"0 */4 * * *"` | no |
-| <a name="input_logging_level"></a> [logging\_level](#input\_logging\_level) | The logging level | `string` | `"INFO"` | no |
-| <a name="input_message_data"></a> [message\_data](#input\_message\_data) | The data to send in the topic message. | `string` | `"c3RhcnQtY2Vuc3lzLWNjLXNjYW4="` | no |
-| <a name="input_project_id"></a> [project\_id](#input\_project\_id) | The project ID to host the cloud function in | `string` | n/a | yes |
-| <a name="input_providers_config"></a> [providers\_config](#input\_providers\_config) | The path to the providers config file | `string` | `"../../providers.yml"` | no |
-| <a name="input_region"></a> [region](#input\_region) | The region the project is in | `string` | `"us-central1"` | no |
-| <a name="input_scheduler_job"></a> [scheduler\_job](#input\_scheduler\_job) | An existing Cloud Scheduler job instance | `object({ name = string })` | `null` | no |
-| <a name="input_secrets_dir"></a> [secrets\_dir](#input\_secrets\_dir) | The path to the secrets directory | `string` | `"../../secrets"` | no |
-| <a name="input_time_zone"></a> [time\_zone](#input\_time\_zone) | The timezone to use in scheduler | `string` | `"Etc/UTC"` | no |
-| <a name="input_topic_name"></a> [topic\_name](#input\_topic\_name) | Name of pubsub topic connecting the scheduled job and the function | `string` | `"censys-cloud-connector-topic"` | no |
-| <a name="input_vpc_connector"></a> [vpc\_connector](#input\_vpc\_connector) | The VPC Network Connector that this cloud function can connect to. It should be set up as fully-qualified URI. The format of this field is projects//locations//connectors/*. | `string` | `null` | no |
-| <a name="input_vpc_connector_egress_settings"></a> [vpc\_connector\_egress\_settings](#input\_vpc\_connector\_egress\_settings) | The egress settings for the connector, controlling what traffic is diverted through it. Allowed values are ALL\_TRAFFIC and PRIVATE\_RANGES\_ONLY. If unset, this field preserves the previously set value. | `string` | `null` | no |
+| bucket\_force\_destroy | When deleting the GCS bucket containing the cloud function, delete all objects in the bucket first. | `bool` | `true` | no |
+| bucket\_labels | A set of key/value label pairs to assign to the bucket. | `map(string)` | `{}` | no |
+| bucket\_name | The name to apply to the bucket. Will default to a string of `censys-cloud-connector-bucket-XXXX` with `XXXX` being random characters. | `string` | `""` | no |
+| censys\_api\_key | The Censys ASM API key | `string` | n/a | yes |
+| create\_bucket | Whether to create a new bucket or use an existing one. If false, `bucket_name` should reference the name of the alternate bucket to use. | `bool` | `true` | no |
+| files\_to\_exclude\_in\_source\_dir | Specify files to ignore when reading the source\_dir | `list(string)` | <pre>[<br>  ".gitignore"<br>]</pre> | no |
+| function\_available\_memory\_mb | The amount of memory in megabytes allotted for the function to use. | `number` | `256` | no |
+| function\_description | The description of the function. | `string` | `"Cloud Function to run the Censys Cloud Connector."` | no |
+| function\_labels | A set of key/value label pairs to assign to the function. | `map(string)` | `{}` | no |
+| function\_name | The name to apply to the function. Will default to a string of `censys-cloud-connector-function-XXXX` with `XXXX` being random characters. | `string` | `""` | no |
+| function\_source\_dir | The directory containing the source code for the function. | `string` | `"function_source"` | no |
+| function\_timeout\_s | The amount of time in seconds allotted for the execution of the function. (Can be up to 540 seconds) | `number` | `540` | no |
+| gcp\_service\_list | The list of apis necessary for the project | `list(string)` | <pre>[<br>  "cloudbuild.googleapis.com",<br>  "cloudfunctions.googleapis.com",<br>  "cloudresourcemanager.googleapis.com",<br>  "cloudscheduler.googleapis.com",<br>  "pubsub.googleapis.com",<br>  "secretmanager.googleapis.com",<br>  "securitycenter.googleapis.com"<br>]</pre> | no |
+| job\_description | Addition text to describe the job | `string` | `"Scheduled time to run the Censys Cloud Connector function"` | no |
+| job\_name | The name of the scheduled job to run | `string` | `"censys-cloud-connector-job"` | no |
+| job\_schedule | The cron schedule for triggering the cloud function | `string` | `"0 */4 * * *"` | no |
+| logging\_level | The logging level | `string` | `"INFO"` | no |
+| message\_data | The data to send in the topic message. | `string` | `"c3RhcnQtY2Vuc3lzLWNjLXNjYW4="` | no |
+| project\_id | The project ID to host the cloud function in | `string` | n/a | yes |
+| providers\_config | The path to the providers config file | `string` | `"../../providers.yml"` | no |
+| region | The region the project is in | `string` | `"us-central1"` | no |
+| scheduler\_job | An existing Cloud Scheduler job instance | `object({ name = string })` | `null` | no |
+| secrets\_dir | The path to the secrets directory | `string` | `"../../secrets"` | no |
+| time\_zone | The timezone to use in scheduler | `string` | `"Etc/UTC"` | no |
+| topic\_name | Name of pubsub topic connecting the scheduled job and the function | `string` | `"censys-cloud-connector-topic"` | no |
+| vpc\_connector | The VPC Network Connector that this cloud function can connect to. It should be set up as fully-qualified URI. The format of this field is projects//locations//connectors/*. | `string` | `null` | no |
+| vpc\_connector\_egress\_settings | The egress settings for the connector, controlling what traffic is diverted through it. Allowed values are ALL\_TRAFFIC and PRIVATE\_RANGES\_ONLY. If unset, this field preserves the previously set value. | `string` | `null` | no |
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
-| <a name="output_api_secret_version"></a> [api\_secret\_version](#output\_api\_secret\_version) | The secret version of the API key |
-| <a name="output_bucket_name"></a> [bucket\_name](#output\_bucket\_name) | The name of the bucket created |
-| <a name="output_function_name"></a> [function\_name](#output\_function\_name) | The name of the function created |
-| <a name="output_function_region"></a> [function\_region](#output\_function\_region) | The region the function is in |
-| <a name="output_job_name"></a> [job\_name](#output\_job\_name) | The name of the scheduled job to run |
-| <a name="output_project_id"></a> [project\_id](#output\_project\_id) | The project ID |
-| <a name="output_providers_secrets_versions"></a> [providers\_secrets\_versions](#output\_providers\_secrets\_versions) | The secret versions of the providers config |
-| <a name="output_topic_name"></a> [topic\_name](#output\_topic\_name) | The name of the topic created |
+| api\_secret\_version | The secret version of the API key |
+| bucket\_name | The name of the bucket created |
+| function\_name | The name of the function created |
+| function\_region | The region the function is in |
+| job\_name | The name of the scheduled job to run |
+| project\_id | The project ID |
+| providers\_secrets\_versions | The secret versions of the providers config |
+| topic\_name | The name of the topic created |
 <!-- END_TF_DOCS -->
 <!-- markdownlint-enable -->

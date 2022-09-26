@@ -35,6 +35,7 @@ Seeds (IP Addresses, Domain Names, CIDRs, and ASNs) as well as Cloud Assets
 ### Azure Cloud
 
 - [Azure Networking](https://azure.microsoft.com/en-us/product-categories/networking/)
+  - [Azure Public IP Addresses](https://docs.microsoft.com/en-us/azure/virtual-network/public-ip-addresses)
   - [Azure DNS](https://azure.microsoft.com/en-us/services/dns/)
 - [Azure Container Services](https://azure.microsoft.com/en-us/product-categories/containers/)
   - [Container Instances](https://azure.microsoft.com/en-us/services/container-instances/)
@@ -273,7 +274,7 @@ This option deploys the connector to Azure as a Azure Function.
 
 This method assumes you have Docker installed and running on your server.
 
-1. Pull the Docker image <!-- markdownlint-disable -->
+1. Pull the Docker image
 
 ```sh
 docker pull gcr.io/censys-io/censys-cloud-connector:latest
@@ -287,7 +288,8 @@ docker pull gcr.io/censys-io/censys-cloud-connector:latest
   docker build -t gcr.io/censys-io/censys-cloud-connector:latest .
   ```
 
-2. Run the Docker container <!-- markdownlint-disable -->
+<!-- markdownlint-disable-next-line MD029 -->
+2. Run the Docker container
 
 The following command will run the Docker container. You can specify the
 environment variables you want to pass to the container using the `-e` flag.
@@ -340,6 +342,7 @@ your server.
 docker-compose up -d
 ```
 
+<!-- markdownlint-disable-next-line MD029 -->
 2. [Optional] Run your connector on a scheduled interval
 
 Uncomment the line `# command: scan --daemon 4` in
@@ -359,27 +362,11 @@ This method assumes you have Kubernetes installed and running on your server.
 
 ### Confirm Results
 
-Visit the [Seed Data Page][seed-data] and the [Storage Buckets Page][storage-bucket] to confirm that you're seeing seeds and storage buckets from your cloud provider(s).
+Visit the [Seed Data Page][seed-data] and the
+[Storage Buckets Page][storage-bucket] to confirm that you're seeing seeds and
+storage buckets from your cloud provider(s).
 
 ---
-
-## Known Issues
-
-### Azure Scan Immediately After Creating a Service Principal
-
-<!-- TODO: Remove once this feature has been added to the setup cli -->
-
-In the case where the user has just run the `censys-cc config` command
-for Azure and then promptly runs the `censys-cc scan` command, the scan may
-fail with a `ClientSecretCredential.get_token failed` exception. This is due
-to the fact that Azure is in the process of creating the service principal.
-Please wait a few minutes and try again.
-
-Example error message:
-
-```error <!-- markdownlint-disable-next-line MD013 -->
-ClientSecretCredential.get_token failed: Authentication failed: AADSTS7000215:Invalid client secret provided. Ensure the secret being sent in the request is the client secret value, not the client secret ID, for a secret added to app 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'.
-```
 
 ## FAQs
 
@@ -412,9 +399,11 @@ It is possible to also utilize AWS built-in policies to ease configuration. Both
 
 ### Azure Roles
 
-Ensure the account's Access control (IAM) role has the following permission to create a service principal with a Reader role:
+Ensure the account's Access control (IAM) role has the following permission to
+create a service principal with a Reader role:
 
-- `Microsoft.Authorization/roleAssignments/write` over scope `/subscriptions/uuid`
+- `Microsoft.Authorization/roleAssignments/write` over scope
+  `/subscriptions/uuid`
 
 The following permissions will be used with this service principal:
 
@@ -424,26 +413,34 @@ The following permissions will be used with this service principal:
 - `Microsoft.Sql/servers/read`
 - `Microsoft.Storage/storageAccounts/read`
 
-If you see the following error message, check that you are logged into an account with the correct permissions:
+If you see the following error message, check that you are logged into an
+account with the correct permissions:
 
+<!-- markdownlint-disable MD013 -->
 ```error
 The client 'user@example.com' with object id 'uuid' does not have authorization to perform action 'Microsoft.Authorization/roleAssignments/write' over scope '/subscriptions/uuid' or the scope is invalid. If access was recently granted, please refresh your credentials.
 ```
+<!-- markdownlint-enable MD013 -->
 
 ### GCP Service Account Keys
 
-If you encounter the following error while configuring your GCP Cloud Connector, a likely cause is that your service account has reached its maximum quota of keys.
+If you encounter the following error while configuring your GCP Cloud
+Connector, a likely cause is that your service account has reached its
+maximum quota of keys.
 
+<!-- markdownlint-disable MD013 -->
 ```error
 Failed to enable service account. ERROR: (gcloud.iam.service-accounts.keys.create) FAILED_PRECONDITION: Precondition check failed.
 ```
+<!-- markdownlint-enable MD013 -->
 
-Go to <https://console.cloud.google.com/iam-admin/serviceaccounts> to manage your service account keys.
+Go to <https://console.cloud.google.com/iam-admin/serviceaccounts> to manage
+your service account keys.
 
 ## Developer Documentation
 
 All contributions (no matter how small) are always welcome. See
-[Contributing to the Cloud Connector](https://github.com/censys/censys-cloud-connector/tree/main/.github/CONTRIBUTING.md) to change or
+[Contributing to the Cloud Connector][contributing] to change or
 test the code or for information on the CI/CD pipeline.
 
 ## Asset Deny List
@@ -465,6 +462,7 @@ This software is licensed under [Apache License, Version 2.0][license].
 
 [license]: http://www.apache.org/licenses/LICENSE-2.0
 [github]: https://github.com/censys/censys-cloud-connector
+[contributing]: https://github.com/censys/censys-cloud-connector/tree/main/CONTRIBUTING.md
 [python-install]: https://www.python.org/downloads/
 [poetry-install]: https://python-poetry.org/docs/
 [pyenv-install]: https://github.com/pyenv/pyenv#installation

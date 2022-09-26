@@ -32,12 +32,12 @@ sort:
   by: name
 
 settings:
-  anchor: true
+  anchor: false
   color: true
   default: true
   description: true
   escape: true
-  hide-empty: false
+  hide-empty: true
   html: true
   indent: 2
   lockfile: true

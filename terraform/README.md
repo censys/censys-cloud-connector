@@ -13,5 +13,5 @@ methods:
 
 ## Methods
 
-- [Google Scheduled Function](./google-scheduled-function/README.md) - Deploy
+- [Google Scheduled Function](./google-scheduled-function) - Deploy
   the Censys Cloud Connector using Google Cloud Functions.

@@ -29,7 +29,7 @@ variables:
   before_script:
     - pip install "poetry==$POETRY_VERSION"
     - poetry config virtualenvs.in-project true
-    - poetry install --with dev,test --no-ansi --no-interaction -vv
+    - poetry install --with dev,test,docs --no-ansi --no-interaction -vv
     - source `poetry env info --path`/bin/activate
 
 make requirements txt:
@@ -37,11 +37,20 @@ make requirements txt:
   rules:
     - if: $CI_MERGE_REQUEST_ID
   script:
-    - pip install poetry
-    - poetry export -o "$PIP_REQUIREMENTS_FILE"
+    - poetry export --without dev,test,docs -o "$PIP_REQUIREMENTS_FILE"
   artifacts:
     paths:
       - "$PIP_REQUIREMENTS_FILE"
+
+build docs:
+  extends: .poetry
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+  script:
+    - poetry run sphinx-build -b html docs docs/_build/html
+  artifacts:
+    paths:
+      - docs/_build/html
 
 .build-image-buildah:
   image: gcr.io/censys-internal/censys.io/buildah:2022-01-08_21-43-42

@@ -101,7 +101,7 @@ resource "aws_cloudwatch_log_group" "cloud_connector" {
 
 locals {
   providers_files = merge({
-    for file_name in fileset(var.secrets_dir, "*.json") : "secrets/" + file_name => file(var.secrets_dir + "/" + file_name)
+    for file_name in fileset(var.secrets_dir, "*.json") : "secrets/${file_name}" => file("${var.secrets_dir}/${file_name}")
   }, { "providers.yml" = file(var.providers_config) })
 }
 
