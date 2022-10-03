@@ -15,13 +15,12 @@ from censys.cloud_connectors.common.cloud_asset import GcpStorageBucketAsset
 from censys.cloud_connectors.common.connector import CloudConnector
 from censys.cloud_connectors.common.context import SuppressValidationError
 from censys.cloud_connectors.common.enums import ProviderEnum
+from censys.cloud_connectors.common.healthcheck import Healthcheck
 from censys.cloud_connectors.common.seed import DomainSeed, IpSeed
 from censys.cloud_connectors.common.settings import Settings
 
 from .enums import GcpSecurityCenterResourceTypes
 from .settings import GcpSpecificSettings
-
-# TODO: Implement this type of cloud function and terraform: https://github.com/GoogleCloudPlatform/security-response-automation
 
 
 class GcpCloudConnector(CloudConnector):
@@ -52,32 +51,47 @@ class GcpCloudConnector(CloudConnector):
         }
 
     def scan(self):
-        """Scan Gcp."""
-        key_file_path = (
-            Path(self.settings.secrets_dir)
-            / self.provider_settings.service_account_json_file
-        )
+        """Scan Gcp.
+
+        Scans Gcp for assets and seeds.
+
+        Raises:
+            ValueError: If the service account credentials file is invalid.
+        """
         try:
-            self.credentials = service_account.Credentials.from_service_account_file(
-                str(key_file_path)
-            )
-        except ValueError as e:
+            with Healthcheck(
+                self.settings,
+                self.provider_settings,
+                exception_map={
+                    exceptions.Unauthenticated: "PERMISSIONS",
+                    exceptions.PermissionDenied: "PERMISSIONS",
+                },
+            ):
+                key_file_path = (
+                    Path(self.settings.secrets_dir)
+                    / self.provider_settings.service_account_json_file
+                )
+                try:
+                    self.credentials = (
+                        service_account.Credentials.from_service_account_file(
+                            str(key_file_path)
+                        )
+                    )
+                except ValueError as e:
+                    self.logger.error(
+                        "Failed to load service account credentials from"
+                        f" {key_file_path}: {e}"
+                    )
+                    raise
+                self.security_center_client = securitycenter_v1.SecurityCenterClient(
+                    credentials=self.credentials
+                )
+                self.logger.info(f"Scanning GCP organization {self.organization_id}")
+                super().scan()
+        except Exception as e:
             self.logger.error(
-                "Failed to load service account credentials from"
-                f" {key_file_path}: {e}"
+                f"Unable to scan GCP organization {self.organization_id}. Error: {e}",
             )
-        self.security_center_client = securitycenter_v1.SecurityCenterClient(
-            credentials=self.credentials
-        )
-        try:
-            super().scan()
-        except exceptions.PermissionDenied as e:  # pragma: no cover
-            # Thrown when the service account does not have permission to
-            # access the securitycenter service or the service is disabled.
-            self.logger.error(e.message)
-        # TODO: Uncomment this when connector is fully tested
-        # except Exception as e:
-        #     self.logger.error(f"Failed to scan {self.organization_id}: {e}")
 
     def scan_all(self):
         """Scan all Gcp Organizations."""
@@ -98,7 +112,6 @@ class GcpCloudConnector(CloudConnector):
         Returns:
             str: Formatted asset label.
         """
-        # print(result.__class__.to_json(result))
         # TODO: Include location in label
         asset_project_display_name = (
             result.asset.security_center_properties.resource_project_display_name
@@ -143,11 +156,9 @@ class GcpCloudConnector(CloudConnector):
             filter=GcpSecurityCenterResourceTypes.COMPUTE_INSTANCE.filter()
         )
         for list_assets_result in list_assets_results:
-            self.logger.debug(list_assets_result.__dict__)
             if network_interfaces := list_assets_result.asset.resource_properties.get(
                 "networkInterfaces"
             ):
-                # network_interfaces is a json string that needs to be parsed
                 try:
                     network_interfaces = json.loads(network_interfaces)
                 except json.JSONDecodeError:
@@ -200,7 +211,6 @@ class GcpCloudConnector(CloudConnector):
                 "privateClusterConfig"
             ):
                 try:
-                    # private_cluster_config is a json string that needs to be parsed
                     private_cluster_config = json.loads(private_cluster_config)
                 except json.decoder.JSONDecodeError:  # pragma: no cover
                     self.logger.debug(
@@ -224,7 +234,6 @@ class GcpCloudConnector(CloudConnector):
             if ip_addresses := list_assets_result.asset.resource_properties.get(
                 "ipAddresses"
             ):
-                # ip_addresses is a json string that needs to be parsed
                 ip_addresses = json.loads(ip_addresses)
                 for ip_address in [
                     address for ip in ip_addresses if (address := ip.get("ipAddress"))

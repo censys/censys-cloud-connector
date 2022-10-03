@@ -26,7 +26,7 @@ def cli_scan(args: argparse.Namespace):
     logger.info("Censys Cloud Connectors Version: %s", __version__)
 
     try:
-        settings = Settings()
+        settings = Settings(_env_file=".env")  # type: ignore
     except ValidationError as e:  # pragma: no cover
         logger.error(e)
         return

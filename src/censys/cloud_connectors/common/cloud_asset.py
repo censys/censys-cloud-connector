@@ -91,18 +91,6 @@ class AwsStorageBucketAsset(ObjectStorageAsset):
 
     csp_label = ProviderEnum.AWS
 
-    @validator("value")
-    def value_is_valid_bucket_name(cls, v: str) -> str:
-        """Validate that the bucket name is valid.
-
-        Args:
-            v (str): Bucket name.
-
-        Returns:
-            Bucket name.
-        """
-        return v
-
     @staticmethod
     def url(bucket: str, region: str = "us-east-1") -> str:
         """Get the URL of the container.

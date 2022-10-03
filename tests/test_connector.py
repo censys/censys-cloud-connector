@@ -42,7 +42,7 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
 
     def test_no_api_key_fail(self):
         # Test data (Ensure that the validation is not triggered)
-        test_settings = Settings(censys_api_key=self.consts["censys_api_key"])
+        test_settings = Settings(**self.default_settings)
 
         # Mock settings
         self.mocker.patch.object(test_settings, "censys_api_key", None)

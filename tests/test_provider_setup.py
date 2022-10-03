@@ -165,6 +165,9 @@ class ExampleProviderSpecificSettings(ProviderSpecificSettings):
     def get_provider_key(self) -> tuple[str, str]:
         return "test", "key"
 
+    def get_provider_payload(self) -> dict:
+        return {"test": "payload"}
+
 
 class ExampleProviderSetupCli(ProviderSetupCli):
     provider = "test_provider"  # type: ignore
@@ -174,7 +177,7 @@ class ExampleProviderSetupCli(ProviderSetupCli):
 class TestProviderSetupCli(BaseCase, TestCase):
     def setUp(self) -> None:
         super().setUp()
-        self.settings = Settings(censys_api_key=self.consts["censys_api_key"])
+        self.settings = Settings(**self.default_settings)
         self.setup_cli = ExampleProviderSetupCli(self.settings)
 
     def test_init(self):
@@ -241,7 +244,7 @@ class TestProviderSetupCli(BaseCase, TestCase):
             "float_6_with_field": 10.0,
         }
         expected_other_fields = {
-            "file_path": self.shared_datadir / "test_consts.json",
+            "file_path": self.shared_datadir / "default_settings.json",
         }
         expected_field_values = (
             expected_str_fields

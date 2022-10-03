@@ -36,6 +36,7 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
         # Set subscription_id as its required for certain calls
         self.connector.subscription_id = self.data["TEST_CREDS"]["subscription_id"]
         self.connector.credentials = self.mocker.MagicMock()
+        self.connector.provider_settings = test_azure_settings
 
     def mock_asset(self, data: dict) -> MagicMock:
         asset = self.mocker.MagicMock()
@@ -49,6 +50,16 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
             f"censys.cloud_connectors.azure_connector.connector.{client_name}"
         )
 
+    def mock_healthcheck(self) -> MagicMock:
+        """Mock the healthcheck.
+
+        Returns:
+            MagicMock: mocked healthcheck
+        """
+        return self.mocker.patch(
+            "censys.cloud_connectors.azure_connector.connector.Healthcheck"
+        )
+
     @parameterized.expand([(ClientAuthenticationError,)])
     def test_scan_fail(self, exception):
         # Mock super().scan()
@@ -57,12 +68,15 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
             "scan",
             side_effect=exception,
         )
+        mock_healthcheck = self.mock_healthcheck()
 
         # Actual call
-        self.connector.scan()
+        with pytest.raises(exception):
+            self.connector.scan()
 
         # Assertions
         mock_scan.assert_called_once()
+        self.assert_healthcheck_called(mock_healthcheck)
 
     def test_scan_all(self):
         # Test data

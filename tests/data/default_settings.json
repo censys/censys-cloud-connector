@@ -1,0 +1,8 @@
+{
+  "censys_api_key": "test-censys-api-key-xxxxxxxxxxxxxxxx",
+  "censys_asm_api_base_url": "https://app.censys.io/api",
+  "censys_cookies": {
+    "session": "test-censys-session-xxxxxxxxxxxxxxxx"
+  },
+  "validation_timeout": 5
+}

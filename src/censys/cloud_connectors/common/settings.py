@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, DefaultDict, Optional, Union
 import yaml
 from pydantic import BaseSettings, Field, validate_arguments, validator
 
+from .. import __version__ as censys_cloud_connectors_version
 from .enums import ProviderEnum
 
 if TYPE_CHECKING:
@@ -86,10 +87,10 @@ class ProviderSpecificSettings(BaseSettings):
         Returns:
             OrderedDict[str, Union[str, List[str]]]: The settings as a dictionary.
         """
-        res = OrderedDict()
+        res: OrderedDict[str, Union[str, list[str]]] = OrderedDict()
         settings_as_dict = self.dict()
         if provider_name := settings_as_dict.pop("provider", None):
-            res["provider"] = provider_name.lower()
+            res["provider"] = str(ProviderEnum[provider_name])
         res.update(remove_none_values(settings_as_dict))
         return res
 
@@ -104,7 +105,7 @@ class ProviderSpecificSettings(BaseSettings):
             ProviderSpecificSettings: The settings.
         """
         if provider_name := data.get("provider"):
-            data["provider"] = provider_name.title()
+            data["provider"] = str(ProviderEnum[provider_name])
         return cls(**data)
 
     @abstractmethod
@@ -113,6 +114,15 @@ class ProviderSpecificSettings(BaseSettings):
 
         Returns:
             tuple: The provider key.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_provider_payload(self) -> dict:
+        """Get the provider payload.
+
+        Returns:
+            dict: The provider payload.
         """
         raise NotImplementedError
 
@@ -126,7 +136,25 @@ class Settings(BaseSettings):
     ] = DefaultDict(dict)
 
     # Required
-    censys_api_key: str = Field(env="CENSYS_API_KEY", min_length=36, max_length=36)
+    censys_api_key: str = Field(
+        env="CENSYS_API_KEY",
+        min_length=36,
+        max_length=36,
+        description="Censys ASM API key",
+    )
+    censys_asm_api_base_url: str = Field(
+        default="https://app.censys.io/api",
+        env="CENSYS_ASM_API_BASE_URL",
+        description="Censys ASM API Base URL",
+    )
+    censys_user_agent: str = Field(
+        default=f"censys-cloud-connector/{censys_cloud_connectors_version}",
+        env="CENSYS_USER_AGENT",
+        description="Censys User Agent",
+    )
+    censys_cookies: dict = Field(
+        default={}, env="CENSYS_COOKIES", description="Censys Cookies"
+    )
 
     # Optional
     providers_config_file: str = Field(
@@ -139,16 +167,33 @@ class Settings(BaseSettings):
         env="SECRETS_DIR",
         description="Directory containing secrets",
     )
-    logging_level: str = Field(default="INFO", env="LOGGING_LEVEL")
-    dry_run: bool = Field(default=False, env="DRY_RUN")
+    logging_level: str = Field(
+        default="INFO",
+        env="LOGGING_LEVEL",
+        description="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
+    )
+    dry_run: bool = Field(
+        default=False,
+        env="DRY_RUN",
+        description="Dry run (i.e. do not submit any data)",
+    )
+    healthcheck_enabled: bool = Field(
+        default=True,
+        env="HEALTHCHECK_ENABLED",
+        description="Enable healthcheck",
+    )
 
     # Verification timeout
-    validation_timeout: int = Field(default=120, env="VALIDATION_TIMEOUT")
-
-    # Censys
-    censys_beta_url: str = Field(
-        default="https://app.censys.io/api/beta", env="CENSYS_BETA_URL"
+    validation_timeout: int = Field(
+        default=120,
+        env="VALIDATION_TIMEOUT",
+        description="Provider Setup CLI Validation timeout",
     )
+
+    class Config:
+        """Config for pydantic."""
+
+        case_sensitive = False
 
     @validator("secrets_dir")
     def validate_secrets_dir(cls, v):
@@ -165,12 +210,6 @@ class Settings(BaseSettings):
         if v.endswith("/"):
             v = v[:-1]
         return v
-
-    class Config:
-        """Config for pydantic."""
-
-        env_file = ".env"
-        case_sensitive = False
 
     @validate_arguments
     def read_providers_config_file(

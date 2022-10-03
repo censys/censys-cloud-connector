@@ -26,7 +26,7 @@ class TestAzureProviderSetup(BaseCase, TestCase):
         super().setUp()
         with open(self.shared_datadir / "test_azure_responses.json") as f:
             self.data = json.load(f)
-        self.settings = Settings(censys_api_key=self.consts["censys_api_key"])
+        self.settings = Settings(**self.default_settings)
         self.setup_cli = __provider_setup__(self.settings)
 
     def mock_asset(self, data: dict) -> MagicMock:

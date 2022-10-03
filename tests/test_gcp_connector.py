@@ -1,16 +1,18 @@
 import json
 from unittest import TestCase
+from unittest.mock import MagicMock
 
 import pytest
 from parameterized import parameterized
 
 from censys.cloud_connectors.common.enums import ProviderEnum
-from censys.cloud_connectors.common.seed import Seed
+
+# from censys.cloud_connectors.common.seed import Seed
 from censys.cloud_connectors.common.settings import Settings
 from censys.cloud_connectors.gcp_connector.connector import GcpCloudConnector
 from censys.cloud_connectors.gcp_connector.enums import GcpSecurityCenterResourceTypes
 from censys.cloud_connectors.gcp_connector.settings import GcpSpecificSettings
-from tests.base_case import BaseCase
+from tests.base_connector_case import BaseConnectorCase
 
 failed_import = False
 try:
@@ -20,13 +22,16 @@ except ImportError:
 
 
 @pytest.mark.skipif(failed_import, reason="Failed to import gcp dependencies")
-class TestGcpConnector(BaseCase, TestCase):
+class TestGcpConnector(BaseConnectorCase, TestCase):
+    connector: GcpCloudConnector
+    connector_cls = GcpCloudConnector
+
     def setUp(self) -> None:
         super().setUp()
         with open(self.shared_datadir / "test_gcp_responses.json") as f:
             self.data = json.load(f)
         self.settings = Settings(
-            censys_api_key=self.consts["censys_api_key"],
+            **self.default_settings,
             secrets_dir=str(self.shared_datadir),
         )
         test_creds = self.data["TEST_CREDS"]
@@ -43,12 +48,12 @@ class TestGcpConnector(BaseCase, TestCase):
         self.connector.credentials = self.mocker.MagicMock()
         self.connector.provider_settings = test_gcp_settings
 
-    def tearDown(self) -> None:
-        # Reset the deaultdicts as they are immutable
-        for seed_key in list(self.connector.seeds.keys()):
-            del self.connector.seeds[seed_key]
-        for cloud_asset_key in list(self.connector.cloud_assets.keys()):
-            del self.connector.cloud_assets[cloud_asset_key]
+    # def tearDown(self) -> None:
+    #     # Reset the deaultdicts as they are immutable
+    #     for seed_key in list(self.connector.seeds.keys()):
+    #         del self.connector.seeds[seed_key]
+    #     for cloud_asset_key in list(self.connector.cloud_assets.keys()):
+    #         del self.connector.cloud_assets[cloud_asset_key]
 
     def mock_list_assets_result(
         self, data: dict
@@ -63,10 +68,20 @@ class TestGcpConnector(BaseCase, TestCase):
         """
         return ListAssetsResponse.ListAssetsResult.from_json(json.dumps(data))
 
-    def assert_seeds_with_values(self, seeds: list[Seed], values: list[str]):
-        assert len(seeds) == len(values)
-        for seed in seeds:
-            assert seed.value in values
+    def mock_healthcheck(self) -> MagicMock:
+        """Mock the healthcheck.
+
+        Returns:
+            MagicMock: mocked healthcheck
+        """
+        return self.mocker.patch(
+            "censys.cloud_connectors.gcp_connector.connector.Healthcheck"
+        )
+
+    # def assert_seeds_with_values(self, seeds: list[Seed], values: list[str]):
+    #     assert len(seeds) == len(values)
+    #     for seed in seeds:
+    #         assert seed.value in values
 
     def test_init(self):
         assert self.connector.provider == ProviderEnum.GCP
@@ -75,39 +90,46 @@ class TestGcpConnector(BaseCase, TestCase):
 
     def test_scan(self):
         # Mock
+        mock_credentials = self.mocker.patch(
+            "censys.cloud_connectors.gcp_connector.connector.service_account.Credentials.from_service_account_file",
+        )
         mock_sc_client = self.mocker.patch(
             "censys.cloud_connectors.gcp_connector.connector.securitycenter_v1.SecurityCenterClient"
         )
         mock_scan = self.mocker.patch.object(
             self.connector.__class__.__bases__[0], "scan"
         )
-
-        # Actual call
-        self.connector.scan()
-
-        # Assertions
-        mock_sc_client.assert_called_once()
-        mock_scan.assert_called_once()
-
-    def test_scan_fail(self):
-        # Mock
-        mock_credentials = self.mocker.patch(
-            "censys.cloud_connectors.gcp_connector.connector.service_account.Credentials.from_service_account_file",
-            side_effect=ValueError,
-        )
-        mock_error_logger = self.mocker.patch.object(self.connector.logger, "error")
-        # Mock super().scan()
-        mock_scan = self.mocker.patch.object(
-            self.connector.__class__.__bases__[0], "scan"
-        )
+        mock_healthcheck = self.mock_healthcheck()
 
         # Actual call
         self.connector.scan()
 
         # Assertions
         mock_credentials.assert_called_once()
-        mock_error_logger.assert_called_once()
+        mock_sc_client.assert_called_once()
         mock_scan.assert_called_once()
+        self.assert_healthcheck_called(mock_healthcheck)
+
+    def test_credentials_fail(self):
+        # Mock
+        mock_credentials = self.mocker.patch(
+            "censys.cloud_connectors.gcp_connector.connector.service_account.Credentials.from_service_account_file",
+            side_effect=ValueError,
+        )
+        mock_error_logger = self.mocker.patch.object(self.connector.logger, "error")
+        mock_scan = self.mocker.patch.object(
+            self.connector.__class__.__bases__[0], "scan"
+        )
+        mock_healthcheck = self.mock_healthcheck()
+
+        # Actual call
+        self.connector.scan()
+
+        # Assertions
+        mock_credentials.assert_called_once()
+        mock_error_logger.assert_called()
+        mock_scan.assert_not_called()
+        self.assert_healthcheck_called(mock_healthcheck)
 
     def test_scan_all(self):
         # Test data
@@ -124,10 +146,6 @@ class TestGcpConnector(BaseCase, TestCase):
         self.connector.settings.providers[self.connector.provider] = provider_settings
 
         # Mock
-        self.mocker.patch(
-            "censys.cloud_connectors.gcp_connector.connector.service_account.Credentials.from_service_account_file",
-            return_value=None,
-        )
         mock_scan = self.mocker.patch.object(self.connector, "scan")
 
         # Actual call

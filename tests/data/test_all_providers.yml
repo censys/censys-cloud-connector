@@ -1,21 +1,21 @@
-- provider: azure
+- provider: Azure
   tenant_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
   client_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
   client_secret: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
   subscription_id:
     - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-- provider: azure
+- provider: Azure
   tenant_id: yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
   client_id: yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
   client_secret: yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
   subscription_id:
     - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
     - yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
-- provider: gcp
+- provider: GCP
   organization_id: 222222222222
   service_account_json_file: test_gcp_service_account.json
   service_account_email: test2-service-account@domain.com
-- provider: aws
+- provider: AWS
   account_number: 123
   access_key: xxxxxxxxxxxxxxxxxxxx
   secret_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

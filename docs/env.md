@@ -36,6 +36,13 @@ If set to `true`, the connector will not write any data to the ASM platform.
 Default: `false`
 ```
 
+```{envvar} HEALTHCHECK_ENABLED
+
+If set to `false`, the connector will not report its health to the ASM platform.
+
+Default: `true`
+```
+
 ## Sample .env File
 
 `.env.sample` is a sample file that contains the above environment variables.

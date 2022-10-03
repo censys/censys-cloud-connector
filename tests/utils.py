@@ -15,4 +15,4 @@ def assert_same_yaml(file_a: str, file_b: str):
         a = yaml.safe_load(f)
     with open(file_b) as f:
         b = yaml.safe_load(f)
-    assert a == b
+    assert a == b, f"{file_a} != {file_b}"

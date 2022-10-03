@@ -21,7 +21,7 @@ class BaseCase:
 
     mocker: MockerFixture
     shared_datadir: Path
-    consts: dict
+    default_settings: dict
 
     @pytest.fixture(autouse=True)
     def __inject_fixtures(self, mocker: MockerFixture, shared_datadir: Path):
@@ -33,8 +33,8 @@ class BaseCase:
 
     def setUp(self):
         """Sets up the test case."""
-        with open(self.shared_datadir / "test_consts.json") as f:
-            self.consts = json.load(f)
+        with open(self.shared_datadir / "default_settings.json") as f:
+            self.default_settings = json.load(f)
 
     def tearDown(self) -> None:
         """Tears down the test case."""

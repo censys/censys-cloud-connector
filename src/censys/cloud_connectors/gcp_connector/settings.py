@@ -44,3 +44,16 @@ class GcpSpecificSettings(ProviderSpecificSettings):
             tuple[int, str]: Provider key.
         """
         return self.organization_id, self.service_account_email
+
+    def get_provider_payload(self) -> dict:
+        """Get the provider payload.
+
+        Returns:
+            dict: The provider payload.
+        """
+        return {
+            self.provider: {
+                "organization_id": self.organization_id,
+                "service_account_email": self.service_account_email,
+            }
+        }

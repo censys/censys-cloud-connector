@@ -1,5 +1,5 @@
 # user access
-- provider: aws
+- provider: AWS
   access_key: xxxxxxxxxxxxxxxxxxxx
   secret_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
   accounts:
@@ -9,7 +9,7 @@
     - xxxxxxxxx
 
 # sts assumed role
-- provider: aws
+- provider: AWS
   account_number: 102
   access_key: xxxxxxxxxxxxxxxxxxxx
   secret_key: xxxxxxxxxxxxxxxxxxxx
@@ -17,13 +17,13 @@
     - xxxxxxxxx
 
 # lambda + fargate + user
-- provider: aws
+- provider: AWS
   account_number: 103
   regions:
     - xxxxxxxxx
 
 # lambda + fargate + sts
-- provider: aws
+- provider: AWS
   accounts:
   - role_name: iam_role_name
     account_number: 104
@@ -31,7 +31,7 @@
     - xxxxxxxxx
 
 # docker/k8s + user
-- provider: aws
+- provider: AWS
   account_number: 105
   access_key: access_key_value
   secret_key: secret_key
@@ -39,7 +39,7 @@
     - xxxxxxxxx
 
 # docker/k8s + sts
-- provider: aws
+- provider: AWS
   access_key: access_key_value
   secret_key: secret_key
   accounts:
@@ -49,7 +49,7 @@
     - xxxxxxxxx
 
 # separate iam user keys
-- provider: aws
+- provider: AWS
   accounts:
     - access_key: access_key_value
       secret_key: secret_key
@@ -58,7 +58,7 @@
     - xxxxxxxxx
 
 # combined example
-- provider: aws
+- provider: AWS
   access_key: x
   secret_key: x
   accounts:

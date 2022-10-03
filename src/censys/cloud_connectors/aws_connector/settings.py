@@ -61,6 +61,18 @@ class AwsSpecificSettings(ProviderSpecificSettings):
 
         return ("_".join(sorted(accounts)), "_".join(self.regions))
 
+    def get_provider_payload(self) -> dict:
+        """Get the provider payload.
+
+        Returns:
+            dict: The provider payload.
+        """
+        return {
+            self.provider: {
+                "account_number": self.account_number,
+            }
+        }
+
     @classmethod
     def from_dict(cls, data: dict):
         """Create a ProviderSpecificSettings object from a dictionary.

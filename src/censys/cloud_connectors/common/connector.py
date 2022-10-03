@@ -44,9 +44,14 @@ class CloudConnector(ABC):
             level=settings.logging_level,
         )
 
-        self.seeds_api = Seeds(settings.censys_api_key)
+        self.seeds_api = Seeds(
+            settings.censys_api_key,
+            url=settings.censys_asm_api_base_url,
+            user_agent=settings.censys_user_agent,
+            cookies=settings.censys_cookies,
+        )
         self._add_cloud_asset_path = (
-            f"{settings.censys_beta_url}/cloudConnector/addCloudAssets"
+            f"{settings.censys_asm_api_base_url}/beta/cloudConnector/addCloudAssets"
         )
 
         self.seeds = defaultdict(set)

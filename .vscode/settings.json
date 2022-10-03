@@ -57,6 +57,8 @@
     "giveup",
     "googleapis",
     "gserviceaccount",
+    "healthcheck",
+    "healthchecks",
     "hostedzone",
     "isort",
     "junitxml",

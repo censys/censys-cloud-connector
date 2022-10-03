@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 from censys.cloud_connectors.common.connector import CloudConnector
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.seed import Seed
@@ -18,7 +20,7 @@ class BaseConnectorCase(BaseCase):
     def setUp(self) -> None:
         super().setUp()
         self.settings = Settings(
-            censys_api_key=self.consts["censys_api_key"],
+            **self.default_settings,
             providers_config_file=str(self.shared_datadir / "test_empty_providers.yml"),
         )
 
@@ -54,7 +56,39 @@ class BaseConnectorCase(BaseCase):
         #         seed.value in values
         #     ), f"The seed {seed.value} is not in the expected values {values}"
 
+    def mock_healthcheck(self) -> MagicMock:
+        """Mock the healthcheck.
+
+        Returns:
+            MagicMock: mocked healthcheck
+        """
+        return self.mocker.patch(
+            "censys.cloud_connectors.common.healthcheck.Healthcheck"
+        )
+
+    def assert_healthcheck_called(self, healthcheck: MagicMock, count: int = 1):
+        """Assert that the healthcheck was called.
+
+        Args:
+            healthcheck (MagicMock): The mocked healthcheck.
+            count (int): The number of times the healthcheck was called. Defaults to 1.
+        """
+        assert (
+            healthcheck.call_count == count
+        ), f"Expected {count} calls, got {healthcheck.call_count}"
+        assert (
+            healthcheck.return_value.__enter__.call_count == count
+        ), f"Expected {count} calls, got {healthcheck.return_value.__enter__.call_count}"
+        assert (
+            healthcheck.return_value.__exit__.call_count == count
+        ), f"Expected {count} calls, got {healthcheck.return_value.__exit__.call_count}"
+
     def test_init(self) -> None:
+        # Test data
+        add_cloud_asset_path = (
+            "https://app.censys.io/api/beta/cloudConnector/addCloudAssets"
+        )
+
         # Assert that the connector is initialized correctly
         assert issubclass(self.connector_cls, CloudConnector)
         assert isinstance(self.connector, self.connector_cls)
@@ -68,11 +102,12 @@ class BaseConnectorCase(BaseCase):
 
         # Assert that the Seeds API client is initialized correctly
         assert self.connector.seeds_api is not None
-        assert self.connector.seeds_api._api_key == self.consts["censys_api_key"]
         assert (
-            self.connector._add_cloud_asset_path
-            == f"{self.settings.censys_beta_url}/cloudConnector/addCloudAssets"
+            self.connector.seeds_api._api_key == self.default_settings["censys_api_key"]
         )
+        assert (
+            self.connector._add_cloud_asset_path == add_cloud_asset_path
+        ), f"Expected {add_cloud_asset_path}, got {self.connector._add_cloud_asset_path}"
 
         # Assert that the connector has no seeds and cloud_assets
         assert list(self.connector.seeds.keys()) == []

@@ -49,3 +49,16 @@ class AzureSpecificSettings(ProviderSpecificSettings):
             tuple[str, str]: The provider key.
         """
         return self.tenant_id, self.client_id
+
+    def get_provider_payload(self) -> dict:
+        """Get the provider payload.
+
+        Returns:
+            dict: The provider payload.
+        """
+        return {
+            self.provider: {
+                "subscription_id": self.subscription_id,
+                "tenant_id": self.tenant_id,
+            }
+        }

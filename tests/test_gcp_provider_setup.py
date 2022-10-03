@@ -32,9 +32,8 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         with open(self.shared_datadir / "test_gcp_cli_responses.json") as f:
             self.data = json.load(f)
         self.settings = Settings(
-            censys_api_key=self.consts["censys_api_key"],
+            **self.default_settings,
             secrets_dir=str(self.shared_datadir),
-            validation_timeout=5,
         )
         self.setup_cli = __provider_setup__(self.settings)
 

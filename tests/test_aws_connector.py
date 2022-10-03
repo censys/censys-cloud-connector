@@ -89,6 +89,16 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
         """
         return self.mock_client_api_response(self.mock_client(), method_name, data)
 
+    def mock_healthcheck(self) -> MagicMock:
+        """Mock the healthcheck.
+
+        Returns:
+            MagicMock: mocked healthcheck
+        """
+        return self.mocker.patch(
+            "censys.cloud_connectors.aws_connector.connector.Healthcheck"
+        )
+
     def test_get_aws_client(self):
         # Test data
         self.connector.provider_settings = AwsSpecificSettings.from_dict(
@@ -123,12 +133,15 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
 
         # Mock scan
         mock_scan = self.mocker.patch.object(self.connector, "scan")
+        mock_healthcheck = self.mock_healthcheck()
 
         # Actual call
         self.connector.scan_all()
 
         # Assertions
-        assert mock_scan.call_count == 2
+        expected_calls = 2
+        assert mock_scan.call_count == expected_calls
+        self.assert_healthcheck_called(mock_healthcheck, expected_calls)
 
     # TODO test multiple account_numbers with multiple regions
     # TODO test single account_number with multiple regions

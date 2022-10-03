@@ -21,7 +21,7 @@ class TestAwsProvidersSetup(BaseCase, TestCase):
         super().setUp()
         with open(self.shared_datadir / "test_aws_cli_responses.json") as f:
             self.data = json.load(f)
-        self.settings = Settings(censys_api_key=self.consts["censys_api_key"])
+        self.settings = Settings(**self.default_settings)
 
         self.mocked_logger = self.mocker.MagicMock()
         self.aws = self.mocker.MagicMock()

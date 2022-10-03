@@ -19,7 +19,7 @@ class TestSettings(BaseCase, TestCase):
     def setUp(self) -> None:
         super().setUp()
         self.settings = Settings(
-            censys_api_key=self.consts["censys_api_key"],
+            **self.default_settings,
             secrets_dir=str(self.shared_datadir),
         )
 
@@ -108,16 +108,19 @@ class ExampleProviderSettings(ProviderSpecificSettings):
     def get_provider_key(self):
         pass
 
+    def get_provider_payload(self):
+        pass
+
 
 class TestProviderSpecificSettings(BaseCase):
     def test_as_dict(self):
         provider_settings = ExampleProviderSettings(
-            provider="test", advanced=True, other="other variable"
+            provider=ProviderEnum.GCP, advanced=True, other="other variable"
         )
         settings_dict = provider_settings.as_dict()
         assert isinstance(settings_dict, OrderedDict), "Must return an OrderedDict"
         assert settings_dict == {
-            "provider": "test",
+            "provider": "GCP",
             "advanced": True,
             "other": "other variable",
         }, "Dict must follow the priority order"
@@ -125,12 +128,12 @@ class TestProviderSpecificSettings(BaseCase):
     def test_from_dict(self):
         provider_settings = ExampleProviderSettings.from_dict(
             {
-                "provider": "test",
+                "provider": ProviderEnum.AWS,
                 "advanced": True,
                 "other": "other variable",
             }
         )
-        assert provider_settings.provider == "Test", "Provider name must be capitalized"
+        assert provider_settings.provider == "AWS", "Provider name must be capitalized"
         assert provider_settings.advanced is True
         assert (
             provider_settings.other == "other variable"

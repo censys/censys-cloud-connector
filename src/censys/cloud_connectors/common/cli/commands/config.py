@@ -21,7 +21,7 @@ def cli_config(args: argparse.Namespace):
     logger = get_logger(log_name="censys_cloud_connectors", level="INFO")
 
     try:
-        settings = Settings()
+        settings = Settings(_env_file=".env")  # type: ignore
     except ValidationError as e:
         error_str = str(e)
         print(error_str)

@@ -34,6 +34,7 @@ from censys.cloud_connectors.common.cloud_asset import AwsStorageBucketAsset
 from censys.cloud_connectors.common.connector import CloudConnector
 from censys.cloud_connectors.common.context import SuppressValidationError
 from censys.cloud_connectors.common.enums import ProviderEnum
+from censys.cloud_connectors.common.healthcheck import Healthcheck
 from censys.cloud_connectors.common.seed import DomainSeed, IpSeed
 from censys.cloud_connectors.common.settings import Settings
 
@@ -115,7 +116,15 @@ class AwsCloudConnector(CloudConnector):
                 for region in self.provider_settings.regions:
                     self.region = region
                     try:
-                        self.scan()
+                        with Healthcheck(
+                            self.settings,
+                            provider_setting,
+                            provider={
+                                "region": region,
+                                "account_number": self.account_number,
+                            },
+                        ):
+                            self.scan()
                     except Exception as e:
                         self.logger.error(
                             f"Unable to scan account {self.account_number} in region {self.region}. Error: {e}"

@@ -1,5 +1,4 @@
 """Azure Cloud Connector."""
-import contextlib
 from typing import Optional
 
 from azure.core.exceptions import (
@@ -20,6 +19,7 @@ from censys.cloud_connectors.common.cloud_asset import AzureContainerAsset
 from censys.cloud_connectors.common.connector import CloudConnector
 from censys.cloud_connectors.common.context import SuppressValidationError
 from censys.cloud_connectors.common.enums import ProviderEnum
+from censys.cloud_connectors.common.healthcheck import Healthcheck
 from censys.cloud_connectors.common.seed import DomainSeed, IpSeed
 from censys.cloud_connectors.common.settings import Settings
 
@@ -53,8 +53,15 @@ class AzureCloudConnector(CloudConnector):
         }
 
     def scan(self):
-        """Scan Azure."""
-        with contextlib.suppress(ClientAuthenticationError):
+        """Scan Azure Subscription."""
+        with Healthcheck(
+            self.settings,
+            self.provider_settings,
+            provider={"subscription_id": self.subscription_id},
+            exception_map={
+                ClientAuthenticationError: "PERMISSIONS",
+            },
+        ):
             super().scan()
 
     def scan_all(self):
@@ -72,7 +79,13 @@ class AzureCloudConnector(CloudConnector):
             for subscription_id in self.provider_settings.subscription_id:
                 self.logger.info(f"Scanning Azure Subscription {subscription_id}")
                 self.subscription_id = subscription_id
-                self.scan()
+                try:
+                    self.scan()
+                except Exception as e:
+                    self.logger.error(
+                        f"Unable to scan Azure Subscription {subscription_id}. Error: {e}"
+                    )
+                self.subscription_id = None
 
     def format_label(self, asset: AzureModel) -> str:
         """Format Azure asset label.
