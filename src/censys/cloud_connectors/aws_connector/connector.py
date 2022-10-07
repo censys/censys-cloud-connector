@@ -1,6 +1,6 @@
 """AWS Cloud Connector."""
 import contextlib
-from collections.abc import Generator
+from collections.abc import Generator, Sequence
 from typing import Any, Optional, TypeVar
 
 import boto3
@@ -10,6 +10,7 @@ from mypy_boto3_apigateway import APIGatewayClient
 from mypy_boto3_apigatewayv2 import ApiGatewayV2Client
 from mypy_boto3_ec2 import EC2Client
 from mypy_boto3_ec2.type_defs import (
+    FilterTypeDef,
     NetworkInterfaceTypeDef,
     TagDescriptionTypeDef,
     TagTypeDef,
@@ -429,8 +430,13 @@ class AwsCloudConnector(CloudConnector):
         ec2: EC2Client = self.get_aws_client(AwsServices.EC2)
         interfaces = {}
 
+        # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html#EC2.Client.describe_network_interfaces
+        filters: Sequence[FilterTypeDef] = [
+            {"Name": "association.public-ip", "Values": ["*"]}
+        ]
+
         try:
-            data = ec2.describe_network_interfaces()
+            data = ec2.describe_network_interfaces(Filters=filters)
             for network in data.get("NetworkInterfaces", {}):
                 network_interface_id = network.get("NetworkInterfaceId")
                 instance_id = network.get("Attachment", {}).get("InstanceId")
@@ -522,8 +528,11 @@ class AwsCloudConnector(CloudConnector):
         client: RDSClient = self.get_aws_client(service=AwsServices.RDS)
         label = self.format_label(SeedLabel.RDS)
 
+        # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/rds.html#RDS.Client.describe_db_instances
+        filters = [{"Name": "publicly-accessible", "Values": ["true"]}]
+
         try:
-            data = client.describe_db_instances()
+            data = client.describe_db_instances(Filters=filters)
             for instance in data.get("DBInstances", []):
                 if domain_name := instance.get("Endpoint", {}).get("Address"):
                     with SuppressValidationError():
@@ -590,7 +599,7 @@ class AwsCloudConnector(CloudConnector):
             hosted_zone_id (str): Hosted Zone Id
 
         Returns:
-            dict: _description_
+            dict: Resource Record Sets.
         """
         return (
             client.get_paginator("list_resource_record_sets")
@@ -627,7 +636,8 @@ class AwsCloudConnector(CloudConnector):
 
     def get_route53_instances(self):
         """Retrieve Route 53 data and emit seeds."""
-        self.get_route53_domains()
+        # Route53 domains have been removed until a client need is identified.
+        # self.get_route53_domains()
         self.get_route53_zones()
 
     def get_ecs_instances(self):
