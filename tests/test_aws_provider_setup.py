@@ -4,6 +4,7 @@ from unittest import TestCase
 import pytest
 
 from censys.cloud_connectors.aws_connector import __provider_setup__
+from censys.cloud_connectors.aws_connector.enums import AwsMessages
 from censys.cloud_connectors.aws_connector.settings import AwsSpecificSettings
 from censys.cloud_connectors.common.settings import Settings
 from tests.base_case import BaseCase
@@ -48,13 +49,9 @@ class TestAwsProvidersSetup(BaseCase, TestCase):
             self.setup_cli, "ask_load_credentials", return_value=True
         )
         self.mocker.patch.object(
-            self.setup_cli, "ask_access_key", return_value="test-access-key"
-        )
-        self.mocker.patch.object(
-            self.setup_cli, "ask_secret_key", return_value="test-secret-key"
-        )
-        self.mocker.patch.object(
-            self.setup_cli.aws, "get_session_credentials", return_value={"key": "value"}
+            self.setup_cli.aws,
+            "get_session_credentials",
+            return_value=self.data["TEST_SESSION_CREDENTIALS"],
         )
         self.mocker.patch.object(
             self.setup_cli, "ask_role_name", return_value="test-role"
@@ -127,7 +124,9 @@ class TestAwsProvidersSetup(BaseCase, TestCase):
 
         self.setup_cli.select_profile()
         env.assert_called_once_with("AWS_PROFILE")
-        select.assert_called_once_with("Select a profile:", choices, default=profile)
+        select.assert_called_once_with(
+            AwsMessages.PROMPT_SELECT_PROFILE, choices, default=profile
+        )
 
     def test_get_profile_choices(self):
         self.mocker.patch.object(
@@ -136,10 +135,7 @@ class TestAwsProvidersSetup(BaseCase, TestCase):
             return_value=["test-profile-1", "test-profile-2"],
         )
         choices = self.setup_cli.get_profile_choices()
-        assert choices == [
-            {"name": "test-profile-1", "value": "test-profile-1"},
-            {"name": "test-profile-2", "value": "test-profile-2"},
-        ]
+        assert choices == self.data["TEST_PROFILE_CHOICES"]
 
     def test_provider_accounts(self):
         ids = ["1", "2"]
@@ -268,24 +264,6 @@ class TestAwsProvidersSetup(BaseCase, TestCase):
         assert stacks == []
         error.assert_called_once()
         confirm.assert_called_once()
-
-    def test_get_primary_account(self):
-        self.mocker.patch.object(
-            self.setup_cli.aws, "get_primary_account", return_value="111"
-        )
-        primary = self.setup_cli.get_primary_account()
-        assert primary == "111"
-
-    def test_get_primary_account_error(self):
-        self.mocker.patch.object(
-            self.setup_cli.aws, "get_primary_account", side_effect=Exception()
-        )
-        error = self.mocker.patch.object(self.setup_cli, "print_error")
-
-        with pytest.raises(SystemExit):
-            self.setup_cli.get_primary_account()
-
-        error.assert_called_once()
 
     def test_print_role_creation_instructions(self):
         info = self.mocker.patch.object(self.setup_cli, "print_info")

@@ -2,9 +2,9 @@
 
 import re
 from logging import Logger
-from typing import Optional
 
 import boto3
+from botocore.credentials import ReadOnlyCredentials
 from botocore.exceptions import ClientError
 
 from censys.cloud_connectors.common.cli.provider_setup import backoff_wrapper
@@ -97,15 +97,15 @@ class AwsSetupService:
         """
         return bool(re.match(r"^[\w+=,.@-]{1,64}$", role))
 
-    def get_primary_account(self) -> Optional[int]:
+    def get_primary_account(self) -> int:
         """Get the primary account id.
 
         Returns:
-            Optional[int]: Primary account id.
+            int: Primary account id.
         """
         sts = self.client("sts")
         identity = sts.get_caller_identity()
-        return identity.get("Account")
+        return int(identity.get("Account", 0))
 
     def get_regions(self) -> list[str]:
         """Get AWS regions.
@@ -188,19 +188,37 @@ class AwsSetupService:
             )
         return False
 
-    def get_session_credentials(self):
+    def get_frozen_credentials(self) -> ReadOnlyCredentials:
+        """Load the frozen credentials from AWS configuration.
+
+        Returns:
+            ReadOnlyCredentials
+        """
+        return self.session().get_credentials().get_frozen_credentials()
+
+    def get_session_credentials(self) -> dict[str, str]:
         """Used to populate the credentials in providers configuration.
 
         Returns:
             dict[str,str]: Credentials.
         """
-        credentials = self.session().get_credentials()
-        current_credentials = credentials.get_frozen_credentials()
-        return {
-            "access_key": current_credentials.access_key,
-            "secret_key": current_credentials.secret_key,
-            "token": current_credentials.token,
+        cred = {
+            "access_key": "",
+            "secret_key": "",
+            "token": "",
         }
+
+        try:
+            current_credentials: ReadOnlyCredentials = self.get_frozen_credentials()
+
+            cred["access_key"] = current_credentials.access_key
+            cred["secret_key"] = current_credentials.secret_key
+            cred["token"] = current_credentials.token
+        except Exception as e:
+            self.logger.error(f"[red]Error getting session credentials: {e}")
+            pass
+
+        return cred
 
     def get_stackset_accounts(self, stack_set_name: str, exclude_id: int) -> list[dict]:
         """Get the accounts that have a stackset.
@@ -221,7 +239,6 @@ class AwsSetupService:
         paginator = client.get_paginator("list_stack_instances")
         results = paginator.paginate(
             StackSetName=stack_set_name,
-            Filters=[{"Name": "DRIFT_STATUS", "Values": "CURRENT"}],
         )
         for page in results:
             for account in page.get("Summaries", []):

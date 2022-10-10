@@ -50,12 +50,19 @@
   "TEST_VERIFY_SETTINGS": {
     "access_key": "test-access-key",
     "secret_key": "test-secret-key",
-    "session_token": "test-session-token",
     "regions": ["test-region"]
   },
   "TEST_VERIFY_SETTINGS_PRIMARY": {
     "aws_access_key_id": "test-access-key",
-    "aws_secret_access_key": "test-secret-key",
-    "aws_session_token": "test-session-token"
+    "aws_secret_access_key": "test-secret-key"
+  },
+  "TEST_PROFILE_CHOICES": [
+    { "name": "test-profile-1", "value": "test-profile-1" },
+    { "name": "test-profile-2", "value": "test-profile-2" }
+  ],
+  "TEST_SESSION_CREDENTIALS": {
+    "access_key": "test-access-key",
+    "secret_key": "test-secret-key",
+    "token": ""
   }
 }

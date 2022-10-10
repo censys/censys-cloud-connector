@@ -11,8 +11,8 @@ from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.settings import Settings
 
 DEFAULT_STACK_SET_NAME = "CensysCloudConnector"
-DEFAULT_ROLE = "CensysCloudConnector"
-DEFAULT_ROLE_SESSION_NAME = "cloud-connector-session"
+DEFAULT_ROLE = "CensysCloudConnectorRole"  # Compatible with existing connector
+DEFAULT_ROLE_SESSION_NAME = "censys-cloud-connector"
 BACKOFF_MAX_TIME = 20
 BACKOFF_TRIES = 3
 
@@ -44,29 +44,15 @@ class AwsSetupCli(ProviderSetupCli):
 
         self.aws = aws or AwsSetupService(self.logger, settings)
 
-    def get_primary_account(
-        self,
-    ) -> Optional[int]:  # type: ignore[missing-return-statement]
-        """Determine the primary account id.
-
-        Returns:
-            int: primary account id
-        """
-        id = None
-        try:
-            id = self.aws.get_primary_account()
-        except Exception as e:
-            self.print_error(f"Error loading primary account: {e}")
-            exit(1)
-
-        return id
-
     def ask_role_session_name(self) -> str:
         """Prompt for a Role Session Name name.
 
         Returns:
             str: Role session name.
         """
+        self.print_info(
+            "AWS recommends setting 'Role Session Name' to the name or identifier that is associated with the user who is using your application."
+        )
         answers = self.prompt(
             {
                 "type": "input",
@@ -89,7 +75,7 @@ class AwsSetupCli(ProviderSetupCli):
             {
                 "type": "input",
                 "name": "answer",
-                "message": "Enter StackSet to use:",
+                "message": "Enter the StackSet name to use:",
                 "default": DEFAULT_STACK_SET_NAME,
                 "invalid_message": "StackSet name must be between 1 and 64 characters.",
                 "validate": lambda name: len(name) > 1 and len(name) <= 64,
@@ -113,7 +99,10 @@ class AwsSetupCli(ProviderSetupCli):
             )
         except Exception as e:
             self.print_error(f"Error loading stackset accounts: {e}")
-            self.confirm_or_exit("Unable to load stackset accounts. Continue?")
+            accounts = []
+
+        if not accounts:
+            self.confirm_or_exit("Unable to load accounts from StackSet. Continue?")
             return []
 
         questions = [
@@ -146,9 +135,6 @@ class AwsSetupCli(ProviderSetupCli):
         Returns:
             list(int): Account ids.
         """
-        self.print_info(
-            "Setup can build a list of accounts from your organization if you have the Organizations ListAccounts policy."
-        )
         accounts = self.get_account_choices(exclude_id)
         if not accounts:
             return []
@@ -159,7 +145,7 @@ class AwsSetupCli(ProviderSetupCli):
                 "name": "accounts",
                 "max_height": "70%",
                 "message": "Select accounts(s):",
-                "instruction": "Use <up> and <down> to scroll, <space> to select, <enter> to continue.",
+                "instruction": "Use <up> and <down> to scroll, <space> to select, <ctrl>+<r> to select all, <enter> to continue.",
                 "choices": accounts,
                 "multiselect": True,
                 "validate": lambda regions: len(regions) > 0,
@@ -183,12 +169,14 @@ class AwsSetupCli(ProviderSetupCli):
         Returns:
             list[int]: Account ids.
         """
-        self.print_info(
-            "Note: each account can have an override role name. Please add them in the generated providers.yml."
-        )
+        self.print_info("Required permissions:")
+        self.print_info("- Organization List Accounts uses Organizations ListAccounts.")
+        self.print_info("- StackSet uses CloudFormation ListStackInstances.")
+
         choices = {
             "Find by Organization List Accounts": self.ask_list_accounts,
             "Find by StackSet": self.ask_stackset,
+            "Do not load any accounts": lambda x: [],
         }
         answers = self.prompt(
             {
@@ -204,13 +192,16 @@ class AwsSetupCli(ProviderSetupCli):
 
         return []
 
-    def confirm_or_exit(self, message: Optional[str] = None) -> None:
+    def confirm_or_exit(
+        self, message: Optional[str] = None, default: bool = False
+    ) -> None:
         """Prompt to continue or exit setup.
 
         Args:
             message (str): Question to ask user.
+            default (bool): Pass no to exit.
         """
-        if not self.prompt_confirm(message, default=False):
+        if not self.prompt_confirm(message, default=default):
             self.print_info("Exiting...")
             exit(0)
 
@@ -257,14 +248,16 @@ class AwsSetupCli(ProviderSetupCli):
         Returns:
             str: Role name.
         """
-        if not self.prompt_confirm("Will you be using a role?"):
+        if not self.prompt_confirm(
+            "Do you want to run the Censys Cloud Connector with a specific IAM Role?"
+        ):
             return ""
 
         answers = self.prompt(
             {
                 "type": "input",
                 "name": "answer",
-                "message": "Enter role to use:",
+                "message": "Enter an existing IAM Role name to use:",
                 "default": DEFAULT_ROLE,
                 "invalid_message": "Role name must be between 1 and 64 characters. Use alphanumeric and '+=,.@-_' characters.",
                 "validate": self.aws.valid_role_name,
@@ -278,26 +271,36 @@ class AwsSetupCli(ProviderSetupCli):
         Returns:
             int: Primary account id.
         """
-        primary_id = self.get_primary_account()
-        questions = {
-            "type": "input",
-            "name": "answer",
-            "message": "Primary account id:",
-            "default": primary_id,
-            "invalid_message": "Primary account id must be a number.",
-            "validate": lambda id: id.isnumeric(),
-        }
-        answers = self.prompt(questions)
-        return answers.get("answer", 0)
+        primary_id = self.aws.get_primary_account()
+        if primary_id <= 0:
+            self.print_error("Unable to find primary account.")
+            exit(1)
 
-    def ask_access_key(self, access_key: str) -> Optional[str]:
+        # primary_id = self.get_primary_account()
+        # questions = {
+        #     "type": "input",
+        #     "name": "answer",
+        #     "message": "Confirm your Primary Account ID:",
+        #     "default": primary_id or "",
+        #     "invalid_message": "Primary account id must be a number.",
+        #     "validate": lambda id: id.isnumeric(),
+        # }
+        # answers = self.prompt(questions)dsaf
+        # return answers.get("answer", 0)
+        self.print_info(
+            "A primary account is required to run the Censys Cloud Connector."
+        )
+        self.confirm_or_exit(f"Confirm your Primary Account ID: {primary_id}", True)
+        return primary_id
+
+    def ask_access_key(self, access_key: str) -> str:
         """Ask for the access key.
 
         Args:
             access_key: Access key.
 
         Returns:
-            int: Primary account id.
+            str: Primary account id.
         """
         questions = {
             "type": "password",
@@ -306,16 +309,16 @@ class AwsSetupCli(ProviderSetupCli):
             "default": access_key,
         }
         answers = self.prompt(questions)
-        return answers.get("answer")
+        return answers.get("answer") or ""
 
-    def ask_secret_key(self, secret_key: str) -> Optional[str]:
+    def ask_secret_key(self, secret_key: str) -> str:
         """Ask for the secret key.
 
         Args:
             secret_key: Secret key.
 
         Returns:
-            Optional[str]: Secret key.
+            str: Secret key.
         """
         questions = {
             "type": "password",
@@ -324,7 +327,7 @@ class AwsSetupCli(ProviderSetupCli):
             "default": secret_key,
         }
         answers = self.prompt(questions)
-        return answers.get("answer")
+        return answers.get("answer") or ""
 
     def ask_regions(self) -> list[str]:
         """Ask to confirm region selections.
@@ -332,6 +335,14 @@ class AwsSetupCli(ProviderSetupCli):
         Returns:
             list[str]: Regions.
         """
+        try:
+            regions = self.aws.get_regions()
+        except Exception:
+            self.print_error(
+                "Unable to load regions from AWS. Please check your credentials and try again."
+            )
+            exit(1)
+
         questions = [
             {
                 "type": "fuzzy",
@@ -339,7 +350,7 @@ class AwsSetupCli(ProviderSetupCli):
                 "max_height": "70%",
                 "message": "Select region(s):",
                 "instruction": "Fuzzy search enabled. Use <up> and <down> to scroll, <space> to select, <ctrl>+<r> to select all, <enter> to continue.",
-                "choices": self.aws.get_regions(),
+                "choices": regions,
                 "multiselect": True,
                 "validate": lambda regions: len(regions) > 0,
                 "invalid_message": "You must select at least one region.",
@@ -407,8 +418,11 @@ class AwsSetupCli(ProviderSetupCli):
 
         return True
 
-    def ask_load_credentials(self) -> bool:
+    def ask_load_credentials(self, profile: str) -> bool:
         """Ask if the user wants to load credentials from the AWS session.
+
+        Args:
+            profile: Profile name.
 
         Returns:
             bool: True if the user wants to load credentials.
@@ -417,7 +431,7 @@ class AwsSetupCli(ProviderSetupCli):
             {
                 "type": "confirm",
                 "name": "answer",
-                "message": "Do you want to run the Cloud Connector using the profile credentials?",
+                "message": f"Do you want to run the Cloud Connector using the credentials from profile '{profile}'?",
                 "default": False,
             }
         )
@@ -426,30 +440,42 @@ class AwsSetupCli(ProviderSetupCli):
     def detect_accounts(self) -> None:
         """Generate providers from the chosen profile."""
         profile = self.select_profile()
+
         self.aws.profile = profile
 
         primary_id = self.ask_primary_account()
 
-        creds = {}
-        if self.ask_load_credentials():
+        creds = {
+            "access_key": "",
+            "secret_key": "",
+            "token": "",
+        }
+        if self.ask_load_credentials(profile):
             creds = self.aws.get_session_credentials()
+            self.print_info(f"Loading access key and secret key from '{profile}'")
+            access_key = creds["access_key"]
+            secret_key = creds["secret_key"]
+        else:
+            # note: keys are still optional; using assume role or deploying an ECS task are keyless examples
+            access_key = self.ask_access_key(creds["access_key"])
+            secret_key = self.ask_secret_key(creds["secret_key"])
 
-        access_key = self.ask_access_key(creds.get("access_key", ""))
-        secret_key = self.ask_secret_key(creds.get("secret_key", ""))
+        token = creds["token"]
 
         role_name = self.ask_role_name()
 
         role_session_name = ""
         if role_name:
+            self.print_role_creation_instructions(role_name)
             role_session_name = self.ask_role_session_name()
 
         regions = self.ask_regions()
 
         ids = []
-        if self.prompt_confirm("Load all accounts?"):
+        if self.prompt_confirm(
+            "Would you like to load all accounts within your organization?"
+        ):
             ids = self.ask_account_lookup_method(primary_id)
-
-        self.print_role_creation_instructions(role_name)
 
         defaults = {
             "account_number": primary_id,
@@ -461,6 +487,9 @@ class AwsSetupCli(ProviderSetupCli):
 
         if secret_key:
             defaults["secret_key"] = secret_key
+
+        if token:
+            defaults["session_token"] = token
 
         if role_name:
             defaults["role_name"] = role_name
@@ -516,10 +545,34 @@ class AwsSetupCli(ProviderSetupCli):
         Returns:
             str: Profile name.
         """
-        choices = self.get_profile_choices()
+        profile = ""
 
-        default = os.getenv("AWS_PROFILE")
-        return self.prompt_select_one("Select a profile:", choices, default=default)
+        try:
+            choices = self.get_profile_choices()
+            if len(choices) == 1:
+                name = choices[0]["name"]
+                self.print_info(
+                    f"There is only one AWS credential profile called '{name}' available."
+                )
+
+            choice = self.prompt_select_one(
+                f"{AwsMessages.PROMPT_SELECT_PROFILE}",
+                choices,
+                default=os.getenv("AWS_PROFILE"),
+            )
+            if type(choice) is dict:
+                # if there is only 1 choice prompt select one returns a dict, otherwise a string
+                profile = choice["value"]
+            else:
+                profile = choice
+        except Exception:
+            pass
+
+        if not profile:
+            self.print_error("Unable to load your AWS credential profile.")
+            exit(1)
+
+        return profile
 
     def setup(self):
         """Entrypoint for AWS provider setup."""
