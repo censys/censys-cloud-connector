@@ -4,6 +4,15 @@ The following providers and services are supported and will be used to import
 Seeds (IP Addresses, Domain Names, CIDRs, and ASNs) as well as Cloud Assets
 (Object Storage Buckets) into the Censys ASM platform.
 
+```{toctree}
+---
+maxdepth: 1
+caption: Provider Specific Setup
+---
+
+aws/provider_setup
+```
+
 ## Amazon Web Services
 
 - [Compute](https://aws.amazon.com/products/compute/)

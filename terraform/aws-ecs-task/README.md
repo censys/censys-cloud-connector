@@ -25,7 +25,7 @@ variable `aws_profile`. This can be defined using a Terraform
    source .env
    ```
 
-3. Run `poetry install -E aws -E azure -E gcp` to install the dependencies.
+3. Run `poetry install` to install the dependencies.
 4. Ensure your `providers.yml` file contains your cloud provider credentials.
 
    If you have not already done so, you can create a `providers.yml` file by

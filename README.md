@@ -153,6 +153,7 @@ Log in to your cloud provider's CLI tool using the following commands:
 #### providers.yml
 
 The `providers.yml` file contains the configuration for all cloud providers.
+
 The file is a YAML file and is structured as follows:
 
 > You will need to have generated your `providers.yml` file using the
@@ -262,11 +263,10 @@ This option deploys the connector to GCP as a Google Cloud Function.
 
 > Coming Soon!
 
-#### [Option 3: Deploy to AWS](./terraform/aws-scheduled-function/README.md)
+#### [Option 3: Deploy to AWS](./terraform/aws-ecs-task/README.md)
 
-> Coming Soon!
-
-This option deploys the connector to Azure as a Azure Function.
+This option deploys the connector to AWS using EventBridge and Elastic
+Container Service.
 
 ---
 
@@ -395,7 +395,10 @@ The following permissions are required to scan:
 - `s3:ListAllMyBuckets`,
 - `ecs:ListClusters`
 
-It is possible to also utilize AWS built-in policies to ease configuration. Both [ReadOnlyAccess][aws-policy-ec2-read-only-access] and [SecurityAudit][aws-policy-security-audit] meet the requirements with the exception of API Gateway v2, which requires  `apigateway:GET`.
+It is possible to also utilize AWS built-in policies to ease configuration.
+Both [ReadOnlyAccess][aws-policy-ec2-read-only-access] and
+[SecurityAudit][aws-policy-security-audit] meet the requirements with the
+exception of API Gateway v2, which requires  `apigateway:GET`.
 
 ### Azure Roles
 
@@ -445,7 +448,9 @@ test the code or for information on the CI/CD pipeline.
 
 ## Asset Deny List
 
-In certain situations it is desirable not to have assets sent to Censys. This can be accomplished by utilizing the cloud provider's tagging feature. At this time, only AWS ENI and EC2 tags are supported.
+In certain situations it is desirable not to have assets sent to Censys. This
+can be accomplished by utilizing the cloud provider's tagging feature. At this
+time, only AWS ENI and EC2 tags are supported.
 
 Usage:
 
