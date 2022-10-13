@@ -5,9 +5,12 @@ build:
   tools:
     python: "3.9"
   jobs:
-    post_install:
-      - pip install poetry==1.2.2
+    pre_create_environment:
+      - asdf plugin add poetry
+      - asdf install poetry 1.2.2
+      - asdf global poetry 1.2.2
       - poetry config virtualenvs.create false
+    post_install:
       - poetry install --with docs
 
 sphinx:
