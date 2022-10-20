@@ -367,6 +367,19 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
             self.connector.seeds[test_label], test_seed_values
         )
 
+    def test_rds_skips_private_instances(self):
+        # Test data
+        data = self.data["TEST_RDS_SKIPS_PRIVATE"].copy()
+
+        # Mock
+        self.mock_api_response("describe_db_instances", data)
+
+        # Actual call
+        self.connector.get_rds_instances()
+
+        # Assertions
+        assert self.connector.seeds == {}
+
     def test_route53_instances(self):
         # Mock
         mocked_scanners = self.mocker.patch.multiple(

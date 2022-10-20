@@ -1,0 +1,45 @@
+{
+  "TEST_STACKSET_ACCOUNT_WITH_REGIONS": [
+    {
+      "StackSetId": "CensysCloudConnector:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "Region": "us-east-1",
+      "Account": "2",
+      "StackId": "arn:aws:cloudformation:us-east-1:111:stack/uuid/id",
+      "Status": "CURRENT",
+      "StackInstanceStatus": { "DetailedStatus": "SUCCEEDED" },
+      "OrganizationalUnitId": "r-41cr",
+      "DriftStatus": "NOT_CHECKED"
+    },
+    {
+      "StackSetId": "CensysCloudConnector:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "Region": "us-east-2",
+      "Account": "2",
+      "StackId": "arn:aws:cloudformation:us-east-2:111:stack/uuid/id",
+      "Status": "OUTDATED",
+      "StatusReason": "ResourceLogicalId:CensysCloudConnectorSetup, ResourceType:AWS::IAM::Role, ResourceStatusReason:CensysCloudConnectorRole already exists.",
+      "StackInstanceStatus": { "DetailedStatus": "FAILED" },
+      "OrganizationalUnitId": "r-41cr",
+      "DriftStatus": "NOT_CHECKED"
+    }
+  ],
+  "TEST_ORGANIZATION_LIST_ACCOUNTS": [
+    {
+      "Id": "111111111111",
+      "Arn": "arn:aws:organizations::111111111111:account/o-xxxxxxxxxx/111111111111",
+      "Email": "aaaaaaaaaaaaa+aaaaaaaaaaaaaaaa@example.com",
+      "Name": "TestParentAccount",
+      "Status": "ACTIVE",
+      "JoinedMethod": "CREATED",
+      "JoinedTimestamp": "2022-08-29 11:19:43.608000-04:00"
+    },
+    {
+      "Id": "222222222222",
+      "Arn": "arn:aws:organizations::222222222222:account/o-bbbbbbbbbb/222222222222",
+      "Email": "bbbbbbbbbbbbb@gmail.com",
+      "Name": "TestChildAccount",
+      "Status": "ACTIVE",
+      "JoinedMethod": "INVITED",
+      "JoinedTimestamp": "2022-08-22 14:07:27.615000-04:00"
+    }
+  ]
+}

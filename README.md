@@ -2,7 +2,7 @@
 
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/censys/censys-cloud-connector)][github]
 [![PyPI - License](https://img.shields.io/pypi/l/censys-cloud-connectors)][license]
-[![AWS Supported](https://img.shields.io/badge/-Supported-orange?logo=amazonaws)](#amazon-web-services)
+[![AWS Supported](https://img.shields.io/badge/-Supported-orange?logo=amazonaws)](#limited-availability-amazon-web-services)
 [![Azure Supported](https://img.shields.io/badge/-Supported-green?logo=microsoftazure)](#azure-cloud)
 [![GCP Supported](https://img.shields.io/badge/-Supported-blue?logo=googlecloud&logoColor=white)](#google-cloud-platform)
 
@@ -18,7 +18,7 @@ The following platforms and services are supported and will be used to import
 Seeds (IP Addresses, Domain Names, CIDRs, and ASNs) as well as Cloud Assets
 (Object Storage Buckets) into the Censys ASM platform.
 
-### Amazon Web Services
+### `[Limited Availability]` Amazon Web Services
 
 - [Compute](https://aws.amazon.com/products/compute/)
   - [Elastic Container Service (ECS)](https://aws.amazon.com/ecs/)
@@ -395,10 +395,8 @@ The following permissions are required to scan:
 - `s3:ListAllMyBuckets`,
 - `ecs:ListClusters`
 
-It is possible to also utilize AWS built-in policies to ease configuration.
-Both [ReadOnlyAccess][aws-policy-ec2-read-only-access] and
-[SecurityAudit][aws-policy-security-audit] meet the requirements with the
-exception of API Gateway v2, which requires  `apigateway:GET`.
+An alternative is to use the AWS policy [SecurityAudit][aws-policy-security-audit]
+along with an additional policy `apigateway:GET` for API Gateway v2.
 
 ### Azure Roles
 
@@ -477,5 +475,4 @@ This software is licensed under [Apache License, Version 2.0][license].
 [gcloud-cli]: https://cloud.google.com/sdk/docs/install
 [seed-data]: https://app.censys.io/seeds
 [storage-bucket]: https://app.censys.io/storage-bucket
-[aws-policy-ec2-read-only-access]: https://console.aws.amazon.com/iam/home#policies/arn:aws:iam::aws:policy/ReadOnlyAccess
 [aws-policy-security-audit]: https://console.aws.amazon.com/iam/home#policies/arn:aws:iam::aws:policy/SecurityAudit

@@ -23,8 +23,8 @@
   },
   "TEST_LIST_ACCOUNTS": [
     {
-      "Id": "123",
-      "Name": "test-account-name"
+      "name": "123 - test-account-name",
+      "value": "123"
     }
   ],
   "TEST_LIST_ACCOUNTS_ERROR": {

@@ -263,12 +263,100 @@
   "TEST_RDS_INSTANCES": {
     "DBInstances": [
       {
+        "PubliclyAccessible": true,
         "Endpoint": {
           "Address": "my-db-instance.ccc.test-region-1.rds.amazonaws.com",
           "Port": 3306
         }
       }
     ]
+  },
+  "TEST_RDS_SKIPS_PRIVATE": {
+    "DBInstances": [
+      {
+        "DBInstanceIdentifier": "terraform-20221005134703708500000001",
+        "DBInstanceClass": "db.t3.micro",
+        "Engine": "mysql",
+        "DBInstanceStatus": "available",
+        "MasterUsername": "cc_db_user",
+        "DBName": "cc_db_name",
+        "Endpoint": {
+          "Address": "terraform-20221005134703708500000001.aaaaaaaaaaaa.us-east-1.rds.amazonaws.com",
+          "Port": 3306,
+          "HostedZoneId": "AAAAAAAAAAAAAA"
+        },
+        "AllocatedStorage": 10,
+        "InstanceCreateTime": "2022-10-05 13:51:55.886000+00:00",
+        "PreferredBackupWindow": "09:43-10:13",
+        "BackupRetentionPeriod": 0,
+        "DBSecurityGroups": [],
+        "VpcSecurityGroups": [
+          { "VpcSecurityGroupId": "sg-00000000000000000", "Status": "active" }
+        ],
+        "DBParameterGroups": [
+          {
+            "DBParameterGroupName": "default.mysql5.7",
+            "ParameterApplyStatus": "in-sync"
+          }
+        ],
+        "AvailabilityZone": "us-east-1b",
+        "DBSubnetGroup": {
+          "DBSubnetGroupName": "default",
+          "DBSubnetGroupDescription": "default",
+          "VpcId": "vpc-00000000000000000",
+          "SubnetGroupStatus": "Complete",
+          "Subnets": [
+            {
+              "SubnetIdentifier": "subnet-00000000000000000",
+              "SubnetAvailabilityZone": { "Name": "us-east-1e" },
+              "SubnetOutpost": {},
+              "SubnetStatus": "Active"
+            }
+          ]
+        },
+        "PreferredMaintenanceWindow": "thu:03:48-thu:04:18",
+        "PendingModifiedValues": {},
+        "MultiAZ": false,
+        "EngineVersion": "5.7.38",
+        "AutoMinorVersionUpgrade": true,
+        "ReadReplicaDBInstanceIdentifiers": [],
+        "LicenseModel": "general-public-license",
+        "OptionGroupMemberships": [
+          { "OptionGroupName": "default:mysql-5-7", "Status": "in-sync" }
+        ],
+        "PubliclyAccessible": false,
+        "StorageType": "gp2",
+        "DbInstancePort": 0,
+        "StorageEncrypted": false,
+        "DbiResourceId": "db-AAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "CACertificateIdentifier": "rds-ca-2019",
+        "DomainMemberships": [],
+        "CopyTagsToSnapshot": false,
+        "MonitoringInterval": 0,
+        "DBInstanceArn": "arn:aws:rds:us-east-1:111111111111:db:terraform-20221005134703708500000001",
+        "IAMDatabaseAuthenticationEnabled": false,
+        "PerformanceInsightsEnabled": false,
+        "DeletionProtection": false,
+        "AssociatedRoles": [],
+        "TagList": [{ "Key": "cc-test", "Value": "aws_db_instance" }],
+        "CustomerOwnedIpEnabled": false,
+        "ActivityStreamStatus": "stopped",
+        "BackupTarget": "region",
+        "NetworkType": "IPV4"
+      }
+    ],
+    "ResponseMetadata": {
+      "RequestId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "HTTPStatusCode": 200,
+      "HTTPHeaders": {
+        "x-amzn-requestid": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "strict-transport-security": "max-age=31536000",
+        "content-type": "text/xml",
+        "content-length": "6268",
+        "date": "Wed, 19 Oct 2022 16:06:38 GMT"
+      },
+      "RetryAttempts": 0
+    }
   },
   "TEST_ROUTE53_DOMAINS": {
     "Domains": [

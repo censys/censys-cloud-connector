@@ -528,12 +528,12 @@ class AwsCloudConnector(CloudConnector):
         client: RDSClient = self.get_aws_client(service=AwsServices.RDS)
         label = self.format_label(SeedLabel.RDS)
 
-        # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/rds.html#RDS.Client.describe_db_instances
-        filters = [{"Name": "publicly-accessible", "Values": ["true"]}]
-
         try:
-            data = client.describe_db_instances(Filters=filters)
+            data = client.describe_db_instances()
             for instance in data.get("DBInstances", []):
+                if not instance.get("PubliclyAccessible"):
+                    continue
+
                 if domain_name := instance.get("Endpoint", {}).get("Address"):
                     with SuppressValidationError():
                         domain_seed = DomainSeed(value=domain_name, label=label)

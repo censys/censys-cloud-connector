@@ -179,20 +179,16 @@ class TestAwsProvidersSetup(BaseCase, TestCase):
         warning.assert_called_once()
         confirm.assert_called_once()
 
-    def test_get_account_choices_excludes(self):
-        self.mocker.patch.object(
-            self.setup_cli.aws,
-            "get_organization_list_accounts",
-            return_value=self.data["TEST_LIST_ACCOUNTS"],
-        )
-        choices = self.setup_cli.get_account_choices("123")
-        assert choices == []
-
     def test_ask_list_accounts_handles_no_accounts(self):
         self.mocker.patch.object(
             self.setup_cli, "get_account_choices", return_value=None
         )
+        confirm = self.mocker.patch.object(self.setup_cli, "confirm_or_exit")
+        self.mocker.patch.object(self.setup_cli, "prompt", return_value=[])
+
         accounts = self.setup_cli.ask_list_accounts(0)
+
+        confirm.assert_called_once_with(AwsMessages.PROMPT_NO_ACCOUNTS_FOUND.value)
         assert accounts == []
 
     def test_get_account_choices_error(self):
@@ -213,7 +209,7 @@ class TestAwsProvidersSetup(BaseCase, TestCase):
             "get_organization_list_accounts",
             return_value=self.data["TEST_LIST_ACCOUNTS"],
         )
-        expected = [{"name": "123 - test-account-name", "value": "123"}]
+        expected = self.data["TEST_LIST_ACCOUNTS"]
         choices = self.setup_cli.get_account_choices(0)
         assert choices == expected
 
@@ -264,6 +260,19 @@ class TestAwsProvidersSetup(BaseCase, TestCase):
         assert stacks == []
         error.assert_called_once()
         confirm.assert_called_once()
+
+    def test_ask_stackset_handles_no_accounts(self):
+        self.mocker.patch.object(self.setup_cli, "ask_stack_set_name")
+        self.mocker.patch.object(
+            self.setup_cli.aws, "get_stackset_accounts", return_value=[]
+        )
+        confirm = self.mocker.patch.object(self.setup_cli, "confirm_or_exit")
+        self.mocker.patch.object(self.setup_cli, "prompt", return_value=[])
+
+        accounts = self.setup_cli.ask_stackset(0)
+
+        confirm.assert_called_once_with(AwsMessages.PROMPT_NO_ACCOUNTS_FOUND.value)
+        assert accounts == []
 
     def test_print_role_creation_instructions(self):
         info = self.mocker.patch.object(self.setup_cli, "print_info")

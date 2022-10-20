@@ -1,6 +1,7 @@
 """Aws Services."""
 
 import re
+from collections.abc import Generator
 from logging import Logger
 
 import boto3
@@ -50,30 +51,41 @@ class AwsSetupService:
         """
         return self.session().client(service_name)
 
-    def get_organization_list_accounts(self) -> list[dict]:
-        """Use the AWS Organizations API to return all accounts.
+    def get_organization_list_accounts(self, exclude_id: int) -> list[dict]:
+        """Get the accounts that are in the organization.
+
+        Args:
+            exclude_id (int): Account id to exclude.
 
         Returns:
-            list: List of account ids.
+            list[dict]: Accounts.
         """
-        # Other exceptions:
-        # AccessDeniedException: Missing IAM policy.
-        # TooManyRequestsException: Rate limit exceeded.
-        #
-        # required policies:
-        # - organizations:ListAccounts.
-        #
-        # docs:
-        # https://docs.aws.amazon.com/organizations/latest/APIReference/API_ListAccounts.html#API_ListAccounts_Errors
-        accounts: list[dict] = []
+        accounts: dict[str, dict] = {}
+        exclude = str(exclude_id)
+        for account in self.get_organization_list_accounts_paginated():
+            account_id = account["Id"]
+            name = account["Name"]
+            if account_id == exclude:
+                continue
+
+            accounts[account_id] = {
+                "name": f"{account_id} - {name}",
+                "value": account_id,
+            }
+
+        return list(accounts.values())
+
+    def get_organization_list_accounts_paginated(self) -> Generator[dict, None, None]:
+        """Use the AWS Organizations API to return all accounts.
+
+        Yields:
+            Iterator[list[dict]]: Accounts.
+        """
         client = self.client("organizations")
-
         paginator = client.get_paginator("list_accounts")
-        for page in paginator.paginate():
-            for account in page.get("Accounts", {}):
-                accounts.append(account)
-
-        return accounts
+        results = paginator.paginate()
+        for page in results:
+            yield from page.get("Accounts", [])
 
     def available_profiles(self) -> list[str]:
         """Return a list of available profiles from the user's credential file.
@@ -230,8 +242,32 @@ class AwsSetupService:
         Returns:
             list[dict]: List of account ids.
         """
-        accounts: list[dict] = []
+        accounts: dict[str, dict] = {}
+        exclude = str(exclude_id)
+        for account in self.get_stackset_accounts_paginated(stack_set_name):
+            account_id = account["Account"]
+            org = account["OrganizationalUnitId"]
+            if account_id == exclude:
+                continue
 
+            accounts[account_id] = {
+                "name": f"{account_id} (Org: {org})",
+                "value": account_id,
+            }
+
+        return list(accounts.values())
+
+    def get_stackset_accounts_paginated(
+        self, stack_set_name: str
+    ) -> Generator[dict, None, None]:
+        """Flatten out the paginated StackSet accounts results.
+
+        Args:
+            stack_set_name (str): StackSet name.
+
+        Yields:
+            Iterator[list[dict]]: Accounts.
+        """
         session = self.session()
         region_name = session.region_name or "us-east-1"
         client = session.client("cloudformation", region_name=region_name)
@@ -240,17 +276,6 @@ class AwsSetupService:
         results = paginator.paginate(
             StackSetName=stack_set_name,
         )
+
         for page in results:
-            for account in page.get("Summaries", []):
-                account_id = account["Account"]
-                if account_id == exclude_id:
-                    continue
-
-                accounts.append(
-                    {
-                        "name": account_id + " - " + account["StackSetId"],
-                        "value": account_id,
-                    }
-                )
-
-        return accounts
+            yield from page.get("Summaries", [])

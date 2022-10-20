@@ -102,7 +102,7 @@ class AwsSetupCli(ProviderSetupCli):
             accounts = []
 
         if not accounts:
-            self.confirm_or_exit("Unable to load accounts from StackSet. Continue?")
+            self.confirm_or_exit(AwsMessages.PROMPT_NO_ACCOUNTS_FOUND.value)
             return []
 
         questions = [
@@ -137,6 +137,7 @@ class AwsSetupCli(ProviderSetupCli):
         """
         accounts = self.get_account_choices(exclude_id)
         if not accounts:
+            self.confirm_or_exit(AwsMessages.PROMPT_NO_ACCOUNTS_FOUND.value)
             return []
 
         questions = [
@@ -208,6 +209,8 @@ class AwsSetupCli(ProviderSetupCli):
     def get_account_choices(self, exclude_id: int) -> list[dict]:
         """Fetch all available accounts.
 
+        The main focus of this method is to capture any service level errors.
+
         Args:
             exclude_id: Account id to exclude.
 
@@ -215,29 +218,16 @@ class AwsSetupCli(ProviderSetupCli):
             list[dict]: Account ids.
         """
         try:
-            accounts = self.aws.get_organization_list_accounts()
-            choices: list[dict] = []
-            for account in accounts:
-                account_id = account["Id"]
-                if account_id == exclude_id:
-                    continue
-
-                choices.append(
-                    {
-                        "name": account_id + " - " + account["Name"],
-                        "value": account_id,
-                    }
-                )
-            return choices
+            return self.aws.get_organization_list_accounts(exclude_id)
         except ClientError as e:
             if e.response["Error"]["Code"] == "AWSOrganizationsNotInUseException":
                 self.print_warning(AwsMessages.ORGANIZATIONS_NOT_IN_USE)
                 self.confirm_or_exit()
             else:
-                self.print_error(f"Get Accounts error: {e}")
+                self.print_error(f"[red]Get Accounts error: {e}")
                 self.confirm_or_exit("Unable to load accounts. Proceed?")
         except Exception as e:
-            self.print_error(f"Get Accounts error: {e}")
+            self.print_error(f"[red]Get Accounts error: {e}")
             self.confirm_or_exit("Unable to load accounts. Proceed?")
 
         return []
@@ -271,22 +261,16 @@ class AwsSetupCli(ProviderSetupCli):
         Returns:
             int: Primary account id.
         """
-        primary_id = self.aws.get_primary_account()
-        if primary_id <= 0:
-            self.print_error("Unable to find primary account.")
+        try:
+            primary_id = self.aws.get_primary_account()
+        except Exception as e:
+            self.print_error(f"[red]Error getting primary account: {e}")
             exit(1)
 
-        # primary_id = self.get_primary_account()
-        # questions = {
-        #     "type": "input",
-        #     "name": "answer",
-        #     "message": "Confirm your Primary Account ID:",
-        #     "default": primary_id or "",
-        #     "invalid_message": "Primary account id must be a number.",
-        #     "validate": lambda id: id.isnumeric(),
-        # }
-        # answers = self.prompt(questions)dsaf
-        # return answers.get("answer", 0)
+        if primary_id <= 0:
+            self.print_error("[red]Unable to find primary account.")
+            exit(1)
+
         self.print_info(
             "A primary account is required to run the Censys Cloud Connector."
         )

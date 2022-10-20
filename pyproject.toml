@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "censys-cloud-connectors"
-version = "3.0.1b5"
+version = "3.0.1b6"
 description = "The Censys Unified Cloud Connector is a standalone connector that gathers assets from various cloud providers and stores them in Censys ASM."
 authors = ["Censys, Inc. <support@censys.io>"]
 license = "Apache-2.0"

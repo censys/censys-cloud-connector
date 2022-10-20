@@ -54,3 +54,4 @@ class AwsMessages(str, Enum):
 
     ORGANIZATIONS_NOT_IN_USE = "AWS Organizations is not enabled in this account."
     PROMPT_SELECT_PROFILE = "Select an AWS profile to use."
+    PROMPT_NO_ACCOUNTS_FOUND = "No additional accounts were found. Continue?"

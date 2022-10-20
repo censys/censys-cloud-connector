@@ -1,3 +1,4 @@
+import json
 from unittest import TestCase
 
 import pytest
@@ -17,6 +18,8 @@ except ImportError:
 class TestAwsSetupService(BaseCase, TestCase):
     def setUp(self) -> None:
         super().setUp()
+        with open(self.shared_datadir / "test_aws_service_responses.json") as f:
+            self.data = json.load(f)
         self.settings = Settings(**self.default_settings)
 
         self.mocked_logger = self.mocker.MagicMock()
@@ -44,3 +47,56 @@ class TestAwsSetupService(BaseCase, TestCase):
         )
 
         assert self.aws.get_session_credentials() == expected
+
+    def test_get_stackset_accounts_prevents_duplicates(self):
+        name = "test-stack-set-name"
+        exclude_id = 1
+        expected = [{"name": "2 (Org: r-41cr)", "value": "2"}]
+
+        self.mocker.patch.object(
+            self.aws,
+            "get_stackset_accounts_paginated",
+            return_value=self.data["TEST_STACKSET_ACCOUNT_WITH_REGIONS"],
+        )
+        actual = self.aws.get_stackset_accounts(name, exclude_id)
+        assert actual == expected
+
+    def test_get_stackset_accounts_exclude(self):
+        name = "test-stack-set-name"
+        exclude_id = 2
+        expected = []
+
+        self.mocker.patch.object(
+            self.aws,
+            "get_stackset_accounts_paginated",
+            return_value=self.data["TEST_STACKSET_ACCOUNT_WITH_REGIONS"],
+        )
+        actual = self.aws.get_stackset_accounts(name, exclude_id)
+        assert actual == expected
+
+    def test_get_organization_list_accounts(self):
+        self.mocker.patch.object(
+            self.aws,
+            "get_organization_list_accounts_paginated",
+            return_value=self.data["TEST_ORGANIZATION_LIST_ACCOUNTS"],
+        )
+        exclude_id = 0
+        expected = [
+            {"name": "111111111111 - TestParentAccount", "value": "111111111111"},
+            {"name": "222222222222 - TestChildAccount", "value": "222222222222"},
+        ]
+        actual = self.aws.get_organization_list_accounts(exclude_id)
+        assert actual == expected
+
+    def test_get_organization_list_accounts_excludes(self):
+        self.mocker.patch.object(
+            self.aws,
+            "get_organization_list_accounts_paginated",
+            return_value=self.data["TEST_ORGANIZATION_LIST_ACCOUNTS"],
+        )
+        exclude_id = 111111111111
+        expected = [
+            {"name": "222222222222 - TestChildAccount", "value": "222222222222"}
+        ]
+        actual = self.aws.get_organization_list_accounts(exclude_id)
+        assert actual == expected

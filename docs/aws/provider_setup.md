@@ -47,10 +47,11 @@ accounts are saved into `providers.yml`.
 
 ### Find Accounts by StackSet Instance
 
-Censys has a CloudFormation [StackSet Template][censys-stackset-role] available
-to create the `CensysCloudConnectorRole`. It also serves as a way to list your
-organization's account numbers with the CloudFormation [Stack Instance][aws-cloudformation-list-stack-instances]
+Censys has a CloudFormation [StackSet Template](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=stack_name&templateURL=https://censys-cloud-connector.s3.us-east-2.amazonaws.com/CensysRoleDeploy.json)
+available to create the `CensysCloudConnectorRole`. It also serves as a way to
+list your organization's account numbers with the CloudFormation [Stack Instance][aws-cloudformation-list-stack-instances]
 API.
+[![StackSet Template](https://d2908q01vomqb2.cloudfront.net/b3f0c7f6bb763af1be91d9e74eabfeb199dc1f1f/2022/06/09/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=stack_name&templateURL=https://censys-cloud-connector.s3.us-east-2.amazonaws.com/CensysRoleDeploy.json)
 
 ### Account Roles
 
@@ -81,4 +82,3 @@ will overwrite the parent role with `Role333`.
 [aws-sts-assume-role]: https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html
 [aws-organizations-list-accounts]: https://docs.aws.amazon.com/organizations/latest/APIReference/API_ListAccounts.html
 [aws-cloudformation-list-stack-instances]: https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_ListStackInstances.html
-[censys-stackset-role]: https://censys-cloud-connector.s3.us-east-2.amazonaws.com/CensysRoleDeploy.json
