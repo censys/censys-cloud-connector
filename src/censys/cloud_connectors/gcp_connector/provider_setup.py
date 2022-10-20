@@ -191,6 +191,25 @@ class GcpSetupCli(ProviderSetupCli):
                 return None
         return None
 
+    def validate_organization_id(self, organization_id: Optional[str]) -> bool:
+        """Validate organization id.
+
+        Args:
+            organization_id (Optional[str]): Organization id.
+
+        Returns:
+            bool: True if valid, False otherwise.
+        """
+        res = self.run_command(
+            GcloudCommands.DESCRIBE_ORGANIZATION.generate(
+                organization_id=organization_id
+            )
+        )
+        if res.returncode != 0:
+            self.print_error(res.stderr.strip())
+            return False
+        return res.returncode == 0
+
     @validate_arguments
     def switch_active_cli_account(self, account_name: str) -> bool:
         """Switch the active account.
@@ -650,8 +669,8 @@ class GcpSetupCli(ProviderSetupCli):
             exit(1)
         project_id: str = selected_project["projectId"]
 
-        organization_id = self.get_organization_id_from_cli(project_id)
-        if not organization_id:
+        default_organization_id = self.get_organization_id_from_cli(project_id)
+        if not default_organization_id:
             self.print_error(GcpMessages.ERROR_UNABLE_TO_GET_ORG_FROM_PROJECT)
             exit(1)
         questions = [
@@ -659,13 +678,18 @@ class GcpSetupCli(ProviderSetupCli):
                 "type": "input",
                 "name": "organization_id",
                 "message": "Confirm your Organization Id:",
-                "default": str(organization_id),
+                "default": str(default_organization_id),
             }
         ]
         answers = self.prompt(questions)
         if not answers.get("organization_id"):
             self.print_error(GcpMessages.ERROR_NO_ORGANIZATION_SELECTED)
             exit(1)
+
+        organization_id = answers.get("organization_id", "")
+        if not self.validate_organization_id(organization_id):
+            exit(1)
+        organization_id = int(organization_id)
 
         service_accounts = self.get_service_accounts_from_cli(project_id)
         if service_accounts is None:
@@ -710,16 +734,21 @@ class GcpSetupCli(ProviderSetupCli):
             default_path = f"{project_id}-{random_str}-key.json"
 
         answers = self.prompt(
-            {
-                "type": "input",
-                "name": "key_file_output_path",
-                "message": "Confirm or edit key file path:",
-                "default": default_path,
-            }
+            [
+                {
+                    "type": "input",
+                    "name": "key_file_output_path",
+                    "message": "Confirm or edit key filename:",
+                    "default": default_path,
+                }
+            ]
         )
         key_file_path = answers.get("key_file_output_path")
         if not key_file_path:
+            self.print_error(GcpMessages.ERROR_NO_KEY_FILE_PATH)
             exit(1)
+
+        self.print_info(GcpMessages.SAVING_KEY)
 
         if service_account_action == create_new_service_account:
             service_account_email = self.prompt_to_create_service_account(

@@ -13,6 +13,7 @@ class GcloudCommands(str, Enum):
     SET_CONFIG_VALUE = "config set {key} {value}"
     ENABLE_SERVICES = "services enable {service}"
     LIST_PROJECTS = "projects list"
+    DESCRIBE_ORGANIZATION = "organizations describe {organization_id}"
     GET_PROJECT_ANCESTORS = "projects get-ancestors {project_id}"
     LIST_SERVICE_ACCOUNTS = "iam service-accounts list"
     ADD_ORG_IAM_POLICY = "organizations add-iam-policy-binding {organization_id} --member '{member}' --role '{role}'"
@@ -137,6 +138,7 @@ class GcpMessages(str, Enum):
         f"Please login to your GCP account with the command: `{GcloudCommands.LOGIN}`."
     )
     LOGIN_TRY_AGAIN = "Please login and try again. Or run the above commands in the Google Cloud Console."
+    SAVING_KEY = "Saving key file into ./secrets/"
 
     ERROR_UNABLE_TO_GET_ACCOUNTS = "Unable to get list of authenticated GCP Accounts."
     ERROR_NO_ACCOUNTS_FOUND = "No authenticated GCP Accounts found."
@@ -150,6 +152,7 @@ class GcpMessages(str, Enum):
     )
     ERROR_NO_ORGANIZATION_SELECTED = "No GCP Organization selected."
     ERROR_UNABLE_TO_GET_SERVICE_ACCOUNTS = "Unable to get list of GCP Service Accounts."
+    ERROR_NO_KEY_FILE_PATH = "No key file path provided."
     ERROR_NO_SERVICE_ACCOUNT_SELECTED = "No GCP Service Account selected."
     ERROR_FAILED_TO_ENABLE_SERVICE_ACCOUNT = "Failed to enable GCP Service Account."
     ERROR_FAILED_TO_CREATE_SERVICE_ACCOUNT_KEY = (
