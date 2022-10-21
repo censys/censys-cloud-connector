@@ -10,8 +10,11 @@ build:
       - asdf install poetry 1.2.2
       - asdf global poetry 1.2.2
       - poetry config virtualenvs.create false
-    post_install:
-      - poetry install --with docs
+      - poetry export --with docs --format=requirements.txt --output=docs-requirements.txt
+
+python:
+  install:
+    - requirements: docs-requirements.txt
 
 sphinx:
   configuration: docs/conf.py
