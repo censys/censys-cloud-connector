@@ -139,13 +139,21 @@ class Healthcheck:
         if not self.run_id:
             raise ValueError("The run ID must be set.")
         body = {}
-        if metadata:
-            body["metadata"] = metadata
-        self._session.post(self.finish_url.format(run_id=self.run_id), json=body)
-        self.logger.debug(
-            f"Finished Run ID: {self.run_id}",
-            extra={"provider": self.provider_payload},
-        )
+
+        if not self.settings.healthcheck_enabled:
+            self.logger.info(
+                "Healthcheck not enabled. Skipping submission of healthcheck data."
+            )
+        else:
+            if metadata:
+                body["metadata"] = metadata
+            self.logger.info("Submitting healthcheck data...")
+            self._session.post(self.finish_url.format(run_id=self.run_id), json=body)
+            self.logger.debug(
+                f"Finished Run ID: {self.run_id}",
+                extra={"provider": self.provider_payload},
+            )
+
         self.run_id = None
 
     def fail(

@@ -99,6 +99,9 @@ class TestHealthcheck(BaseCase, TestCase):
     def test_start(self):
         # Setup response
         self.responses.add(
+            method="POST", url=FINISH_BASE_URL.format(run_id=TEST_RUN_ID), status=200
+        )
+        self.responses.add(
             method="POST",
             url=START_BASE_URL,
             status=200,
@@ -135,10 +138,38 @@ class TestHealthcheck(BaseCase, TestCase):
         healthcheck = Healthcheck(self.settings, self.provider_specific_settings)
         healthcheck.run_id = TEST_RUN_ID
 
+        # Mock
+        self.mocker.patch.object(self.settings, "dry_run", False)
+        post_call = self.mocker.patch.object(healthcheck._session, "post")
+
         # Actual call
         healthcheck.finish()
 
         # Assertions
+        post_call.assert_called_once()
+        assert healthcheck.run_id is None
+
+    def test_finish_no_healthcheck(self):
+        # Setup response
+        self.responses.add(
+            method="POST",
+            url=FINISH_BASE_URL.format(run_id=TEST_RUN_ID),
+            status=200,
+        )
+
+        # Test data
+        healthcheck = Healthcheck(self.settings, self.provider_specific_settings)
+        healthcheck.run_id = TEST_RUN_ID
+
+        # Mock
+        self.mocker.patch.object(self.settings, "healthcheck_enabled", False)
+        post_call = self.mocker.patch.object(healthcheck._session, "post")
+
+        # Actual call
+        healthcheck.finish()
+
+        # Assertions
+        post_call.assert_not_called()
         assert healthcheck.run_id is None
 
     def test_finish_error(self):

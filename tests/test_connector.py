@@ -167,6 +167,21 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
         submit_seeds_mock.assert_called_once()
         submit_cloud_assets_mock.assert_called_once()
 
+    def test_submit_dry_run(self):
+        # Mock
+        submit_seeds_mock = self.mocker.patch.object(self.connector, "submit_seeds")
+        submit_cloud_assets_mock = self.mocker.patch.object(
+            self.connector, "submit_cloud_assets"
+        )
+        self.mocker.patch.object(self.connector.settings, "dry_run", True)
+
+        # Actual call
+        self.connector.submit()
+
+        # Assertions
+        submit_seeds_mock.assert_not_called()
+        submit_cloud_assets_mock.assert_not_called()
+
     def test_scan(self):
         # Mock
         get_seeds_mock = self.mocker.patch.object(self.connector, "get_seeds")
