@@ -1,10 +1,10 @@
 """AWS specific settings."""
 
-from typing import Optional
+from typing import Any, Optional
 
-from pydantic import BaseModel, Field, PositiveInt
+from pydantic import BaseModel, Field, PositiveInt, root_validator
 
-from censys.cloud_connectors.aws_connector.enums import AwsResourceTypes
+from censys.cloud_connectors.aws_connector.enums import AwsMessages, AwsResourceTypes
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.settings import ProviderSpecificSettings
 
@@ -32,7 +32,7 @@ class AwsSpecificSettings(ProviderSpecificSettings):
     provider = ProviderEnum.AWS
     ignore: Optional[list[AwsResourceTypes]] = None
 
-    account_number: Optional[AwsAccountNumber] = Field()
+    account_number: AwsAccountNumber = Field()
     access_key: Optional[str] = Field(min_length=1)
     secret_key: Optional[str] = Field(min_length=1)
     role_name: Optional[str] = Field(min_length=1)
@@ -46,20 +46,35 @@ class AwsSpecificSettings(ProviderSpecificSettings):
 
     regions: list[str] = Field(min_items=1)
 
+    @root_validator
+    def validate_account_numbers(cls, values: dict[str, Any]) -> dict:
+        """Validate.
+
+        Args:
+            values (dict): Settings
+
+        Raises:
+            ValueError: Invalid settings.
+
+        Returns:
+            dict: Settings
+        """
+        has_key = values.get("access_key") and values.get("secret_key")
+        has_role = values.get("role_name")
+        has_none = not has_key and not has_role
+
+        if has_none:
+            raise ValueError(AwsMessages.KEY_OR_ROLE_REQUIRED.value)
+
+        return values
+
     def get_provider_key(self) -> tuple:
         """Get provider key.
 
         Returns:
-            tuple: [str, str]: Provider key.
+            tuple: Provider key.
         """
-        accounts = []
-        if self.accounts:
-            for account in self.accounts:
-                accounts.append(str(account.account_number))
-        else:
-            accounts.append(str(self.account_number))
-
-        return ("_".join(sorted(accounts)), "_".join(self.regions))
+        return (str(self.account_number),)
 
     def get_provider_payload(self) -> dict:
         """Get the provider payload.
@@ -97,26 +112,24 @@ class AwsSpecificSettings(ProviderSpecificSettings):
         Yields:
             dict[str, Any]
         """
+        yield {
+            "account_number": self.account_number,
+            "access_key": self.access_key,
+            "secret_key": self.secret_key,
+            "role_name": self.role_name,
+            "role_session_name": self.role_session_name,
+            "ignore_tags": self.ignore_tags,
+        }
+
         if self.accounts:
             for account in self.accounts:
                 yield {
                     "account_number": (account.account_number or self.account_number),
-                    "access_key": (account.access_key or self.access_key),
-                    "secret_key": (account.secret_key or self.secret_key),
+                    "access_key": account.access_key,
+                    "secret_key": account.secret_key,
                     "role_name": (account.role_name or self.role_name),
                     "role_session_name": (
                         account.role_session_name or self.role_session_name
                     ),
-                    # TODO: should this merge or override?
                     "ignore_tags": (account.ignore_tags or self.ignore_tags),
                 }
-
-        else:
-            yield {
-                "account_number": self.account_number,
-                "access_key": self.access_key,
-                "secret_key": self.secret_key,
-                "role_name": self.role_name,
-                "role_session_name": self.role_session_name,
-                "ignore_tags": self.ignore_tags,
-            }

@@ -1,0 +1,6 @@
+- provider: AWS
+  account_number: 111111111111
+  role_name: test-primary-role-name
+  role_session_name: test-primary-role-session-name
+  regions:
+    - test-region

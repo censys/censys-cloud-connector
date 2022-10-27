@@ -8,6 +8,7 @@ from parameterized import parameterized
 
 from censys.cloud_connectors.aws_connector.connector import AwsCloudConnector
 from censys.cloud_connectors.aws_connector.enums import (
+    AwsDefaults,
     AwsResourceTypes,
     AwsServices,
     SeedLabel,
@@ -120,6 +121,72 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
             aws_secret_access_key=self.connector.provider_settings.secret_key,
         )
 
+    def test_get_aws_client_uses_override_credentials(self):
+        service = AwsServices.API_GATEWAY
+        expected = self.data["TEST_BOTO_CRED_FULL"]
+        mock_client = self.mocker.patch("boto3.client", autospec=True)
+        mock_credentials = self.mocker.patch.object(self.connector, "credentials")
+
+        self.connector.get_aws_client(service, expected)
+
+        mock_client.assert_called_with(service, **expected)
+        mock_credentials.assert_not_called()
+
+    def test_get_aws_client_no_key(self):
+        cred = self.data["TEST_BOTO_CRED_SSO"]
+        service = AwsServices.API_GATEWAY
+        mock_client = self.mocker.patch("boto3.client", autospec=True)
+        self.connector.get_aws_client(service, cred)
+        mock_client.assert_called_with(service)
+
+    def test_credentials_using_role(self):
+        cred = self.data["TEST_GET_CREDENTIALS_WITH_ROLE"]
+        self.connector.credential = cred
+        mocked = self.mocker.patch.object(self.connector, "get_assume_role_credentials")
+        self.connector.credentials()
+        mocked.assert_called_once_with(cred["role_name"])
+
+    def test_credentials_using_access_key(self):
+        self.connector.credential = self.data["TEST_GET_CREDENTIALS_WITH_KEYS"]
+        mocked = self.mocker.patch.object(self.connector, "boto_cred")
+        self.connector.credentials()
+        mocked.assert_called_once_with(
+            self.connector.region,
+            self.connector.provider_settings.access_key,
+            self.connector.provider_settings.secret_key,
+            self.connector.provider_settings.session_token,
+        )
+
+    def test_handle_credential_change_when_changed(self):
+        cred = self.data["TEST_GET_CREDENTIALS_WITH_ROLE"].copy()
+        cred["role_name"] = "new-role-name"
+        self.connector.credential = self.data["TEST_GET_CREDENTIALS_WITH_ROLE"]
+        self.connector.temp_sts_cred = self.connector.boto_cred(
+            "region", "access_key", "secret_key", "session_token"
+        )
+        self.connector.handle_credential_change(cred)
+        assert self.connector.temp_sts_cred is None
+
+    def test_handle_credential_change_when_unchanged(self):
+        self.connector.credential = self.data["TEST_GET_CREDENTIALS_WITH_ROLE"]
+        self.connector.temp_sts_cred = self.connector.boto_cred(
+            "region", "access_key", "secret_key", "session_token"
+        )
+        self.connector.handle_credential_change(
+            self.data["TEST_GET_CREDENTIALS_WITH_ROLE"]
+        )
+        assert self.connector.temp_sts_cred is not None
+
+    def test_boto_cred(self):
+        expected = self.data["TEST_BOTO_CRED_FULL"]
+        actual = self.connector.boto_cred(
+            expected["region_name"],
+            expected["aws_access_key_id"],
+            expected["aws_secret_access_key"],
+            expected["aws_session_token"],
+        )
+        assert actual == expected
+
     def test_scan_all(self):
         # Test data
         test_single_account = self.data["TEST_ACCOUNTS"]
@@ -139,7 +206,7 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
         self.connector.scan_all()
 
         # Assertions
-        expected_calls = 2
+        expected_calls = 3
         assert mock_scan.call_count == expected_calls
         self.assert_healthcheck_called(mock_healthcheck, expected_calls)
 
@@ -539,8 +606,38 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
         # Assertions
         assert result["AccessKeyId"] == "sts-access-key-value"
         mock.assert_called_with(
-            RoleArn="arn:aws:iam::999999999999:role/CensysCloudConnectorRole"
+            RoleArn="arn:aws:iam::999999999999:role/CensysCloudConnectorRole",
+            RoleSessionName=AwsDefaults.ROLE_SESSION_NAME,
         )
+
+    def test_assume_role_with_custom_names(self):
+        expected_role = "test-override-role-name"
+        expected_role_session = "test-override-role-name"
+        data = self.data["TEST_STS"].copy()
+        mock = self.mock_api_response("assume_role", data)
+        self.connector.credential["role_session_name"] = expected_role_session
+
+        self.connector.assume_role(expected_role)
+
+        mock.assert_called_with(
+            RoleArn=f"arn:aws:iam::999999999999:role/{expected_role}",
+            RoleSessionName=expected_role_session,
+        )
+
+    def test_get_assume_role_credentials_uses_cache(self):
+        expected = self.data["TEST_GET_CREDENTIALS_WITH_ROLE"]
+        self.connector.temp_sts_cred = expected
+        assert self.connector.get_assume_role_credentials() == expected
+
+    def test_get_assume_role_credentials(self):
+        role_name = "test-assume-role-name"
+        expected = self.data["TEST_BOTO_CRED_FULL"]
+
+        assume_role = self.mock_api_response("assume_role", self.data["TEST_STS"])
+        self.mocker.patch.object(self.connector, "boto_cred", return_value=expected)
+
+        assert self.connector.get_assume_role_credentials(role_name) == expected
+        assume_role.assert_called_once()
 
     def test_format_label_without_region(self):
         # Test data

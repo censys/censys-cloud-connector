@@ -48,6 +48,7 @@
     "regions": ["test-region-1"]
   },
   "TEST_VERIFY_SETTINGS": {
+    "account_number": 111111111111,
     "access_key": "test-access-key",
     "secret_key": "test-secret-key",
     "regions": ["test-region"]

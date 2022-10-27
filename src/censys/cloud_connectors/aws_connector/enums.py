@@ -2,6 +2,14 @@
 from enum import Enum
 
 
+class AwsDefaults(str, Enum):
+    """Default values for AWS connector."""
+
+    STACK_SET_NAME = "CensysCloudConnector"
+    ROLE_NAME = "CensysCloudConnectorRole"  # Compatible with existing connector
+    ROLE_SESSION_NAME = "censys-cloud-connector"
+
+
 class AwsResourceTypes(str, Enum):
     """AWS resource types.
 
@@ -55,3 +63,6 @@ class AwsMessages(str, Enum):
     ORGANIZATIONS_NOT_IN_USE = "AWS Organizations is not enabled in this account."
     PROMPT_SELECT_PROFILE = "Select an AWS profile to use."
     PROMPT_NO_ACCOUNTS_FOUND = "No additional accounts were found. Continue?"
+    KEY_OR_ROLE_REQUIRED = (
+        "Specify either access_key and secret_key or role_name and role_session_name"
+    )

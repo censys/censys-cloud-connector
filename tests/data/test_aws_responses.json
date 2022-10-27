@@ -6,6 +6,7 @@
     "regions": ["test-region-1"]
   },
   "TEST_ACCOUNTS": {
+    "account_number": 999999999999,
     "access_key": "xxxxxxxxxxxxxxxxxxxx",
     "secret_key": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
     "accounts": [
@@ -459,5 +460,33 @@
         ]
       }
     ]
+  },
+  "TEST_GET_CREDENTIALS_WITH_ROLE": {
+    "account_number": "111111111111",
+    "access_key": "test-access-key",
+    "secret_key": "test-secret-key",
+    "role_name": "test-role-name",
+    "role_session_name": "test-role-session-name",
+    "ignore_tags": ["test-ignore-tag-1"]
+  },
+  "TEST_GET_CREDENTIALS_WITH_KEYS": {
+    "account_number": "111111111111",
+    "access_key": "test-access-key",
+    "secret_key": "test-secret-key",
+    "ignore_tags": ["test-ignore-tag-1"]
+  },
+  "TEST_BOTO_CRED_FULL": {
+    "region_name": "test-region-name",
+    "aws_access_key_id": "test-access-key",
+    "aws_secret_access_key": "test-secret-key",
+    "aws_session_token": "test-session-token"
+  },
+  "TEST_BOTO_CRED_SSO": {
+    "sso_start_url": "test-sso-start-url",
+    "sso_region": "test-sso-region",
+    "sso_account_id": "test-sso-account-id",
+    "sso_role_name": "test-sso-role-name",
+    "region": "test-region",
+    "output": "json"
   }
 }

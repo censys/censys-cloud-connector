@@ -4,8 +4,7 @@ from censys.cloud_connectors.common.connector import CloudConnector
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.seed import Seed
 from censys.cloud_connectors.common.settings import Settings
-
-from .base_case import BaseCase
+from tests.base_case import BaseCase
 
 
 class BaseConnectorCase(BaseCase):

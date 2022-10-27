@@ -3,16 +3,13 @@ import os
 import re
 from typing import Optional
 
-from censys.cloud_connectors.aws_connector.enums import AwsMessages
+from censys.cloud_connectors.aws_connector.enums import AwsDefaults, AwsMessages
 from censys.cloud_connectors.aws_connector.service import AwsSetupService
 from censys.cloud_connectors.aws_connector.settings import AwsSpecificSettings
 from censys.cloud_connectors.common.cli.provider_setup import ProviderSetupCli
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.settings import Settings
 
-DEFAULT_STACK_SET_NAME = "CensysCloudConnector"
-DEFAULT_ROLE = "CensysCloudConnectorRole"  # Compatible with existing connector
-DEFAULT_ROLE_SESSION_NAME = "censys-cloud-connector"
 BACKOFF_MAX_TIME = 20
 BACKOFF_TRIES = 3
 
@@ -58,7 +55,7 @@ class AwsSetupCli(ProviderSetupCli):
                 "type": "input",
                 "name": "answer",
                 "message": "Enter role session name to use:",
-                "default": DEFAULT_ROLE_SESSION_NAME,
+                "default": AwsDefaults.ROLE_SESSION_NAME,
                 "invalid_message": "Role session name must be between 1 and 64 characters.",
                 "validate": lambda name: re.match(r"^[\w+=,.@-]{2,64}$", name),
             }
@@ -76,7 +73,7 @@ class AwsSetupCli(ProviderSetupCli):
                 "type": "input",
                 "name": "answer",
                 "message": "Enter the StackSet name to use:",
-                "default": DEFAULT_STACK_SET_NAME,
+                "default": AwsDefaults.STACK_SET_NAME,
                 "invalid_message": "StackSet name must be between 1 and 64 characters.",
                 "validate": lambda name: len(name) > 1 and len(name) <= 64,
             }
@@ -248,7 +245,7 @@ class AwsSetupCli(ProviderSetupCli):
                 "type": "input",
                 "name": "answer",
                 "message": "Enter an existing IAM Role name to use:",
-                "default": DEFAULT_ROLE,
+                "default": AwsDefaults.ROLE_NAME,
                 "invalid_message": "Role name must be between 1 and 64 characters. Use alphanumeric and '+=,.@-_' characters.",
                 "validate": self.aws.valid_role_name,
             }
