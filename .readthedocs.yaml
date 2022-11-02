@@ -18,6 +18,9 @@ python:
       path: .
     - requirements: docs-requirements.txt
 
+formats:
+  - pdf
+
 sphinx:
   configuration: docs/conf.py
   fail_on_warning: true
