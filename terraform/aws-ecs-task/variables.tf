@@ -11,12 +11,6 @@ variable "aws_availability_zone" {
   description = "The AWS availability zones to use."
 }
 
-variable "aws_profile" {
-  type        = string
-  default     = "default"
-  description = "The AWS profile to use."
-}
-
 variable "image_uri" {
   type        = string
   default     = "gcr.io/censys-io/censys-cloud-connector"

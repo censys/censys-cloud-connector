@@ -9,9 +9,11 @@ The following prerequisites are required to run any of the Terraform deployment
 methods:
 
 - [Terraform](https://www.terraform.io/downloads)
-- [Poetry](https://python-poetry.org/docs/)
+- [A valid `providers.yml`](../README.md#configuration)
 
 ## Methods
 
-- [Google Scheduled Function](./google-scheduled-function) - Deploy
-  the Censys Cloud Connector using Google Cloud Functions.
+- [AWS ECS Task](./aws-ecs-task) - Deploy to an ECS cluster scheduled with
+  EventBridge.
+- [Google Scheduled Function](./google-scheduled-function) - Deploy using
+  Google Cloud Functions.
