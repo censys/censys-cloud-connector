@@ -684,7 +684,7 @@ class AwsCloudConnector(CloudConnector):
         except ClientError as e:
             self.logger.error(f"Could not connect to ECS. Error: {e}")
 
-    def _get_s3_region(self, client: S3Client, bucket: str) -> str:
+    def get_s3_region(self, client: S3Client, bucket: str) -> str:
         """Lookup S3 bucket location.
 
         Args:
@@ -708,12 +708,12 @@ class AwsCloudConnector(CloudConnector):
                 if not bucket_name:
                     continue
 
-                region = self._get_s3_region(client, bucket_name)
+                region = self.get_s3_region(client, bucket_name)
                 label = self.format_label(SeedLabel.STORAGE_BUCKET, region)
 
                 with SuppressValidationError():
                     bucket_asset = AwsStorageBucketAsset(
-                        value=AwsStorageBucketAsset.url(bucket_name, self.region),
+                        value=AwsStorageBucketAsset.url(bucket_name, region),
                         uid=label,
                         scan_data={
                             "accountNumber": self.account_number,

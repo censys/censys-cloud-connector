@@ -539,7 +539,7 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
         mock_add = self.mocker.patch.object(self.connector, "add_cloud_asset")
 
         self.mocker.patch.object(
-            self.connector, "_get_s3_region"
+            self.connector, "get_s3_region"
         ).return_value = self.region
 
         # Actual Call
@@ -549,7 +549,34 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
         mock_add.assert_has_calls(expected_calls)
         assert mock_add.call_count == 2
 
-    # TODO test_get_s3_instances_without_region
+    def test_get_s3_region_has_no_region(self):
+        data = {"LocationConstraint": None}
+        bucket_name = "test-bucket-1"
+
+        mock_client = self.mocker.patch("mypy_boto3_s3.client.S3Client", autospec=True)
+        mock_bucket_location = self.mocker.patch.object(
+            mock_client, "get_bucket_location", return_value=data
+        )
+        region = self.connector.get_s3_region(mock_client, bucket_name)
+
+        mock_bucket_location.assert_called_once_with(Bucket=bucket_name)
+        # TODO: use AwsDefaults.REGION.value when available
+        assert region == "us-east-1"
+
+    def test_get_s3_handles_bucket_region_exception(self):
+        buckets = self.data["TEST_S3_BUCKETS"].copy()
+
+        self.mock_api_response("list_buckets", buckets)
+        self.mocker.patch.object(
+            self.connector, "get_s3_region", side_effect=ClientError({}, "test")
+        )
+        mock_add_asset = self.mocker.patch.object(self.connector, "add_cloud_asset")
+        mock_log = self.mocker.patch.object(self.connector.logger, "error")
+
+        self.connector.get_s3_instances()
+
+        mock_add_asset.assert_not_called()
+        mock_log.assert_called_once()
 
     def test_ecs_instances_creates_seeds(self):
         # Test data
@@ -607,7 +634,7 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
         assert result["AccessKeyId"] == "sts-access-key-value"
         mock.assert_called_with(
             RoleArn="arn:aws:iam::999999999999:role/CensysCloudConnectorRole",
-            RoleSessionName=AwsDefaults.ROLE_SESSION_NAME,
+            RoleSessionName=AwsDefaults.ROLE_SESSION_NAME.value,
         )
 
     def test_assume_role_with_custom_names(self):

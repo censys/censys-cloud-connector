@@ -60,6 +60,10 @@ class SeedTest(TestCase):
         [
             ("censys.io", "censys.io"),
             ("https://search.censys.io.", "search.censys.io"),
+            (
+                "_111111111111111111111111111111.one.two.three.example.com",
+                "_111111111111111111111111111111.one.two.three.example.com",
+            ),
         ]
     )
     def test_domain_seed(self, test_value: str, expected_value: str):

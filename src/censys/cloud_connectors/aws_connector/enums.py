@@ -9,6 +9,14 @@ class AwsDefaults(str, Enum):
     ROLE_NAME = "CensysCloudConnectorRole"  # Compatible with existing connector
     ROLE_SESSION_NAME = "censys-cloud-connector"
 
+    def __str__(self) -> str:
+        """Get the string representation of the message.
+
+        Returns:
+            str: The string representation of the message.
+        """
+        return self.value
+
 
 class AwsResourceTypes(str, Enum):
     """AWS resource types.
@@ -66,3 +74,11 @@ class AwsMessages(str, Enum):
     KEY_OR_ROLE_REQUIRED = (
         "Specify either access_key and secret_key or role_name and role_session_name"
     )
+
+    def __str__(self) -> str:
+        """Get the string representation of the message.
+
+        Returns:
+            str: The string representation of the message.
+        """
+        return self.value

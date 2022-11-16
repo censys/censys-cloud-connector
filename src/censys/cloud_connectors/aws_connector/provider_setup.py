@@ -55,7 +55,7 @@ class AwsSetupCli(ProviderSetupCli):
                 "type": "input",
                 "name": "answer",
                 "message": "Enter role session name to use:",
-                "default": AwsDefaults.ROLE_SESSION_NAME,
+                "default": AwsDefaults.ROLE_SESSION_NAME.value,
                 "invalid_message": "Role session name must be between 1 and 64 characters.",
                 "validate": lambda name: re.match(r"^[\w+=,.@-]{2,64}$", name),
             }
@@ -73,7 +73,7 @@ class AwsSetupCli(ProviderSetupCli):
                 "type": "input",
                 "name": "answer",
                 "message": "Enter the StackSet name to use:",
-                "default": AwsDefaults.STACK_SET_NAME,
+                "default": AwsDefaults.STACK_SET_NAME.value,
                 "invalid_message": "StackSet name must be between 1 and 64 characters.",
                 "validate": lambda name: len(name) > 1 and len(name) <= 64,
             }
@@ -245,7 +245,7 @@ class AwsSetupCli(ProviderSetupCli):
                 "type": "input",
                 "name": "answer",
                 "message": "Enter an existing IAM Role name to use:",
-                "default": AwsDefaults.ROLE_NAME,
+                "default": AwsDefaults.ROLE_NAME.value,
                 "invalid_message": "Role name must be between 1 and 64 characters. Use alphanumeric and '+=,.@-_' characters.",
                 "validate": self.aws.valid_role_name,
             }
