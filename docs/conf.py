@@ -33,6 +33,7 @@ extensions = [
     "sphinx_copybutton",
     "sphinx-prompt",
     "sphinxcontrib.autoprogram",
+    "sphinx.ext.autosectionlabel",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -77,3 +78,5 @@ html_static_path: list[str] = []
 # -- Extensions configuration -----------------------------------------------
 
 myst_heading_anchors = 3
+
+autosectionlabel_prefix_document = True

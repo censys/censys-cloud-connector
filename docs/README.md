@@ -12,6 +12,8 @@ View the docs on [Read the Docs](https://censys-cloud-connector.rtfd.io/).
 
 Install the docs dependencies:
 
+Note: A shell restart may be required to pick up any installed dependencies.
+
 ```bash
 poetry install --with docs
 ```

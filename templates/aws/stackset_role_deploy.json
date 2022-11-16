@@ -1,0 +1,48 @@
+{
+  "Parameters": {
+    "PrimaryAccountID": {
+      "AllowedPattern": "\\d{12}",
+      "ConstraintDescription": "\"PrimaryAccountID\" must be a valid AWS Account ID (12 digits).",
+      "Description": "Enter the AWS Account ID where your Censys Cloud Connector will run.",
+      "MaxLength": 12,
+      "MinLength": 12,
+      "Type": "String"
+    },
+    "Principal": {
+      "AllowedPattern": "[a-zA-Z0-9]{1,64}",
+      "ConstraintDescription": "\"Principal\" must be a valid AWS IAM Principal name.",
+      "Description": "Enter the account principal.",
+      "MaxLength": 64,
+      "MinLength": 1,
+      "Type": "String",
+      "Default": "root"
+    }
+  },
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Censys AWS Cloud Connector cross-account Role deployment.",
+  "Resources": {
+    "CensysCloudConnectorSetup": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Sub": "arn:aws:iam::${PrimaryAccountID}:${Principal}"
+                }
+              },
+              "Action": ["sts:AssumeRole"]
+            }
+          ]
+        },
+        "Description": "This role was created by the Censys Cloud Connector. The Censys Cloud Connector utilizes this role to enumerate assets in this account.",
+        "ManagedPolicyArns": ["arn:aws:iam::aws:policy/SecurityAudit"],
+        "Path": "/",
+        "RoleName": "CensysCloudConnectorRole"
+      }
+    }
+  }
+}

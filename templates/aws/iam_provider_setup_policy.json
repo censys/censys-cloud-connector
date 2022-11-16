@@ -1,0 +1,15 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "censysCloudConnectorProviderSetup",
+      "Effect": "Allow",
+      "Action": [
+        "sts:GetCallerIdentity",
+        "organizations:ListAccounts",
+        "cloudformation:ListStackInstances"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

@@ -22,6 +22,12 @@ dev:  ## Install the connector development dependencies
 	@if [ -z $(POETRY) ]; then echo "Poetry could not be found. See https://python-poetry.org/docs/"; exit 2; fi
 	$(POETRY) install --with dev,test
 
+.PHONY: docs
+docs:  ## Build the documentation
+	@if [ -z $(POETRY) ]; then echo "Poetry could not be found. See https://python-poetry.org/docs/"; exit 2; fi
+	$(POETRY) install --with docs
+	cd docs && $(POETRY) run make html
+
 .PHONY: clean
 clean:
 	find . -type d -name "__pycache__" | xargs rm -rf {};

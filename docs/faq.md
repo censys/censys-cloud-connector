@@ -11,18 +11,11 @@ correct version of Python automatically.
 
 The following permissions are required to scan:
 
-- `route53:ListHostedZones`
-- `elasticloadbalancing:DescribeLoadBalancers`
-- `route53domains:ListDomains`
-- `ec2:DescribeNetworkInterfaces`
-- `rds:DescribeDBInstances`
-- `route53:ListResourceRecordSets`
-- `ecs:ListContainerInstances`
-- `apigateway:GET`
-- `s3:GetBucketLocation`
-- `s3:ListBucket`
-- `s3:ListAllMyBuckets`
-- `ecs:ListClusters`
+```{literalinclude} ../templates/aws/iam_least_privilege_policy.json
+---
+language: json
+---
+```
 
 ## Azure Roles
 

@@ -72,6 +72,7 @@
     "Minikube",
     "msrest",
     "multiselect",
+    "mypy",
     "ordereddict",
     "pydantic",
     "pyenv",

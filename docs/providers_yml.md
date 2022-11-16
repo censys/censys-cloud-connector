@@ -1,4 +1,4 @@
-# providers.yml
+# Provider Configuration
 
 The `providers.yml` file contains the configuration for all cloud providers.
 The file is a YAML file and is structured as follows:

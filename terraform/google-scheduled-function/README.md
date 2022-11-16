@@ -65,13 +65,13 @@ Censys Cloud Connector.
 8. To see what resources will be created or updated, run the following command:
 
    ```sh
-   terraform plan -var-file terraform.tfvars
+   terraform plan -var-file terraform.tfvars -out=censys-tfplan -input=false
    ```
 
 9. To create or update the resources, run the following command:
 
    ```sh
-   terraform apply -var-file terraform.tfvars
+   terraform apply -input=false censys-tfplan
    ```
 
 ## Cleanup

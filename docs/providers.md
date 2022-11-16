@@ -55,7 +55,8 @@ aws/provider_setup
 
 Log in to your cloud provider's CLI tool using the following commands:
 
-- [AWS CLI][aws-cli]: `aws configure` or `aws configure sso`
+- [AWS CLI][aws-cli]: Credentials are stored on your machine, making
+  authentication unnecessary. See {doc}`aws/provider_setup` for more information.
 
 - [Azure CLI][azure-cli]: `az login`
 

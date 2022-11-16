@@ -10,7 +10,7 @@ Your Censys ASM API key found in the
 
 ```{envvar} PROVIDERS_CONFIG_FILE
 
-The path to the {doc}`providers_yml` file.
+The path to {doc}`providers_yml`.
 
 Default: `./providers.yml`
 ```

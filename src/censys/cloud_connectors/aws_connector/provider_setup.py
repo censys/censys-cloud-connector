@@ -218,7 +218,7 @@ class AwsSetupCli(ProviderSetupCli):
             return self.aws.get_organization_list_accounts(exclude_id)
         except ClientError as e:
             if e.response["Error"]["Code"] == "AWSOrganizationsNotInUseException":
-                self.print_warning(AwsMessages.ORGANIZATIONS_NOT_IN_USE)
+                self.print_warning(AwsMessages.ORGANIZATIONS_NOT_IN_USE.value)
                 self.confirm_or_exit()
             else:
                 self.print_error(f"[red]Get Accounts error: {e}")
@@ -500,9 +500,7 @@ class AwsSetupCli(ProviderSetupCli):
         """
         self.print_info(f"Please ensure the role {role} exists in your account(s).")
         self.print_info("For more information please see the README:")
-        self.print_info(
-            "https://github.com/censys/censys-cloud-connector/blob/main/README.md#aws-cloud-connector-role"
-        )
+        self.print_info(AwsMessages.AWS_ROLES_LINK.value)
         self.confirm_or_exit()
 
     def get_profile_choices(self):
@@ -537,7 +535,7 @@ class AwsSetupCli(ProviderSetupCli):
                 )
 
             choice = self.prompt_select_one(
-                f"{AwsMessages.PROMPT_SELECT_PROFILE}",
+                AwsMessages.PROMPT_SELECT_PROFILE.value,
                 choices,
                 default=os.getenv("AWS_PROFILE"),
             )
