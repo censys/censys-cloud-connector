@@ -28,7 +28,7 @@ have opt-in defaults.
 
 - Select a credential profile allows you to choose which
   [named profile][aws-cli-profile] to use during provider setup.
-  - You can optionally save the profile's credentials to `providers.yml`
+  - You can optionally save the profile's credentials to `providers.yml`.
 - Define a role name to use STS [Assume Role][aws-sts-assume-role]. This enables
   running the connector without defining an access or secret key.
   - When using a role, AWS recommends using a [Session Role Name][aws-boto3-sts].
@@ -40,6 +40,44 @@ have opt-in defaults.
   feature has two ways to look up accounts:
   - Find accounts with a CloudFormation StackSet Instance
   - Find accounts using Organization List Accounts
+
+## Supported Provider Configurations
+
+The Censys Cloud Connector officially supports the following IAM configurations:
+
+- [IAM User in Parent, Assume Role in Children](#iam-user-in-parent-assume-role-in-children)
+- [IAM User in Parent, IAM Users in each children](#iam-user-in-parent-iam-users-in-each-children)
+- [ECS Role in Parent, Assume Role in Children](#ecs-role-in-parent-assume-role-in-children)
+
+### IAM User in Parent, Assume Role in Children
+
+This is the recommended configuration if you are running the connector outside
+of ECS.
+
+```{literalinclude} ../../tests/data/aws/accounts_parent_key_child_role.yml
+---
+language: yaml
+---
+```
+
+### IAM User in Parent, IAM Users in each children
+
+```{literalinclude} ../../tests/data/aws/accounts_key.yml
+---
+language: yaml
+---
+```
+
+### ECS Role in Parent, Assume Role in Children
+
+This configuration can be used in conjunction with the
+{doc}`AWS ECS <../terraform/aws_ecs_task>` deployment.
+
+```{literalinclude} ../../tests/data/aws/ecs.yml
+---
+language: yaml
+---
+```
 
 ## Permissions Overview
 

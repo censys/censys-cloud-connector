@@ -92,35 +92,45 @@ class TestAwsSettings(BaseCase, TestCase):
         assert setting.regions == ["test-region"]
         assert credential["account_number"] == 111111111111
 
-    def test_primary_with_access_key(self):
-        credential = self.get_credentials("primary_access_key.yml")[0]
-        assert credential["access_key"] == "test-primary-access-key"
-        assert credential["secret_key"] == "test-primary-secret-key"
+    def test_parent_key_child_role_loads_parent_key(self):
+        credential = self.get_credentials("accounts_parent_key_child_role.yml")[0]
+        assert credential["access_key"] == "example-access-key-1"
+        assert credential["secret_key"] == "example-secret-key-1"
 
-    def test_primary_with_role(self):
-        credential = self.get_credentials("primary_role.yml")[0]
-        assert credential["role_name"] == "test-primary-role-name"
-        assert credential["role_session_name"] == "test-primary-role-session-name"
+    def test_parent_key_child_role_loads_child_role(self):
+        credential = self.get_credentials("accounts_parent_key_child_role.yml")[1]
+        assert credential["role_name"] == "example-role-2"
+        assert credential["account_number"] == 111111111112
 
-    def test_accounts_with_access_key(self):
+    def test_parent_account_with_access_key(self):
+        credential = self.get_credentials("accounts_key.yml")[0]
+        assert credential["access_key"] == "example-access-key-1"
+        assert credential["secret_key"] == "example-secret-key-1"
+
+    def test_child_account_with_access_key(self):
         credential = self.get_credentials("accounts_key.yml")[1]
-        assert credential["access_key"] == "test-111111111112-access-key"
-        assert credential["secret_key"] == "test-111111111112-secret-key"
+        assert credential["access_key"] == "example-access-key-2"
+        assert credential["secret_key"] == "example-secret-key-2"
 
-    def test_accounts_with_role(self):
-        credential = self.get_credentials("accounts_role.yml")[1]
-        assert credential["role_name"] == "test-111111111112-role-name"
-        assert credential["role_session_name"] == "test-111111111112-role-session-name"
+    def test_ecs_parent_account_with_role(self):
+        credential = self.get_credentials("ecs.yml")[0]
+        assert credential["role_name"] == "example-role-1"
+        assert credential["role_session_name"] == "censys-cloud-connector"
+
+    def test_ecs_child_account_with_role(self):
+        credential = self.get_credentials("ecs.yml")[1]
+        assert credential["role_name"] == "example-role-2"
+        assert credential["role_session_name"] == "censys-cloud-connector"
 
     def test_accounts_minimum_required_fields(self):
-        settings = self.get_settings_file("accounts.yml")
+        settings = self.get_settings_file("accounts_inherit.yml")
         setting = settings[0]
         credentials = list(setting.get_credentials())
         assert len(settings) == 1
         assert len(credentials) == 3
 
     def test_accounts_get_credentials_enumerates_all(self):
-        setting = self.get_settings_file("accounts.yml")[0]
+        setting = self.get_settings_file("accounts_inherit.yml")[0]
         for cred in setting.get_credentials():
             assert cred["account_number"] in [111111111111, 111111111112, 111111111113]
 
