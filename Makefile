@@ -18,9 +18,29 @@ install:  ## Install the connector dependencies
 	$(POETRY) install
 
 .PHONY: dev
-dev:  ## Install the connector development dependencies
+dev:  ## Install the connector with development dependencies
 	@if [ -z $(POETRY) ]; then echo "Poetry could not be found. See https://python-poetry.org/docs/"; exit 2; fi
 	$(POETRY) install --with dev,test
+
+.PHONY: install-aws
+install-aws:  ## Install the connector with aws dependencies
+	@if [ -z $(POETRY) ]; then echo "Poetry could not be found. See https://python-poetry.org/docs/"; exit 2; fi
+	$(POETRY) install --with aws
+
+.PHONY: install-gcp
+install-gcp:  ## Install the connector with gcp dependencies
+	@if [ -z $(POETRY) ]; then echo "Poetry could not be found. See https://python-poetry.org/docs/"; exit 2; fi
+	$(POETRY) install --with gcp
+
+.PHONY: install-azure
+install-azure:  ## Install the connector with azure dependencies
+	@if [ -z $(POETRY) ]; then echo "Poetry could not be found. See https://python-poetry.org/docs/"; exit 2; fi
+	$(POETRY) install --with azure
+
+.PHONY: install-all
+install-all:  ## Install the connector with all provider dependency groups
+	@if [ -z $(POETRY) ]; then echo "Poetry could not be found. See https://python-poetry.org/docs/"; exit 2; fi
+	$(POETRY) install --with aws,gcp,azure
 
 .PHONY: docs
 docs:  ## Build the documentation
@@ -54,10 +74,14 @@ lint:
 
 .PHONY: test
 test:  ## Runs tests
+	@if [ -z $(POETRY) ]; then echo "Poetry could not be found. See https://python-poetry.org/docs/"; exit 2; fi
+	$(POETRY) install --with test
 	$(POETRY) run pytest --no-cov
 
 .PHONY: test-cov
 test-cov:  ## Runs tests and generates coverage report
+	@if [ -z $(POETRY) ]; then echo "Poetry could not be found. See https://python-poetry.org/docs/"; exit 2; fi
+	$(POETRY) install --with test
 	$(POETRY) run pytest --cov --cov-report html
 
 .PHONY: build-image

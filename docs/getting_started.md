@@ -29,11 +29,39 @@ Ensure you have poetry installed (may require restarting shell)
 pip install --upgrade poetry
 ```
 
-Install the dependencies
+Start a shell and activate the virtual environment
+(this is optional if you'd like to install dependencies globally)
 
 ```{prompt} bash
-poetry install
+poetry shell
 ```
+
+Install the dependencies
+(a Makefile is provided for convenience in installation)
+
+- Installs dependencies for Azure, AWS, and GCP
+
+  ```{prompt} bash
+  make install-all
+  ```
+
+- Installs dependencies for Azure
+
+  ```{prompt} bash
+  make install-azure
+  ```
+
+- Installs dependencies for AWS
+
+  ```{prompt} bash
+  make install-aws
+  ```
+
+- Installs dependencies for GCP
+
+  ```{prompt} bash
+  make install-gcp
+  ```
 
 Copy .env.sample to .env
 
