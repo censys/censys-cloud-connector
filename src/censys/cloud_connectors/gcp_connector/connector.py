@@ -14,7 +14,7 @@ from google.oauth2 import service_account
 from censys.cloud_connectors.common.cloud_asset import GcpStorageBucketAsset
 from censys.cloud_connectors.common.connector import CloudConnector
 from censys.cloud_connectors.common.context import SuppressValidationError
-from censys.cloud_connectors.common.enums import ProviderEnum
+from censys.cloud_connectors.common.enums import EventTypeEnum, ProviderEnum
 from censys.cloud_connectors.common.healthcheck import Healthcheck
 from censys.cloud_connectors.common.seed import DomainSeed, IpSeed
 from censys.cloud_connectors.common.settings import Settings
@@ -92,6 +92,7 @@ class GcpCloudConnector(CloudConnector):
             self.logger.error(
                 f"Unable to scan GCP organization {self.organization_id}. Error: {e}",
             )
+            self.dispatch_event(EventTypeEnum.SCAN_FAILED, exception=e)
 
     def scan_all(self):
         """Scan all Gcp Organizations."""

@@ -30,6 +30,7 @@ def get_parser() -> argparse.ArgumentParser:
 
     for command in commands.__dict__.values():
         try:
+            # FIXME: This is weird and doesn't just include the commands
             include_func = command.include_cli
         except AttributeError:
             continue

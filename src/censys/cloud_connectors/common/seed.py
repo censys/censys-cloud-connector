@@ -86,6 +86,8 @@ class DomainSeed(Seed):
         except ValueError:
             raise ValueError("Domain is not valid")
         host = url.host.lower()
+        if "_" in host:
+            raise ValueError("Domain contains an underscore")
         if host in IGNORED_DOMAINS:
             raise ValueError("Domain is in the ignore list")
         return host

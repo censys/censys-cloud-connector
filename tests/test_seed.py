@@ -61,8 +61,8 @@ class SeedTest(TestCase):
             ("censys.io", "censys.io"),
             ("https://search.censys.io.", "search.censys.io"),
             (
-                "_111111111111111111111111111111.one.two.three.example.com",
-                "_111111111111111111111111111111.one.two.three.example.com",
+                "111111111111111111111111111111.one.two.three.example.com",
+                "111111111111111111111111111111.one.two.three.example.com",
             ),
         ]
     )
@@ -76,6 +76,7 @@ class SeedTest(TestCase):
         [
             ("notaprotocol://bad.domain/path", "Domain is not valid"),
             ("google.com", "Domain is in the ignore list"),
+            ("_bad.domain", "Domain contains an underscore"),
         ]
     )
     def test_domain_seed_validation(self, value: str, exception_message: str):

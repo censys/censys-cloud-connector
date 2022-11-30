@@ -18,7 +18,7 @@ from msrest.serialization import Model as AzureModel
 from censys.cloud_connectors.common.cloud_asset import AzureContainerAsset
 from censys.cloud_connectors.common.connector import CloudConnector
 from censys.cloud_connectors.common.context import SuppressValidationError
-from censys.cloud_connectors.common.enums import ProviderEnum
+from censys.cloud_connectors.common.enums import EventTypeEnum, ProviderEnum
 from censys.cloud_connectors.common.healthcheck import Healthcheck
 from censys.cloud_connectors.common.seed import DomainSeed, IpSeed
 from censys.cloud_connectors.common.settings import Settings
@@ -85,6 +85,7 @@ class AzureCloudConnector(CloudConnector):
                     self.logger.error(
                         f"Unable to scan Azure Subscription {subscription_id}. Error: {e}"
                     )
+                    self.dispatch_event(EventTypeEnum.SCAN_FAILED, exception=e)
                 self.subscription_id = None
 
     def format_label(self, asset: AzureModel) -> str:

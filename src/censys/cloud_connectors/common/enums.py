@@ -49,3 +49,15 @@ class ProviderEnum(str, Enum, metaclass=CaseInsensitiveEnumMeta):
             str: The module path of the provider.
         """
         return f"censys.cloud_connectors.{self.name.lower()}_connector"
+
+
+class EventTypeEnum(str, Enum, metaclass=CaseInsensitiveEnumMeta):
+    """Event types supported by Censys."""
+
+    SCAN_STARTED = "SCAN_STARTED"
+    SCAN_FAILED = "SCAN_FAILED"
+    SCAN_FINISHED = "SCAN_FINISHED"
+    SEED_FOUND = "SEED_FOUND"
+    CLOUD_ASSET_FOUND = "CLOUD_ASSET_FOUND"
+    SEEDS_SUBMITTED = "SEEDS_SUBMITTED"
+    CLOUD_ASSETS_SUBMITTED = "CLOUD_ASSETS_SUBMITTED"

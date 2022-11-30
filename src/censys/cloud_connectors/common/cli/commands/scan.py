@@ -10,6 +10,7 @@ from pydantic import ValidationError
 from censys.cloud_connectors import __version__
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.logger import get_logger
+from censys.cloud_connectors.common.plugins import CloudConnectorPluginRegistry
 from censys.cloud_connectors.common.settings import Settings
 
 
@@ -27,6 +28,7 @@ def cli_scan(args: argparse.Namespace):
 
     try:
         settings = Settings(_env_file=".env")  # type: ignore
+        CloudConnectorPluginRegistry.load_plugins(settings, logger)
     except ValidationError as e:  # pragma: no cover
         logger.error(e)
         return

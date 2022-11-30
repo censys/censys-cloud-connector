@@ -190,6 +190,13 @@ class Settings(BaseSettings):
         description="Provider Setup CLI Validation timeout",
     )
 
+    # Plugins
+    aws_tags_plugin_enabled: bool = Field(
+        default=False,
+        env="AWS_TAGS_PLUGIN_ENABLED",
+        description="Enable AWS Tags plugin",
+    )
+
     class Config:
         """Config for pydantic."""
 

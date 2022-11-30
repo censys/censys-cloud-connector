@@ -27,6 +27,7 @@
     "azuredocs",
     "backoff",
     "balancingv",
+    "boto",
     "boto3",
     "botocore",
     "capsys",

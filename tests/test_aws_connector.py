@@ -488,8 +488,16 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
         resources = self.data["TEST_ROUTE53_ZONES_LIST_RESOURCE_RECORD_SETS"].copy()
         test_label = f"AWS: Route53/Zones - 999999999999/{self.region}"
         expected_calls = [
-            call(DomainSeed(value="example.com", label=test_label)),
-            call(DomainSeed(value="sub.example.com", label=test_label)),
+            call(
+                DomainSeed(value="example.com", label=test_label),
+                route53_zone_res=self.mocker.ANY,
+                aws_client=self.mocker.ANY,
+            ),
+            call(
+                DomainSeed(value="sub.example.com", label=test_label),
+                route53_zone_res=self.mocker.ANY,
+                aws_client=self.mocker.ANY,
+            ),
         ]
 
         # Mock
@@ -523,14 +531,18 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
                     value="https://test-bucket-1.s3.test-region-1.amazonaws.com",
                     uid=test_label,
                     scan_data={"accountNumber": 999999999999},
-                )
+                ),
+                bucket_name=self.mocker.ANY,
+                aws_client=self.mocker.ANY,
             ),
             call(
                 AwsStorageBucketAsset(
                     value="https://test-bucket-2.s3.test-region-1.amazonaws.com",
                     uid=test_label,
                     scan_data={"accountNumber": 999999999999},
-                )
+                ),
+                bucket_name=self.mocker.ANY,
+                aws_client=self.mocker.ANY,
             ),
         ]
 
@@ -586,8 +598,14 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
         descriptions = self.data["TEST_ECS_EC2_DESCRIBE_INSTANCES"].copy()
         test_label = f"AWS: ECS - 999999999999/{self.region}"
         expected_calls = [
-            call(IpSeed(value="108.156.117.66", label=test_label)),
-            call(IpSeed(value="108.156.117.67", label=test_label)),
+            call(
+                IpSeed(value="108.156.117.66", label=test_label),
+                ecs_res=self.mocker.ANY,
+            ),
+            call(
+                IpSeed(value="108.156.117.67", label=test_label),
+                ecs_res=self.mocker.ANY,
+            ),
         ]
 
         # Mock

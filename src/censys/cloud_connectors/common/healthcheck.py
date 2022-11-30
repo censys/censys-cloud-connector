@@ -37,8 +37,12 @@ class Healthcheck:
         self.provider_specific_settings = provider_specific_settings
         self.provider_payload = provider_specific_settings.get_provider_payload()
         if provider:
+            new_provider_payload = self.provider_payload.get(
+                self.provider_specific_settings.provider, {}
+            )
+            new_provider_payload.update(provider)
             self.provider_payload.update(
-                {self.provider_specific_settings.provider: provider}
+                {self.provider_specific_settings.provider: new_provider_payload}
             )
         if kwargs:
             self.provider_payload.update(kwargs)
