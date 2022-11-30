@@ -65,5 +65,10 @@
     "access_key": "test-access-key",
     "secret_key": "test-secret-key",
     "token": ""
+  },
+  "TEST_SESSION_CREDENTIALS_WITH_TOKEN": {
+    "access_key": "test-access-key",
+    "secret_key": "test-secret-key",
+    "token": "test-token"
   }
 }

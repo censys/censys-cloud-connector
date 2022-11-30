@@ -418,31 +418,36 @@ class AwsSetupCli(ProviderSetupCli):
         )
         return bool(answer.get("answer"))
 
+    def ask_key_credentials(self, profile: str) -> tuple[str, str]:
+        """Ask for credentials.
+
+        Args:
+            profile (str): AWS Profile.
+
+        Returns:
+            tuple[str, str]: Access key, secret key.
+        """
+        if self.ask_load_credentials(profile):
+            self.print_info(f"Loading access key and secret key from '{profile}'")
+            creds = self.aws.get_session_credentials()
+            if creds["token"]:
+                self.print_error(AwsMessages.TEMPORARY_CREDENTIAL_ERROR.value)
+                exit(1)
+
+            return creds["access_key"], creds["secret_key"]
+        else:
+            # note: keys are still optional; using assume role or deploying an ECS task are keyless examples
+            access_key = self.ask_access_key("")
+            secret_key = self.ask_secret_key("")
+            return access_key, secret_key
+
     def detect_accounts(self) -> None:
         """Generate providers from the chosen profile."""
         profile = self.select_profile()
-
         self.aws.profile = profile
+        access_key, secret_key = self.ask_key_credentials(profile)
 
         primary_id = self.ask_primary_account()
-
-        creds = {
-            "access_key": "",
-            "secret_key": "",
-            "token": "",
-        }
-        if self.ask_load_credentials(profile):
-            creds = self.aws.get_session_credentials()
-            self.print_info(f"Loading access key and secret key from '{profile}'")
-            access_key = creds["access_key"]
-            secret_key = creds["secret_key"]
-        else:
-            # note: keys are still optional; using assume role or deploying an ECS task are keyless examples
-            access_key = self.ask_access_key(creds["access_key"])
-            secret_key = self.ask_secret_key(creds["secret_key"])
-
-        token = creds["token"]
-
         role_name = self.ask_role_name()
 
         role_session_name = ""
@@ -468,9 +473,6 @@ class AwsSetupCli(ProviderSetupCli):
 
         if secret_key:
             defaults["secret_key"] = secret_key
-
-        if token:
-            defaults["session_token"] = token
 
         if role_name:
             defaults["role_name"] = role_name
@@ -499,8 +501,6 @@ class AwsSetupCli(ProviderSetupCli):
             role (str): Role name.
         """
         self.print_info(f"Please ensure the role {role} exists in your account(s).")
-        self.print_info("For more information please see the README:")
-        self.print_info(AwsMessages.AWS_ROLES_LINK.value)
         self.confirm_or_exit()
 
     def get_profile_choices(self):
@@ -555,6 +555,9 @@ class AwsSetupCli(ProviderSetupCli):
 
     def setup(self):
         """Entrypoint for AWS provider setup."""
+        self.print_info("Please view our documentation for help with provider setup:")
+        self.print_info(AwsMessages.PROVIDER_SETUP_DOC_LINK.value)
+
         if not has_boto:
             self.print_error("Please install the AWS SDK for Python")
             exit(1)

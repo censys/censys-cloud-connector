@@ -280,3 +280,48 @@ class TestAwsProvidersSetup(BaseCase, TestCase):
         self.setup_cli.print_role_creation_instructions("test-role")
         info.assert_called()
         confirm.assert_called_once()
+
+    def test_ask_key_credentials_errors_on_token(self):
+        test_creds = self.data["TEST_SESSION_CREDENTIALS_WITH_TOKEN"].copy()
+        self.mocker.patch.object(
+            self.setup_cli, "ask_load_credentials", return_value=True
+        )
+        self.mocker.patch.object(
+            self.setup_cli.aws, "get_session_credentials", return_value=test_creds
+        )
+        mock_print_error = self.mocker.patch.object(self.setup_cli, "print_error")
+
+        with pytest.raises(SystemExit):
+            self.setup_cli.ask_key_credentials("test-temporary-token-profile")
+
+        mock_print_error.assert_called_once_with(
+            AwsMessages.TEMPORARY_CREDENTIAL_ERROR.value
+        )
+
+    def test_ask_key_credentials(self):
+        test_creds = self.data["TEST_SESSION_CREDENTIALS"].copy()
+        self.mocker.patch.object(
+            self.setup_cli, "ask_load_credentials", return_value=True
+        )
+        self.mocker.patch.object(
+            self.setup_cli.aws, "get_session_credentials", return_value=test_creds
+        )
+        access_key, secret_key = self.setup_cli.ask_key_credentials("test-profile")
+        assert access_key == test_creds["access_key"]
+        assert secret_key == test_creds["secret_key"]
+
+    def test_ask_key_credentials_no_load(self):
+        test_access = "test-access-key"
+        test_secret = "test-secret-key"
+        self.mocker.patch.object(
+            self.setup_cli, "ask_load_credentials", return_value=False
+        )
+        self.mocker.patch.object(
+            self.setup_cli, "ask_access_key", return_value=test_access
+        )
+        self.mocker.patch.object(
+            self.setup_cli, "ask_secret_key", return_value=test_secret
+        )
+        access_key, secret_key = self.setup_cli.ask_key_credentials("test-profile")
+        assert access_key == test_access
+        assert secret_key == test_secret
