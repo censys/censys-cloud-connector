@@ -110,12 +110,12 @@ class AwsCloudConnector(CloudConnector):
             self.provider_settings = provider_setting
 
             for credential in self.provider_settings.get_credentials():
-                self.handle_credential_change(credential)
                 self.credential = credential
                 self.account_number = credential["account_number"]
                 self.ignored_tags = self.get_ignored_tags(credential["ignore_tags"])
 
                 for region in self.provider_settings.regions:
+                    self.temp_sts_cred = None
                     self.region = region
                     try:
                         with Healthcheck(
@@ -133,11 +133,6 @@ class AwsCloudConnector(CloudConnector):
                         )
                         self.dispatch_event(EventTypeEnum.SCAN_FAILED, exception=e)
                     self.region = None
-
-                self.credential = {}
-                self.temp_sts_cred = None
-                self.account_number = None
-                self.ignored_tags = None
 
     def format_label(self, service: AwsServices, region: Optional[str] = None) -> str:
         """Format AWS label.
@@ -209,20 +204,6 @@ class AwsCloudConnector(CloudConnector):
                 f"Could not connect with client type '{service}'. Error: {e}"
             )
             raise
-
-    def handle_credential_change(self, credential: dict):
-        """Detects and clears temporary STS credentials during a scan.
-
-        This is necessary because AWS primary values can be overridden by each
-        sub-account.
-
-        Args:
-            credential (dict): The new credential.
-        """
-        new_role = credential.get("role_name")
-        old_role = self.credential and self.credential.get("role_name")
-        if new_role != old_role:
-            self.temp_sts_cred = None
 
     def get_assume_role_credentials(self, role_name: Optional[str] = None) -> dict:
         """Acquire temporary STS credentials and cache them for the duration of the scan.

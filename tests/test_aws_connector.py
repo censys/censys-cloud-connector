@@ -157,26 +157,6 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
             self.connector.provider_settings.session_token,
         )
 
-    def test_handle_credential_change_when_changed(self):
-        cred = self.data["TEST_GET_CREDENTIALS_WITH_ROLE"].copy()
-        cred["role_name"] = "new-role-name"
-        self.connector.credential = self.data["TEST_GET_CREDENTIALS_WITH_ROLE"]
-        self.connector.temp_sts_cred = self.connector.boto_cred(
-            "region", "access_key", "secret_key", "session_token"
-        )
-        self.connector.handle_credential_change(cred)
-        assert self.connector.temp_sts_cred is None
-
-    def test_handle_credential_change_when_unchanged(self):
-        self.connector.credential = self.data["TEST_GET_CREDENTIALS_WITH_ROLE"]
-        self.connector.temp_sts_cred = self.connector.boto_cred(
-            "region", "access_key", "secret_key", "session_token"
-        )
-        self.connector.handle_credential_change(
-            self.data["TEST_GET_CREDENTIALS_WITH_ROLE"]
-        )
-        assert self.connector.temp_sts_cred is not None
-
     def test_boto_cred(self):
         expected = self.data["TEST_BOTO_CRED_FULL"]
         actual = self.connector.boto_cred(
