@@ -16,12 +16,12 @@ def get_logger(
     Returns:
         logger: A logger configured with the provided logging settings.
     """
-    formatter = logging.Formatter(fmt="%(levelname)s:%(name)s: %(message)s")
-    handler = logging.StreamHandler()
-    handler.setFormatter(formatter)
-
     logger = logging.getLogger(log_name)
-    logger.addHandler(handler)
+    if not logger.hasHandlers():
+        formatter = logging.Formatter(fmt="%(levelname)s:%(name)s: %(message)s")
+        handler = logging.StreamHandler()
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
     logger.setLevel(level)
 
     return logger

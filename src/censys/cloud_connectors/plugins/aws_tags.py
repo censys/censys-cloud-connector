@@ -1,4 +1,5 @@
 """AWS Tags Cloud Connector Plugin."""
+import contextlib
 import urllib.parse
 from typing import Callable, Optional
 
@@ -8,6 +9,7 @@ from mypy_boto3_elbv2 import ElasticLoadBalancingv2Client
 from mypy_boto3_route53 import Route53Client
 from mypy_boto3_route53domains import Route53DomainsClient
 from mypy_boto3_s3 import S3Client
+from requests import HTTPError
 
 from censys.asm import AsmClient
 from censys.common.exceptions import (
@@ -250,9 +252,6 @@ class AwsTagsPlugin(CloudConnectorPlugin):
             context: Event context.
             cloud_asset: Cloud asset.
             tag_set: Tags.
-
-        Raises:
-            CensysAsmException: If an error occurs.
         """
         settings = context["connector"].settings
         client = self.get_client(context)
@@ -264,14 +263,8 @@ class AwsTagsPlugin(CloudConnectorPlugin):
                 f"{settings.censys_asm_api_base_url}/beta/assets/object-storages/{url_encoded_object_storage_key}/tags",
                 json={"name": self.format_tag_set_as_string(tag)},
             )
-            json_data = res.json()
-            if error_message := json_data.get("error"):
-                raise CensysAsmException(
-                    res.status_code,
-                    error_message,
-                    res.text,
-                    error_code=json_data.get("errorCode"),
-                )
+            with contextlib.suppress(HTTPError):
+                res.raise_for_status()
 
     def _get_api_gateway_tags(
         self, context: EventContext, seed: DomainSeed, **kwargs
