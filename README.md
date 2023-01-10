@@ -27,7 +27,7 @@ test the code or for information on the CI/CD pipeline.
 
 This software is licensed under [Apache License, Version 2.0][license].
 
-- Copyright (C) 2022 Censys, Inc.
+- Copyright (C) 2023 Censys, Inc.
 
 <!-- References -->
 

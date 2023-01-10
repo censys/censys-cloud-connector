@@ -1,6 +1,6 @@
 """Censys Cloud Connectors."""
 
-__copyright__ = "Copyright 2022 Censys, Inc."
+__copyright__ = "Copyright 2023 Censys, Inc."
 
 import os.path
 

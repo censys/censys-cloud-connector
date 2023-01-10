@@ -20,7 +20,7 @@ from datetime import datetime
 
 project = "Censys Unified Cloud Connector"
 author = "Censys, Inc."
-copyright = f"{datetime.now().year or 2022}, {author}"
+copyright = f"{datetime.now().year or 2023}, {author}"
 
 
 # -- General configuration ---------------------------------------------------
