@@ -2,17 +2,17 @@
 
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field, PositiveInt, root_validator
+from pydantic import BaseModel, ConstrainedStr, Field, root_validator
 
 from censys.cloud_connectors.aws_connector.enums import AwsMessages, AwsResourceTypes
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.settings import ProviderSpecificSettings
 
 
-class AwsAccountNumber(PositiveInt):
+class AwsAccountNumber(ConstrainedStr):
     """Account Number."""
 
-    lt = 10**12
+    regex = "^[0-9]{12}$"
 
 
 class AwsAccount(BaseModel):
@@ -74,7 +74,7 @@ class AwsSpecificSettings(ProviderSpecificSettings):
         Returns:
             tuple: Provider key.
         """
-        return (str(self.account_number),)
+        return (self.account_number,)
 
     def get_provider_payload(self) -> dict:
         """Get the provider payload.

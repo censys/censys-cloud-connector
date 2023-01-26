@@ -64,7 +64,7 @@ class AwsCloudConnector(CloudConnector):
     # When scanning, the current loaded credential will be set here.
     credential: dict = {}
 
-    account_number: int
+    account_number: str
     region: Optional[str]
 
     # Current set of ignored tags (combined set of user settings + overall settings)

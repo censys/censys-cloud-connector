@@ -50,8 +50,8 @@ class TestAwsSetupService(BaseCase, TestCase):
 
     def test_get_stackset_accounts_prevents_duplicates(self):
         name = "test-stack-set-name"
-        exclude_id = 1
-        expected = [{"name": "2 (Org: r-41cr)", "value": "2"}]
+        exclude_id = "011111111111"
+        expected = [{"name": "222222222222 (Org: r-41cr)", "value": "222222222222"}]
 
         self.mocker.patch.object(
             self.aws,
@@ -63,7 +63,7 @@ class TestAwsSetupService(BaseCase, TestCase):
 
     def test_get_stackset_accounts_exclude(self):
         name = "test-stack-set-name"
-        exclude_id = 2
+        exclude_id = "222222222222"
         expected = []
 
         self.mocker.patch.object(
@@ -80,9 +80,9 @@ class TestAwsSetupService(BaseCase, TestCase):
             "get_organization_list_accounts_paginated",
             return_value=self.data["TEST_ORGANIZATION_LIST_ACCOUNTS"],
         )
-        exclude_id = 0
+        exclude_id = "000000111111"
         expected = [
-            {"name": "111111111111 - TestParentAccount", "value": "111111111111"},
+            {"name": "011111111111 - TestParentAccount", "value": "011111111111"},
             {"name": "222222222222 - TestChildAccount", "value": "222222222222"},
         ]
         actual = self.aws.get_organization_list_accounts(exclude_id)
@@ -94,7 +94,7 @@ class TestAwsSetupService(BaseCase, TestCase):
             "get_organization_list_accounts_paginated",
             return_value=self.data["TEST_ORGANIZATION_LIST_ACCOUNTS"],
         )
-        exclude_id = 111111111111
+        exclude_id = "011111111111"
         expected = [
             {"name": "222222222222 - TestChildAccount", "value": "222222222222"}
         ]

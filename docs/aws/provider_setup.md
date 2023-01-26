@@ -117,18 +117,19 @@ configure roles that are unique to each account.
 
 ```yaml
 - provider: aws
-  account_number: 111 # <- primary account
+  account_number: 111111111111 # <- primary account
   role_name: SharedRole
   accounts:
-  - account_number: 222
-  - account_number: 333
+  - account_number: 222222222222
+  - account_number: 333333333333
     role_name: Role333
-  - account_number: 444
+  - account_number: 444444444444
     role_name: Role444
 ```
 
-In this example, account 222 will inherit the role `SharedRole`. Account 333
-will overwrite the parent role with `Role333`.
+In this example, account 222222222222 will inherit the role `SharedRole`. Account
+333333333333 will overwrite the parent role with `Role333`. Note that the [account
+number][aws-account-id] must be a 12-digit number.
 
 ## Configure Cloud Connector IAM
 
@@ -161,6 +162,7 @@ Usage:
 - Tags named `censys-cloud-connector-ignore` are ignored.
 
 <!-- References -->
+[aws-account-id]: https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-identifiers.html
 [aws-boto3-sts]: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sts.html
 [aws-cli]: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
 [aws-cli-configure]: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-prereqs.html

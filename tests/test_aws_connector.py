@@ -510,7 +510,7 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
                 AwsStorageBucketAsset(
                     value="https://test-bucket-1.s3.test-region-1.amazonaws.com",
                     uid=test_label,
-                    scan_data={"accountNumber": 999999999999},
+                    scan_data={"accountNumber": "999999999999"},
                 ),
                 bucket_name=self.mocker.ANY,
                 aws_client=self.mocker.ANY,
@@ -519,7 +519,7 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
                 AwsStorageBucketAsset(
                     value="https://test-bucket-2.s3.test-region-1.amazonaws.com",
                     uid=test_label,
-                    scan_data={"accountNumber": 999999999999},
+                    scan_data={"accountNumber": "999999999999"},
                 ),
                 bucket_name=self.mocker.ANY,
                 aws_client=self.mocker.ANY,

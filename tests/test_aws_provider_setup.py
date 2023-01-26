@@ -64,7 +64,7 @@ class TestAwsProvidersSetup(BaseCase, TestCase):
         )
         self.mocker.patch.object(self.setup_cli, "prompt_confirm", return_value=True)
         self.mocker.patch.object(
-            self.setup_cli, "ask_account_lookup_method", return_value=[3]
+            self.setup_cli, "ask_account_lookup_method", return_value=["111111222222"]
         )
         self.mocker.patch.object(self.setup_cli, "print_role_creation_instructions")
 
@@ -138,7 +138,7 @@ class TestAwsProvidersSetup(BaseCase, TestCase):
         assert choices == self.data["TEST_PROFILE_CHOICES"]
 
     def test_provider_accounts(self):
-        ids = ["1", "2"]
+        ids = ["111111111111", "222222222222"]
         role = "test-role"
         role_session_name = "test-role-session-name"
         res = self.setup_cli.provider_accounts(ids, role, role_session_name)

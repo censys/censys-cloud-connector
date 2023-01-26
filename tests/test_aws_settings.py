@@ -29,7 +29,7 @@ class TestAwsSettings(BaseCase, TestCase):
             AwsSpecificSettings: AWS Settings.
         """
         defaults = {
-            "account_number": 123,
+            "account_number": "123123123123",
             "access_key": "test-access-key",
             "secret_key": "test-secret-key",
             "regions": ["us-east-1"],
@@ -78,7 +78,7 @@ class TestAwsSettings(BaseCase, TestCase):
     def test_missing_role_and_access_key(self):
         with pytest.raises(ValueError, match="Specify either access_key"):
             AwsSpecificSettings(
-                account_number=123,
+                account_number="123123123123",
                 regions=["us-east-1"],
             )
 
@@ -90,7 +90,7 @@ class TestAwsSettings(BaseCase, TestCase):
         assert len(settings) == 1
         assert len(credentials) == 1
         assert setting.regions == ["test-region"]
-        assert credential["account_number"] == 111111111111
+        assert credential["account_number"] == "111111111111"
 
     def test_parent_key_child_role_loads_parent_key(self):
         credential = self.get_credentials("accounts_parent_key_child_role.yml")[0]
@@ -100,7 +100,7 @@ class TestAwsSettings(BaseCase, TestCase):
     def test_parent_key_child_role_loads_child_role(self):
         credential = self.get_credentials("accounts_parent_key_child_role.yml")[1]
         assert credential["role_name"] == "example-role-2"
-        assert credential["account_number"] == 111111111112
+        assert credential["account_number"] == "111111111112"
 
     def test_parent_account_with_access_key(self):
         credential = self.get_credentials("accounts_key.yml")[0]
@@ -132,11 +132,15 @@ class TestAwsSettings(BaseCase, TestCase):
     def test_accounts_get_credentials_enumerates_all(self):
         setting = self.get_settings_file("accounts_inherit.yml")[0]
         for cred in setting.get_credentials():
-            assert cred["account_number"] in [111111111111, 111111111112, 111111111113]
+            assert cred["account_number"] in [
+                "111111111111",
+                "111111111112",
+                "111111111113",
+            ]
 
     def test_accounts_inherit_from_primary(self):
         expected = {
-            "account_number": 111111111112,
+            "account_number": "111111111112",
             "access_key": None,
             "secret_key": None,
             "role_name": "test-primary-role-name",
@@ -148,7 +152,7 @@ class TestAwsSettings(BaseCase, TestCase):
 
     def test_accounts_override_primary_values(self):
         expected = {
-            "account_number": 111111111112,
+            "account_number": "111111111112",
             "access_key": None,
             "secret_key": None,
             "role_name": "test-override-role",
@@ -164,7 +168,7 @@ class TestAwsSettings(BaseCase, TestCase):
         assert credential["secret_key"] is None
 
     def test_provider_key(self):
-        account = "123123123"
+        account = "123123123123"
         expected = (account,)
         settings = self.aws_settings({"account_number": account})
         assert settings.get_provider_key() == expected
@@ -181,7 +185,7 @@ class TestAwsSettings(BaseCase, TestCase):
 
     def test_ignore_tags_account_overrides_provider(self):
         child = {
-            "account_number": 112,
+            "account_number": "123123123123",
             "ignore_tags": ["test-account-ignore-tag"],
         }
         primary = {

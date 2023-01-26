@@ -3,7 +3,7 @@
     {
       "StackSetId": "CensysCloudConnector:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
       "Region": "us-east-1",
-      "Account": "2",
+      "Account": "222222222222",
       "StackId": "arn:aws:cloudformation:us-east-1:111:stack/uuid/id",
       "Status": "CURRENT",
       "StackInstanceStatus": { "DetailedStatus": "SUCCEEDED" },
@@ -13,7 +13,7 @@
     {
       "StackSetId": "CensysCloudConnector:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
       "Region": "us-east-2",
-      "Account": "2",
+      "Account": "222222222222",
       "StackId": "arn:aws:cloudformation:us-east-2:111:stack/uuid/id",
       "Status": "OUTDATED",
       "StatusReason": "ResourceLogicalId:CensysCloudConnectorSetup, ResourceType:AWS::IAM::Role, ResourceStatusReason:CensysCloudConnectorRole already exists.",
@@ -24,8 +24,8 @@
   ],
   "TEST_ORGANIZATION_LIST_ACCOUNTS": [
     {
-      "Id": "111111111111",
-      "Arn": "arn:aws:organizations::111111111111:account/o-xxxxxxxxxx/111111111111",
+      "Id": "011111111111",
+      "Arn": "arn:aws:organizations::011111111111:account/o-xxxxxxxxxx/011111111111",
       "Email": "aaaaaaaaaaaaa+aaaaaaaaaaaaaaaa@example.com",
       "Name": "TestParentAccount",
       "Status": "ACTIVE",

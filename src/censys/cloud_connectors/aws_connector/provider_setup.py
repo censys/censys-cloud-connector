@@ -80,11 +80,11 @@ class AwsSetupCli(ProviderSetupCli):
         )
         return str(answers.get("answer"))
 
-    def ask_stackset(self, exclude_id: int) -> list[dict]:
+    def ask_stackset(self, exclude_id: str) -> list[dict]:
         """Find accounts by stack set.
 
         Args:
-            exclude_id (int): Primary account id.
+            exclude_id (str): Primary account id.
 
         Returns:
             list[dict]: Account Ids.
@@ -123,14 +123,14 @@ class AwsSetupCli(ProviderSetupCli):
         answers = self.prompt(questions)
         return answers.get("accounts", [])
 
-    def ask_list_accounts(self, exclude_id: int):
+    def ask_list_accounts(self, exclude_id: str):
         """Ask for the sub-accounts to use.
 
         Args:
-            exclude_id (int): Id to exclude.
+            exclude_id (str): Id to exclude.
 
         Returns:
-            list(int): Account ids.
+            list(str): Account ids.
         """
         accounts = self.get_account_choices(exclude_id)
         if not accounts:
@@ -158,14 +158,14 @@ class AwsSetupCli(ProviderSetupCli):
         answers = self.prompt(questions)
         return answers.get("accounts", [])
 
-    def ask_account_lookup_method(self, primary_id: int) -> list[int]:
+    def ask_account_lookup_method(self, primary_id: str) -> list[str]:
         """Prompt for the account lookup method.
 
         Args:
-            primary_id (int): Primary account id.
+            primary_id (str): Primary account id.
 
         Returns:
-            list[int]: Account ids.
+            list[str]: Account ids.
         """
         self.print_info("Required permissions:")
         self.print_info("- Organization List Accounts uses Organizations ListAccounts.")
@@ -203,7 +203,7 @@ class AwsSetupCli(ProviderSetupCli):
             self.print_info("Exiting...")
             exit(0)
 
-    def get_account_choices(self, exclude_id: int) -> list[dict]:
+    def get_account_choices(self, exclude_id: str) -> list[dict]:
         """Fetch all available accounts.
 
         The main focus of this method is to capture any service level errors.
@@ -252,11 +252,11 @@ class AwsSetupCli(ProviderSetupCli):
         )
         return str(answers.get("answer"))
 
-    def ask_primary_account(self) -> int:
+    def ask_primary_account(self) -> str:
         """Get the primary account id.
 
         Returns:
-            int: Primary account id.
+            str: Primary account id.
         """
         try:
             primary_id = self.aws.get_primary_account()
@@ -264,7 +264,7 @@ class AwsSetupCli(ProviderSetupCli):
             self.print_error(f"[red]Error getting primary account: {e}")
             exit(1)
 
-        if primary_id <= 0:
+        if len(primary_id) < 12:
             self.print_error("[red]Unable to find primary account.")
             exit(1)
 
@@ -346,12 +346,12 @@ class AwsSetupCli(ProviderSetupCli):
         return answers.get("regions", [])
 
     def provider_accounts(
-        self, ids: list[int], role: str, role_session_name: str
+        self, ids: list[str], role: str, role_session_name: str
     ) -> list[dict]:
         """Generate the provider settings account data structure.
 
         Args:
-            ids (list[dict]): Account ids.
+            ids (list[str]): Account ids.
             role (str): Role name.
             role_session_name (str): Role session name.
 
@@ -361,7 +361,7 @@ class AwsSetupCli(ProviderSetupCli):
         accounts = []
         for id in ids:
             account: dict[str, str] = {
-                "account_number": str(id),
+                "account_number": id,
             }
 
             if role:
@@ -463,7 +463,7 @@ class AwsSetupCli(ProviderSetupCli):
         ):
             ids = self.ask_account_lookup_method(primary_id)
 
-        defaults = {
+        defaults: dict = {
             "account_number": primary_id,
             "regions": regions,
         }

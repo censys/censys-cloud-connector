@@ -51,11 +51,11 @@ class AwsSetupService:
         """
         return self.session().client(service_name)
 
-    def get_organization_list_accounts(self, exclude_id: int) -> list[dict]:
+    def get_organization_list_accounts(self, exclude_id: str) -> list[dict]:
         """Get the accounts that are in the organization.
 
         Args:
-            exclude_id (int): Account id to exclude.
+            exclude_id (str): Account id to exclude.
 
         Returns:
             list[dict]: Accounts.
@@ -109,15 +109,15 @@ class AwsSetupService:
         """
         return bool(re.match(r"^[\w+=,.@-]{1,64}$", role))
 
-    def get_primary_account(self) -> int:
+    def get_primary_account(self) -> str:
         """Get the primary account id.
 
         Returns:
-            int: Primary account id.
+            str: Primary account id.
         """
         sts = self.client("sts")
         identity = sts.get_caller_identity()
-        return int(identity.get("Account", 0))
+        return identity.get("Account", "")
 
     def get_regions(self) -> list[str]:
         """Get AWS regions.
@@ -169,12 +169,12 @@ class AwsSetupService:
         max_tries=BACKOFF_TRIES,
     )
     def validate_assume_role_account(
-        self, account_number: int, role: str, credentials: dict
+        self, account_number: str, role: str, credentials: dict
     ) -> bool:
         """Validate the credentials for this assume role are accurate.
 
         Args:
-            account_number (int): Primary account id.
+            account_number (str): Primary account id.
             role (str): Role to assume.
             credentials (dict): Credentials.
 
@@ -232,18 +232,18 @@ class AwsSetupService:
 
         return cred
 
-    def get_stackset_accounts(self, stack_set_name: str, exclude_id: int) -> list[dict]:
+    def get_stackset_accounts(self, stack_set_name: str, exclude_id: str) -> list[dict]:
         """Get the accounts that have a stackset.
 
         Args:
             stack_set_name (str): Stackset name.
-            exclude_id (int): Account id to exclude.
+            exclude_id (str): Account id to exclude.
 
         Returns:
             list[dict]: List of account ids.
         """
         accounts: dict[str, dict] = {}
-        exclude = str(exclude_id)
+        exclude = exclude_id
         for account in self.get_stackset_accounts_paginated(stack_set_name):
             account_id = account["Account"]
             org = account["OrganizationalUnitId"]
