@@ -81,15 +81,15 @@ terraform destroy -var-file terraform.tfvars
 
 | Name | Version |
 |------|---------|
-| terraform | >= 0.13 |
-| aws | ~> 3.0 |
+| terraform | >= 0.13.1 |
+| aws | >= 4.7 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| aws | 3.75.2 |
-| random | 3.3.2 |
+| aws | 4.51.0 |
+| random | 3.4.3 |
 
 ## Modules
 

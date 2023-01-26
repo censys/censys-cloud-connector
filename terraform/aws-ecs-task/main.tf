@@ -51,7 +51,7 @@ module "eventbridge" {
   attach_ecs_policy = true
   ecs_target_arns   = [aws_ecs_task_definition.cloud_connector.arn]
 
-  # Fire every five minutes
+  # Configures rate of scan
   rules = {
     cloud_connector = {
       description         = "Cloud Connector scan schedule."
@@ -92,7 +92,6 @@ module "ecs" {
   container_insights = true
   capacity_providers = ["FARGATE", "FARGATE_SPOT"]
 }
-
 
 resource "aws_cloudwatch_log_group" "cloud_connector" {
   name = local.project_id
