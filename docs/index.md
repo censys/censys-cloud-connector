@@ -6,11 +6,10 @@ maxdepth: 1
 caption: Contents
 ---
 
+overview
 getting_started
-deployment_methods
-env
 providers_yml
-providers
+deployment_methods
 cli
 faq
 ```

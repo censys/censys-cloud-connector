@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "censys-cloud-connectors"
-version = "3.1.0b2"
+version = "3.1.0b3"
 description = "The Censys Unified Cloud Connector is a standalone connector that gathers assets from various cloud providers and stores them in Censys ASM."
 authors = ["Censys, Inc. <support@censys.io>"]
 license = "Apache-2.0"
@@ -97,6 +97,8 @@ sphinx-copybutton = "^0.5.0"
 sphinx-prompt = "^1.5.0"
 sphinxcontrib-autoprogram = "^0.1.7"
 sphinx-autobuild = "^2021.3.14"
+sphinx-design = "^0.3.0"
+sphinxcontrib-asciinema = {git = "https://github.com/thehappydinoa/sphinxcontrib.asciinema.git", rev = "patch-1"}
 
 [tool.poetry.group.aws.dependencies]
 boto3 = "^1.24.63"

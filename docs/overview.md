@@ -1,19 +1,21 @@
-# Supported Providers
+# Overview
+
+The Censys Attack Surface Management platform already discovers on-premise and
+cloud assets through our best-in-class Internet-wide scanning and attribution
+methodologies. Censys Cloud Connectors offer users the ability to supercharge
+our ASM Platform with total, cross-cloud visibility. Continuously monitor
+storage buckets like S3, Google storage or Azure blobs, virtual instances,
+databases, and more using our easy-to-configure connectors.
+
+----------
+
+## Which resources does the Cloud Connector scan for?
 
 The following providers and services are supported and will be used to import
 Seeds (IP Addresses, Domain Names, CIDRs, and ASNs) as well as Cloud Assets
 (Object Storage Buckets) into the Censys ASM platform.
 
-```{toctree}
----
-maxdepth: 1
-caption: Provider Specific Setup
----
-
-aws/provider_setup
-```
-
-## Amazon Web Services
+### Amazon Web Services
 
 - [Compute](https://aws.amazon.com/products/compute/)
   - [Elastic Container Service (ECS)](https://aws.amazon.com/ecs/)
@@ -27,7 +29,7 @@ aws/provider_setup
 - [Cloud Storage](https://aws.amazon.com/products/storage/)
   - [Simple Storage Service (S3)](https://aws.amazon.com/s3/features/)
 
-## Azure Cloud
+### Azure Cloud
 
 - [Azure Networking](https://azure.microsoft.com/en-us/product-categories/networking/)
   - [Azure DNS](https://azure.microsoft.com/en-us/services/dns/)
@@ -38,7 +40,7 @@ aws/provider_setup
 - [Azure Storage](https://azure.microsoft.com/en-us/product-categories/storage/)
   - [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/)
 
-## Google Cloud Platform
+### Google Cloud Platform
 
 - [Google Cloud Compute](https://cloud.google.com/products/compute)
   - [Compute Engine](https://cloud.google.com/compute)
@@ -50,19 +52,3 @@ aws/provider_setup
   - [Cloud SQL](https://cloud.google.com/sql)
 - [Google Cloud Storage](https://cloud.google.com/products/storage)
   - [Cloud Storage](https://cloud.google.com/storage)
-
-## Authenticating
-
-Log in to your cloud provider's CLI tool using the following commands:
-
-- [AWS CLI][aws-cli]: Credentials are stored on your machine, making
-  authentication unnecessary. See {doc}`aws/provider_setup` for more information.
-
-- [Azure CLI][azure-cli]: `az login`
-
-- [Google's gcloud CLI][gcloud-cli]: `gcloud auth login`
-
-<!-- References -->
-[aws-cli]: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
-[azure-cli]: https://docs.microsoft.com/en-us/cli/azure/install-azure-cli
-[gcloud-cli]: https://cloud.google.com/sdk/docs/install

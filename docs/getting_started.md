@@ -14,6 +14,11 @@ connector, you can deploy it to your environment.
 - [Pip][pip-install]
 - [Poetry][poetry-install]
 
+```{admonition} Note
+:class: censys
+There may be additional requirements depending on the deployment method
+```
+
 ## Installation
 
 Clone the repo
@@ -39,28 +44,11 @@ poetry shell
 Install the dependencies
 (a Makefile is provided for convenience in installation)
 
-- Installs dependencies for Azure, AWS, and GCP
-
   ```{prompt} bash
-  make install-all
-  ```
-
-- Installs dependencies for Azure
-
-  ```{prompt} bash
-  make install-azure
-  ```
-
-- Installs dependencies for AWS
-
-  ```{prompt} bash
-  make install-aws
-  ```
-
-- Installs dependencies for GCP
-
-  ```{prompt} bash
-  make install-gcp
+  make install-all     # Install dependencies for all providers
+  make install-azure   # Azure only
+  make install-aws     # AWS only
+  make install-gcp     # GCP only
   ```
 
 Copy .env.sample to .env
@@ -74,73 +62,61 @@ cp .env.sample .env
 The connector uses environment variables to configure the connector. The
 {envvar}`CENSYS_API_KEY` environment variable is required to run the connector.
 
-To learn more about the environment variables, see {doc}`env`.
+The following environment variables are available for use in the connector:
 
-## Configuration
+```{envvar} CENSYS_API_KEY
 
-```{note}
-Before configuring the connector, make sure you are logged in to your cloud
-provider's CLI tool. See our {doc}`providers` for more
-information.
+Your Censys ASM API key found in the
+[ASM Integrations Page](https://app.censys.io/integrations). (**Required**)
 ```
 
-To configure the connector, you can use the command line interface. The base
-command is {ref}`censys-cc`. The configuration command is:
+```{envvar} PROVIDERS_CONFIG_FILE
 
-```{prompt} bash
-poetry run censys-cc config
+The path to {doc}`providers_yml`.
+
+Default: `./providers.yml`
 ```
 
-The {ref}`censys-cc config <censys-cc>` command will guide you through the
-configuration of supported cloud providers. This command will assist you in
-generating {doc}`providers_yml`. This file can contain multiple provider
-configurations.
+```{envvar} SECRETS_DIR
 
-**You have successfully configured your cloud connector if your
-{doc}`providers_yml` is populated with your credentials.**
+The path to the directory containing the secrets.
 
-## Running the Connector
-
-To run the connector, you can use the command line interface. The scan command
-is:
-
-```{prompt} bash
-poetry run censys-cc scan
+Default: `./secrets`
 ```
 
-The {ref}`censys-cc scan <censys-cc>` command will enumerate the configured
-cloud providers and scan the resources. The scan command will submit the public
-cloud assets to Censys ASM as Seeds and Cloud Assets.
+```{envvar} LOGGING_LEVEL
 
-## Deploying the Connector
+The logging level. Valid values are `DEBUG`, `INFO`, `WARN`, `ERROR`, and `CRITICAL`.
 
-The connector can be deployed to a variety of environments. We have provided
-several deployment methods. See {doc}`deployment_methods` for more information.
+Default: `INFO`
+```
 
-## Confirm Results
+```{envvar} DRY_RUN
 
-Visit the [Seed Data Page][seed-data] and the
-[Storage Buckets Page][storage-bucket] to confirm that you're seeing seeds and
-storage buckets from your cloud provider(s).
+If set to `true`, the connector will not write any data to the ASM platform.
 
-## Additional options
+Default: `false`
+```
 
-- You can specify one or more providers in the command line with the flag
-`--provider`. The connector will only scan for assets from the specified
-providers.
+```{envvar} HEALTHCHECK_ENABLED
 
-- You can set a scheduled interval for the connector to run on with the flag
-`--daemon`. This option takes in a time interval in hours. If you do not
-specify an interval, the default will be set to 1 hour.
+If set to `false`, the connector will not report its health to the ASM platform.
 
-  ```sh
-  censys-cc scan --daemon       # Run every 1 hour
-  censys-cc scan --daemon 1.5   # Run every 1.5 hours
-  ```
+Default: `true`
+```
+
+### Sample `.env` File
+
+`.env.sample` is a sample file that contains the above environment variables.
+Please use this file as a template to create your own `.env` file.
+
+```{literalinclude} ../.env.sample
+---
+language: bash
+---
+```
 
 <!-- References -->
 [python-install]: https://www.python.org/downloads/
 [poetry-install]: https://python-poetry.org/docs/
 [pip-install]: https://pip.pypa.io/en/stable/installation/
-[seed-data]: https://app.censys.io/seeds
-[storage-bucket]: https://app.censys.io/storage-bucket

@@ -1,13 +1,17 @@
 # FAQ
 
-## My Python Version is Not Compatible
+## General
+
+### My Python Version is Not Compatible
 
 It is highly recommended that a Python version shim like
 [pyenv][pyenv-install] is used.
 Once installed, Poetry will make a virtualenv using the
 correct version of Python automatically.
 
-## AWS Policy Actions
+## AWS
+
+### AWS Policy Actions
 
 The following permissions are required to scan:
 
@@ -17,20 +21,26 @@ language: json
 ---
 ```
 
-## Azure Roles
+### Can I use a Session Role Name?
 
-Ensure the account's Access control (IAM) role has the following permission to
-create a service principal with a Reader role:
+Yes, this can be set during the provider setup and will be defined in `providers.yml`.
 
-- `Microsoft.Authorization/roleAssignments/write` over scope `/subscriptions/uuid`
+### Do you support Named Profiles?
 
-The following permissions will be used with this service principal:
+[Yes][aws-cli-profile].
 
-- `Microsoft.ContainerInstance/containerGroups/read`
-- `Microsoft.Network/dnszones/read`
-- `Microsoft.Network/publicIPAddresses/read`
-- `Microsoft.Sql/servers/read`
-- `Microsoft.Storage/storageAccounts/read`
+### Can I use SSO?
+
+AWS CLI supports [Single Sign-On][aws-cli-sso] via IAM Identity Center.
+You can use the `aws sso login` command to authenticate before running
+provider setup.
+
+## Azure
+
+### Azure Roles
+
+Read about Azure roles and permissions
+{ref}`here <azure/provider_setup:roles and permissions>`.
 
 If you see the following error message, check that you are logged into an
 account with the correct permissions:
@@ -41,7 +51,9 @@ The client 'user@example.com' with object id 'uuid' does not have authorization 
 ```
 <!-- markdownlint-enable MD013 -->
 
-## GCP Service Account Keys
+## GCP
+
+### GCP Service Account Keys
 
 If you encounter the following error while configuring your GCP Cloud Connector,
 a likely cause is that your service account has reached its maximum quota of keys.
@@ -57,3 +69,5 @@ your service account keys.
 
 <!-- References -->
 [pyenv-install]: https://github.com/pyenv/pyenv#installation
+[aws-cli-profile]: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html
+[aws-cli-sso]: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sso.html

@@ -25,13 +25,13 @@ Use the Censys-provided template to create a role in all of your accounts for
 cross-account access.
 
 1. {download}`Download <../../templates/aws/stackset_role_deploy.json>` the
-   StackSet template
+   StackSet template.
 2. From the CloudFormation landing page, click **StackSets**.
 3. Click the **Create StackSet** button.
 4. In the **Prerequisite** section, select the "Template is ready" option.
-5. In the **Specify template** section, select "Upload a template file"
-6. Click **Choose file**
-7. Choose the template from in _step 1_.
+5. In the **Specify template** section, select "Upload a template file".
+6. Click **Choose file**.
+7. Choose the template from Step 1.
 
 Click **Next**.
 

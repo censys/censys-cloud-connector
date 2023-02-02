@@ -17,11 +17,13 @@ providers: AWS, Azure, and GCP. Please see our
 
 Please view our documentation on [Read the Docs][censys-cloud-connector-docs].
 
-## Developer Documentation
+## Contributing
 
 All contributions (no matter how small) are always welcome. See
 [Contributing to the Cloud Connector][contributing] to change or
 test the code or for information on the CI/CD pipeline.
+
+Submit an issue or pull request on [GitHub][github-issues].
 
 ## License
 
@@ -37,5 +39,6 @@ This software is licensed under [Apache License, Version 2.0][license].
 [contributing]: https://github.com/censys/censys-cloud-connector/tree/main/CONTRIBUTING.md
 [gcp]: https://censys-cloud-connector.readthedocs.io/en/stable/providers.html#google-cloud-platform
 [github]: https://github.com/censys/censys-cloud-connector
+[github-issues]: https://github.com/censys/censys-cloud-connector/issues
 [license]: http://www.apache.org/licenses/LICENSE-2.0
 [supported-providers]: https://censys-cloud-connector.readthedocs.io/en/stable/providers.html

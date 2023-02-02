@@ -10,36 +10,44 @@ stackset
 templates
 ```
 
-## Prerequisites
+## Installation
 
-- [Install][aws-cli] the AWS CLI
-- [Configure][aws-cli-configure] the AWS CLI
-- [Configure](#configure-cloud-connector-iam) Cloud Connector IAM
-- Optional: [Define][aws-cli-profile] a named profile
+[Install][aws-cli] the AWS CLI.
 
-Note: AWS CLI supports [Single Sign-On][aws-cli-sso] via IAM Identity Center.
-You can use the `aws sso login` command to authenticate before running
-provider setup.
+## Authentication
 
-## Overview
+[Configure][aws-cli-configure] the AWS CLI.
 
-The Censys Cloud Connector provider setup will ask a series of questions that
-have opt-in defaults.
+### Configure Cloud Connector IAM
 
-- Select a credential profile allows you to choose which
-  [named profile][aws-cli-profile] to use during provider setup.
-  - You can optionally save the profile's credentials to `providers.yml`.
-- Define a role name to use STS [Assume Role][aws-sts-assume-role]. This enables
-  running the connector without defining an access or secret key.
-  - When using a role, AWS recommends using a [Session Role Name][aws-boto3-sts].
-    Typically, you pass the name or identifier that is associated with the user
-    who is using your application. That way, the temporary security credentials
-    that your application will use are associated with that user.
-- If your organization has multiple accounts, provider setup will give an option
-  to find and load these accounts into `providers.yml`.  The find accounts
-  feature has two ways to look up accounts:
-  - Find accounts with a CloudFormation StackSet Instance
-  - Find accounts using Organization List Accounts
+We recommend {doc}`deploying a StackSet<stackset>`, but
+[alterative options](#alternative-aws-configuration-options) are available.
+
+## Configuration
+
+The Censys Cloud Connector {doc}`provider setup CLI <../cli>` will ask a series
+of questions that have opt-in defaults.
+
+```{prompt} bash
+censys-cc config --provider aws
+```
+
+```{admonition} Note
+:class: censys
+Permissions required during provider setup are described [here](#provider-setup-permissions-overview).
+```
+
+### Example AWS Provider Setup: Basic Usage
+
+:::{asciinema} assets/aws-single-account.cast
+:poster: "npt:00:16"
+:::
+
+## Alternative AWS Configuration Options
+
+Manually create an IAM role and attach the either the
+{ref}`Least Privilege<aws/templates:least privilege>` policy or the
+{ref}`Recommended<aws/templates:recommended>` set of policies.
 
 ## Supported Provider Configurations
 
@@ -79,7 +87,7 @@ language: yaml
 ---
 ```
 
-## Permissions Overview
+## Provider Setup Permissions Overview
 
 The permissions used are dependant on options chosen during setup.
 
@@ -96,13 +104,7 @@ The permissions used are dependant on options chosen during setup.
 Add assets from all of your AWS accounts for the most up-to-date view of your
 cloud attack surface.
 
-### Find Accounts by Organizations
-
-Provider setup will use the Organizations [List Accounts][aws-organizations-list-accounts]
-feature to find a list of accounts. You will then have the option to choose which
-accounts are saved into `providers.yml`.
-
-### Find Accounts by StackSet
+### Find Accounts by StackSet (recommended)
 
 Censys provides a CloudFormation
 {ref}`StackSet template <aws/templates:stackset template>`
@@ -110,44 +112,23 @@ available to create the `CensysCloudConnectorRole`. It also serves as a way to
 list your organization's account numbers with the CloudFormation [Stack Instance][aws-cloudformation-list-stack-instances]
 API.
 
-### Account Specific Roles
+#### Example 1
 
-If you are utilizing multiple accounts in `providers.yml`, it's possible to
-configure roles that are unique to each account.
+:::{asciinema} assets/aws-stackset-setup.cast
+:poster: "npt:00:46"
+:::
 
-```yaml
-- provider: aws
-  account_number: 111111111111 # <- primary account
-  role_name: SharedRole
-  accounts:
-  - account_number: 222222222222
-  - account_number: 333333333333
-    role_name: Role333
-  - account_number: 444444444444
-    role_name: Role444
-```
+### Find Accounts by Organizations
 
-In this example, account 222222222222 will inherit the role `SharedRole`. Account
-333333333333 will overwrite the parent role with `Role333`. Note that the [account
-number][aws-account-id] must be a 12-digit number.
+Provider setup will use the Organizations [List Accounts][aws-organizations-list-accounts]
+feature to find a list of accounts. You will then have the option to choose which
+accounts are saved into `providers.yml`.
 
-## Configure Cloud Connector IAM
+#### Example 2
 
-The Censys Cloud Connector has a set of
-{ref}`minimum required permissions <aws/templates:least privilege policy>`.
-These permissions can be applied through standard IAM configuration. As a security
-best-practice, the connector also supports creation of [temporary credentials][aws-sts-creds]
-via Secure Token Service (STS).
-
-Censys also maintains a CloudFormation
-{ref}`StackSet template <aws/templates:stackset template>`
-that will deploy a `CensysCloudConnectorRole` role to all of your AWS accounts.
-The StackSet can also be used to list all of your accounts.
-
-### StackSet Deployment
-
-See {doc}`StackSet Deployment <stackset>` for a walk-through of how to install
-the Censys Cloud Connector StackSet in your account.
+:::{asciinema} assets/aws-orglist-setup.cast
+:poster: "npt:01:01"
+:::
 
 ## Asset Deny List
 
@@ -162,13 +143,7 @@ Usage:
 - Tags named `censys-cloud-connector-ignore` are ignored.
 
 <!-- References -->
-[aws-account-id]: https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-identifiers.html
-[aws-boto3-sts]: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sts.html
 [aws-cli]: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
 [aws-cli-configure]: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-prereqs.html
-[aws-cli-profile]: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html
-[aws-cli-sso]: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sso.html
 [aws-cloudformation-list-stack-instances]: https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_ListStackInstances.html
 [aws-organizations-list-accounts]: https://docs.aws.amazon.com/organizations/latest/APIReference/API_ListAccounts.html
-[aws-sts-assume-role]: https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html
-[aws-sts-creds]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp.html

@@ -11,7 +11,8 @@ This method assumes you have Docker installed and running on your server.
     docker pull gcr.io/censys-io/censys-cloud-connector:latest
     ```
 
-    ````{note}
+    ````{admonition} Note
+    :class: censys
     If your environment does not allow you to pull the Docker image, you can
     build it from the Dockerfile using the following command. You can then
     push the image to a Docker registry.
@@ -51,7 +52,8 @@ flag to ensure the container is removed after it has finished.
         scan --daemon 4
     ```
 
-    ```{note}
+    ```{admonition} Note
+    :class: censys
     The {doc}`--daemon <cli>` flag will run the connector in the background.
     The number specifies the number of hours between each scan.
     ```
@@ -80,6 +82,7 @@ your server.
 
     Uncomment the line `# command: scan --daemon 4` in `docker-compose.yml`.
 
-    ```{note}
+    ```{admonition} Note
+    :class: censys
     Learn more about the available options for the {doc}`scan <cli>` command.
     ```

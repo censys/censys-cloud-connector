@@ -1,0 +1,36 @@
+:root {
+    --censys-dark: #bd5b00;
+    --censys-light: #ffae62;
+    --censys-lighter: #ffebd7;
+    --censys-blue: #10069f;
+    --censys-light-blue: #9bbbfd;
+    --icon-success: url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" aria-hidden="true"><path fill-rule="evenodd" d="M1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0zM0 8a8 8 0 1116 0A8 8 0 010 8zm11.78-1.72a.75.75 0 00-1.06-1.06L6.75 9.19 5.28 7.72a.75.75 0 00-1.06 1.06l2 2a.75.75 0 001.06 0l4.5-4.5z"></path></svg>');
+}
+
+.admonition.censys {
+    border-color: var(--censys-blue);
+}
+.admonition.censys > .admonition-title {
+    background-color: var(--censys-light-blue);
+    border-color: var(--color-admonition-title--censys);
+}
+.admonition.censys > .admonition-title::before {
+    background-color: var(--censys-blue);
+    -webkit-mask-image: var(--icon-info);
+    mask-image: var(--icon-info);
+
+}
+
+.admonition.success {
+    border-color: var(--color-admonition-title--tip);
+}
+.admonition.success > .admonition-title {
+    background-color: var(--color-admonition-title-background--tip);
+    border-color: var(--color-admonition-title--tip);
+}
+.admonition.success > .admonition-title::before {
+    background-color: var(--color-admonition-title--tip);
+    -webkit-mask-image: var(--icon-success);
+    mask-image: var(--icon-success);
+
+}
