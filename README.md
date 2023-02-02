@@ -35,7 +35,7 @@ This software is licensed under [Apache License, Version 2.0][license].
 
 [aws]: https://censys-cloud-connector.readthedocs.io/en/stable/providers.html#amazon-web-services
 [azure]: https://censys-cloud-connector.readthedocs.io/en/stable/providers.html#azure-cloud
-[censys-cloud-connector-docs]: https://censys-cloud-connector.readthedocs.io/en/stable/
+[censys-cloud-connector-docs]: https://censys-cloud-connector.rtfd.io/
 [contributing]: https://github.com/censys/censys-cloud-connector/tree/main/CONTRIBUTING.md
 [gcp]: https://censys-cloud-connector.readthedocs.io/en/stable/providers.html#google-cloud-platform
 [github]: https://github.com/censys/censys-cloud-connector
