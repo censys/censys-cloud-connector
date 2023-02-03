@@ -98,7 +98,7 @@ sphinx-prompt = "^1.5.0"
 sphinxcontrib-autoprogram = "^0.1.7"
 sphinx-autobuild = "^2021.3.14"
 sphinx-design = "^0.3.0"
-sphinxcontrib-asciinema = {git = "https://github.com/thehappydinoa/sphinxcontrib.asciinema.git", rev = "patch-1"}
+sphinxcontrib-asciinema = "^0.3.6"
 
 [tool.poetry.group.aws.dependencies]
 boto3 = "^1.24.63"

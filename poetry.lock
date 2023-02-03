@@ -3651,6 +3651,7 @@ category = "dev"
 optional = false
 python-versions = "*"
 files = [
+    {file = "livereload-2.6.3-py2.py3-none-any.whl", hash = "sha256:ad4ac6f53b2d62bb6ce1a5e6e96f1f00976a32348afedcb4b6d68df2a1d346e4"},
     {file = "livereload-2.6.3.tar.gz", hash = "sha256:776f2f865e59fde56490a56bcc6773b6917366bce0c267c60ee8aaf1a0959869"},
 ]
 
@@ -5346,23 +5347,18 @@ lint = ["docutils-stubs", "flake8", "mypy"]
 test = ["pytest"]
 
 [[package]]
-name = "sphinxcontrib.asciinema"
-version = "0.3.5"
+name = "sphinxcontrib-asciinema"
+version = "0.3.6"
 description = "Embed asciinema casts in your Sphinx docs"
 category = "dev"
 optional = false
 python-versions = "*"
-files = []
-develop = false
+files = [
+    {file = "sphinxcontrib.asciinema-0.3.6.tar.gz", hash = "sha256:ad8a15cca90454bfb2bd8558500f518f11b3dbdc4e3cb79d03cea6195985c8ce"},
+]
 
 [package.dependencies]
 sphinx = "*"
-
-[package.source]
-type = "git"
-url = "https://github.com/thehappydinoa/sphinxcontrib.asciinema.git"
-reference = "patch-1"
-resolved_reference = "d24f1706cbb7014c9e5382880ae24a4e77d66789"
 
 [[package]]
 name = "sphinxcontrib-autoprogram"
@@ -5842,4 +5838,4 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "fb8b6373e44f4577dff0967a61fdc2fdfbc7bdab6676e844c89c6d010b9461cd"
+content-hash = "2e184a521285940e748d20b9ff605b60a6d40b411aa88795ea4ea7815d12a2fb"
