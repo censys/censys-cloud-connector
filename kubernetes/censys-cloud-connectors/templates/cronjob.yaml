@@ -11,24 +11,46 @@ spec:
   failedJobsHistoryLimit: 2
   jobTemplate:
     spec:
+      backoffLimit: 3
+      # activeDeadlineSeconds: 3600
       template:
         spec:
-          restartPolicy: Never
-          volumes:
-            - name: config
-              configMap:
-                name: {{ include "censys-cloud-connectors.fullname" . }}
+          restartPolicy: OnFailure
+          securityContext: {{ .Values.securityContext | toYaml | nindent 12 }}
           containers:
             - name: {{ .Chart.Name }}
               image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default "latest" }}"
               imagePullPolicy: {{ .Values.image.pullPolicy }}
+              securityContext: {{ .Values.podSecurityContext | toYaml | nindent 16 }}
+              resources: {{ .Values.resources | toYaml | nindent 16 }}
               volumeMounts:
-                - name: config
-                  mountPath: /config
+                - name: providers-volume
+                  mountPath: /providers
                   readOnly: true
+                {{- if .Values.credentialsSecretName }}
+                - name: credentials-volume
+                  mountPath: /credentials
+                  readOnly: true
+                {{- end }}
               env:
                 - name: PROVIDERS_CONFIG_FILE
-                  value: /config/providers.yml
+                  value: /providers/providers.yml
+                {{- if .Values.credentialsSecretName }}
+                - name: SECRETS_DIR
+                  value: /credentials
+                {{- end }}
               envFrom:
                 - secretRef:
-                    name: {{ include "censys-cloud-connectors.fullname" . }}
+                    name: {{ .Values.envSecretName }}
+          volumes:
+            - name: providers-volume
+              secret:
+                secretName: {{ .Values.providersSecretName }}
+            {{- if .Values.credentialsSecretName }}
+            - name: credentials-volume
+              secret:
+                secretName: {{ .Values.credentialsSecretName }}
+            {{- end }}
+          nodeSelector: {{ .Values.nodeSelector | toYaml | nindent 12 }}
+          tolerations: {{ .Values.tolerations | toYaml | nindent 12 }}
+          affinity: {{ .Values.affinity | toYaml | nindent 12 }}

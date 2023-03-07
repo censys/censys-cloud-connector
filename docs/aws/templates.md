@@ -51,3 +51,5 @@ language: json
 <!-- References -->
 [aws-least-privilege]: https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#grant-least-privilege
 [aws-policy-security-audit]: https://console.aws.amazon.com/iam/home#policies/arn:aws:iam::aws:policy/SecurityAudit
+<!-- markdownlint-disable-next-line MD053 -->
+[aws-sts-creds]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp.html

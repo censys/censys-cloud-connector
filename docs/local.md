@@ -15,7 +15,7 @@ cloud assets to Censys ASM as Seeds and Cloud Assets.
 
 ## Additional Options
 
-- You can set a scheduled interval for the connector to run on with the flag
+You can set a scheduled interval for the connector to run on with the flag
 `--daemon`. This option takes in a time interval in hours. If you do not
 specify an interval, the default will be set to 1 hour.
 

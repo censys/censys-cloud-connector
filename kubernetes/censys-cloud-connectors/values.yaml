@@ -1,44 +1,62 @@
-# Default values for censys-cloud-connectors.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+# Default values for censys-cloud-connectors
 
-replicaCount: 1
+# The name of the secret containing the .env file
+envSecretName: "censys-cloud-connectors-env"
 
-image:
-  repository: gcr.io/censys-io/censys-cloud-connector
-  pullPolicy: Always
-  # Overrides the image tag whose default is latest.
-  tag: ""
+# The name of the secret containing the providers.yml file
+providersSecretName: "censys-cloud-connectors-providers"
 
-imagePullSecrets: []
+# Optional: The name of the secret containing all the credentials stored in the
+# secrets directory
+# credentialsSecretName: "censys-cloud-connectors-secrets"
+
+# Optional: The override for the name of the chart
 nameOverride: ""
+
+# Optional: The override for the fullname (including release name) of the chart
 fullnameOverride: ""
 
+# Optional: The authorization token to use when accessing the docker registry
+imagePullSecrets: []
+
+image:
+  # The image for the censys-cloud-connector container
+  repository: gcr.io/censys-io/censys-cloud-connector
+  # Overrides the image pull policy (values: Always, IfNotPresent, Never)
+  pullPolicy: Always
+  # Overrides the image tag whose default is latest
+  tag: ""
+
 cronjob:
-  # Run every 4 hours
+  # The interval at which the censys-cloud-connector container will run (in cron format)
+  # Defaults to every 4 hours (0 */4 * * *). See https://crontab.guru/ for assistance
+  # in creating cron schedules.
   schedule: "0 */4 * * *"
-  concurrencyPolicy: Forbid
+  # The concurrency policy for the cronjob (values: Allow, Forbid, Replace)
+  concurrencyPolicy: Allow
 
-secrets:
-  CENSYS_API_KEY: ""
-
-providers: []
-
+# The annotations to add to the pod
 podAnnotations: {}
 
-podSecurityContext:
+# The security context to add to the container
+securityContext:
+  seccompProfile:
+    type: RuntimeDefault
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 10000
+  runAsGroup: 3000
   fsGroup: 2000
 
-securityContext:
+# The security context to add to the pod
+podSecurityContext:
+  allowPrivilegeEscalation: false
   capabilities:
     drop:
       - ALL
-  readOnlyRootFilesystem: true
-  runAsNonRoot: true
-  runAsUser: 1000
 
-resources:
-  {}
+# The resources to allocate to the container
+resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
@@ -50,8 +68,11 @@ resources:
   #   cpu: 100m
   #   memory: 128Mi
 
+# The node selector to use when scheduling the pod
 nodeSelector: {}
 
+# The tolerations to use when scheduling the pod
 tolerations: []
 
+# The affinity to use when scheduling the pod
 affinity: {}

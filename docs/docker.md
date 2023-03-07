@@ -31,7 +31,7 @@ additional secret files, you can mount it as a volume as well. The `-d` flag
 is used to run the container in the background. We also include the `--rm`
 flag to ensure the container is removed after it has finished.
 
-- Run the Docker container (Once-off)
+- Run the Docker container (Once)
 
     ```{prompt} bash
     docker run -d --rm \
@@ -78,7 +78,7 @@ your server.
     docker-compose up -d
     ```
 
-2. [Optional] Run your connector on a scheduled interval
+2. (Optional) Run your connector on a scheduled interval
 
     Uncomment the line `# command: scan --daemon 4` in `docker-compose.yml`.
 

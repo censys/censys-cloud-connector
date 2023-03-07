@@ -14,7 +14,7 @@ Censys Cloud Connector.
     If you are running from your local machine, you also need Default
     Application Credentials:
 
-    ```sh
+    ```{prompt} bash
     gcloud auth application-default login
     ```
 
@@ -23,13 +23,13 @@ Censys Cloud Connector.
 1. Ensure you are in the root directory of the project.
 2. Source your environment variables.
 
-   ```sh
+   ```{prompt} bash
    source .env
    ```
 
 3. Install the dependencies.
 
-   ```sh
+   ```{prompt} bash
    poetry install
    ```
 
@@ -38,39 +38,39 @@ Censys Cloud Connector.
    If you have not already done so, you can create a `providers.yml` file by
    running the following command:
 
-   ```sh
+   ```{prompt} bash
    poetry run censys-cc config
    ```
 
 5. Change the working directory to the `google-scheduled-function` directory
    with the following command:
 
-    ```sh
+    ```{prompt} bash
     cd ./terraform/google-scheduled-function
     ```
 
 6. Copy `terraform.tfvars.example` to `terraform.tfvars` and update the values
    to match your environment.
 
-   ```sh
+   ```{prompt} bash
    cp terraform.tfvars.example terraform.tfvars
    ```
 
 7. Initialize the project with the following command:
 
-   ```sh
+   ```{prompt} bash
    terraform init
    ```
 
 8. To see what resources will be created or updated, run the following command:
 
-   ```sh
+   ```{prompt} bash
    terraform plan -var-file terraform.tfvars -out=censys-tfplan -input=false
    ```
 
 9. To create or update the resources, run the following command:
 
-   ```sh
+   ```{prompt} bash
    terraform apply -input=false censys-tfplan
    ```
 
@@ -78,7 +78,7 @@ Censys Cloud Connector.
 
 To clean up the resources created by this module, run the following command:
 
-```sh
+```{prompt} bash
 terraform destroy -var-file terraform.tfvars
 ```
 
