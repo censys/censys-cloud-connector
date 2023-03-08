@@ -40,6 +40,22 @@
         },
         "Description": "This role was created by the Censys Cloud Connector. The Censys Cloud Connector utilizes this role to enumerate assets in this account.",
         "ManagedPolicyArns": ["arn:aws:iam::aws:policy/SecurityAudit"],
+        "Policies": [
+          {
+            "PolicyName": "CensysAPIGatewayPolicy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "CensysCloudConnectorPolicy",
+                  "Effect": "Allow",
+                  "Action": ["apigateway:GET"],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ],
         "Path": "/",
         "RoleName": "CensysCloudConnectorRole"
       }
