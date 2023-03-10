@@ -100,7 +100,7 @@ helm upgrade --install censys-cloud-connectors ./kubernetes/censys-cloud-connect
 8. Run the Censys Cloud Connector Manually
 
 ```{prompt} bash
-kubectl create job --from=cronjob/censys-cloud-connectors censys-cloud-connectors-manual --dry-run=client -o yaml | kubectl replace --force -f -
+kubectl create job --from=cronjob/censys-cloud-connectors censys-cloud-connectors-manual --dry-run=client -o yaml | kubectl apply -f -
 ```
 
 9. Check the logs of the Censys Cloud Connector Job

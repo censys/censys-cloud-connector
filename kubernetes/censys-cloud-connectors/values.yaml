@@ -42,7 +42,6 @@ podAnnotations: {}
 securityContext:
   seccompProfile:
     type: RuntimeDefault
-  readOnlyRootFilesystem: true
   runAsNonRoot: true
   runAsUser: 10000
   runAsGroup: 3000
