@@ -1,4 +1,5 @@
 """Azure Cloud Connector."""
+from collections.abc import Generator
 from typing import Optional
 
 from azure.core.exceptions import (
@@ -12,7 +13,8 @@ from azure.mgmt.dns import DnsManagementClient
 from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.sql import SqlManagementClient
 from azure.mgmt.storage import StorageManagementClient
-from azure.storage.blob import BlobServiceClient
+from azure.mgmt.storage.models import StorageAccount
+from azure.storage.blob import BlobServiceClient, ContainerProperties
 from msrest.serialization import Model as AzureModel
 
 from censys.cloud_connectors.common.cloud_asset import AzureContainerAsset
@@ -198,6 +200,26 @@ class AzureCloudConnector(CloudConnector):
                         )
                         self.add_seed(ip_seed)
 
+    def _list_containers(
+        self, bucket_client: BlobServiceClient, account: StorageAccount
+    ) -> Generator[ContainerProperties, None, None]:
+        """List Azure containers.
+
+        Args:
+            bucket_client (BlobServiceClient): Blob service client.
+            account (StorageAccount): Storage account.
+
+        Yields:
+            ContainerProperties: Azure container properties.
+        """
+        try:
+            yield from bucket_client.list_containers()
+        except HttpResponseError as error:
+            self.logger.error(
+                f"Failed to get Azure containers for {account.name}: {error.message}"
+            )
+            return
+
     def get_storage_containers(self):
         """Get Azure containers."""
         storage_client = StorageManagementClient(self.credentials, self.subscription_id)
@@ -216,7 +238,8 @@ class AzureCloudConnector(CloudConnector):
                     )
                     self.add_seed(domain_seed)
             uid = f"{self.subscription_id}/{self.credentials._tenant_id}/{account.name}"
-            for container in bucket_client.list_containers():
+
+            for container in self._list_containers(bucket_client, account):
                 try:
                     container_client = bucket_client.get_container_client(container)
                     container_url = container_client.url
@@ -233,6 +256,5 @@ class AzureCloudConnector(CloudConnector):
                         self.add_cloud_asset(container_asset)
                 except ServiceRequestError as error:  # pragma: no cover
                     self.logger.error(
-                        f"Failed to get Azure container {container} for {account.name}: {error.message}",
-                        exc_info=True,
+                        f"Failed to get Azure container {container} for {account.name}: {error.message}"
                     )
