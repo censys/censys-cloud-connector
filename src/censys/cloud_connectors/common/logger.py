@@ -18,7 +18,9 @@ def get_logger(
     """
     logger = logging.getLogger(log_name)
     if not logger.hasHandlers():
-        formatter = logging.Formatter(fmt="%(levelname)s:%(name)s: %(message)s")
+        formatter = logging.Formatter(
+            fmt="%(asctime)s:%(levelname)s:%(name)s: %(message)s"
+        )
         handler = logging.StreamHandler()
         handler.setFormatter(formatter)
         logger.addHandler(handler)
