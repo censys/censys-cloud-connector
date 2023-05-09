@@ -11,6 +11,7 @@ classifiers = [
     "Typing :: Typed",
     "Topic :: Internet",
     "Topic :: Security",
+    "Topic :: System :: Monitoring",
     "Topic :: System :: Networking",
     "Topic :: System :: Networking :: Monitoring",
     "Topic :: Utilities",
@@ -19,13 +20,14 @@ classifiers = [
     "Intended Audience :: Information Technology",
     "Intended Audience :: System Administrators",
     "Operating System :: OS Independent",
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
 ]
 
 [tool.poetry.urls]
@@ -40,16 +42,13 @@ censys-cc = "censys.cloud_connectors.common.cli:main"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-backoff = "^2.1.2"
-censys = "^2.1.8"
+backoff = "^2.2.1"
+censys = "^2.2.2"
 inquirerpy = "^0.3.3"
 pydantic = {extras = ["dotenv", "email"], version = "^1.9.0"}
 PyYAML = "^6.0"
-requests = "^2.27.1"
-rich = "^12.4.4"
-
-[tool.poetry.group.dev]
-optional = true
+requests = "^2.30.0"
+rich = "^13.3.5"
 
 [tool.poetry.group.dev.dependencies]
 # Debug
@@ -105,19 +104,10 @@ boto3 = "^1.24.63"
 boto3-stubs = {extras = ["apigateway", "apigatewayv2", "ec2", "ecs", "elb", "elbv2", "rds", "route53", "route53domains", "s3", "sts"], version = "^1.24.63"}
 
 [tool.poetry.group.azure.dependencies]
-azure-cli = "^2.34.1"
-azure-common = "^1.1.28"
-azure-core = "^1.22.0"
-azure-identity = "^1.7.1"
-azure-mgmt-compute = ">=25.0.0,<25.1.0"
-azure-mgmt-containerinstance = "^9.1.0"
-azure-mgmt-core = "^1.3.0"
-azure-mgmt-dns = "^8.0.0"
-azure-mgmt-network = "^19.3.0"
-azure-mgmt-resource = "20.0.0"
-azure-mgmt-sql = "^3.0.1"
-azure-mgmt-storage = "^19.1.0"
-azure-storage-blob = "^12.9.0"
+azure-cli = "^2.48.1"
+azure-identity = "^1.12.0"
+azure-mgmt-network = "^23.0.1"
+azure-storage-blob = "^12.16.0"
 # Specified sys_platform to avoid issues with platform_system
 pywin32 = {version = "^303", markers = "sys_platform == 'win32'"}
 
