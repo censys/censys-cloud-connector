@@ -183,7 +183,10 @@ class AzureCloudConnector(CloudConnector):
                             value=domain_name, label=self.format_label(zone)
                         )
                         self.add_seed(domain_seed)
-                if cname := asset_dict.get("cname_record", {}).get("cname"):
+                if (
+                    cname := asset_dict.get("cname_record", {}).get("cname")
+                    and self.settings.include_cname_domains
+                ):
                     with SuppressValidationError():
                         domain_seed = DomainSeed(
                             value=cname, label=self.format_label(zone)

@@ -105,6 +105,13 @@ If set to `false`, the connector will not report its health to the ASM platform.
 Default: `true`
 ```
 
+```{envvar} INCLUDE_CNAME_DOMAINS
+
+If set to `false`, the connector will not include CNAME domains as seed domains.
+
+Default: `true`
+```
+
 ### Sample `.env` File
 
 `.env.sample` is a sample file that contains the above environment variables.

@@ -190,6 +190,13 @@ class Settings(BaseSettings):
         description="Provider Setup CLI Validation timeout",
     )
 
+    # Service specific settings
+    include_cname_domains: bool = Field(
+        default=True,
+        env="INCLUDE_CNAME_DOMAINS",
+        description="Include CNAME domains as seeds",
+    )
+
     # Plugins
     aws_tags_plugin_enabled: bool = Field(
         default=False,

@@ -42,7 +42,6 @@ from censys.cloud_connectors.common.settings import Settings
 
 T = TypeVar("T", bound="botocore.client.BaseClient")
 
-VALID_RECORD_TYPES = ["A", "CNAME"]
 IGNORED_TAGS = ["censys-cloud-connector-ignore"]
 
 
@@ -70,6 +69,7 @@ class AwsCloudConnector(CloudConnector):
     # Current set of ignored tags (combined set of user settings + overall settings)
     ignored_tags: list[str]
     global_ignored_tags: set[str]
+    valid_dns_record_types: list[str] = ["A"]
 
     def __init__(self, settings: Settings):
         """Initialize AWS Cloud Connectors.
@@ -92,6 +92,8 @@ class AwsCloudConnector(CloudConnector):
 
         self.ignored_tags = []
         self.global_ignored_tags: set[str] = set(IGNORED_TAGS)
+        if settings.include_cname_domains:
+            self.valid_dns_record_types.append("CNAME")
 
     def scan(self):
         """Scan AWS."""
@@ -616,7 +618,7 @@ class AwsCloudConnector(CloudConnector):
                 id = zone.get("Id")
                 resource_sets = self._get_route53_zone_resources(client, id)
                 for resource_set in resource_sets.get("ResourceRecordSets", []):
-                    if resource_set.get("Type") not in VALID_RECORD_TYPES:
+                    if resource_set.get("Type") not in self.valid_dns_record_types:
                         continue
 
                     domain_name = resource_set.get("Name").rstrip(".")
