@@ -11,6 +11,14 @@ variable "aws_availability_zone" {
   description = "The AWS availability zones to use."
 }
 
+variable "aws_default_tags" {
+  type        = map(string)
+  default     = {
+    "Product" = "CensysCloudConnector"
+  }
+  description = "The default tags to apply to AWS resources."
+}
+
 variable "image_uri" {
   type        = string
   default     = "gcr.io/censys-io/censys-cloud-connector"
