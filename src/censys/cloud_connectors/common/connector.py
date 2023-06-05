@@ -213,6 +213,11 @@ class CloudConnector(ABC):
             )
         return json_data
 
+    def clear(self):
+        """Clear the seeds and cloud assets."""
+        self.seeds.clear()
+        self.cloud_assets.clear()
+
     def submit(self):  # pragma: no cover
         """Submit the seeds and cloud assets to the Censys ASM."""
         if self.settings.dry_run:
@@ -221,6 +226,7 @@ class CloudConnector(ABC):
             self.logger.info("Submitting seeds and assets...")
             self.submit_seeds()
             self.submit_cloud_assets()
+        self.clear()
 
     def scan(self):
         """Scan the seeds and cloud assets."""
