@@ -37,13 +37,17 @@ class GcpSpecificSettings(ProviderSpecificSettings):
         """
         return f"organizations/{self.organization_id}"
 
-    def get_provider_key(self) -> tuple[int, str]:
+    def get_provider_key(self) -> tuple[int, str, str]:
         """Get provider key.
 
         Returns:
-            tuple[int, str]: Provider key.
+            tuple[int, str, str]: Provider key.
         """
-        return self.organization_id, self.service_account_email
+        return (
+            self.organization_id,
+            self.service_account_email,
+            self.service_account_json_file.as_posix(),
+        )
 
     def get_provider_payload(self) -> dict:
         """Get the provider payload.
