@@ -9,7 +9,7 @@
       "Type": "String"
     },
     "Principal": {
-      "AllowedPattern": "[a-zA-Z0-9]{1,64}",
+      "AllowedPattern": "[a-zA-Z_0-9+=,.@\\-_/]+",
       "ConstraintDescription": "\"Principal\" must be a valid AWS IAM Principal name.",
       "Description": "Enter the account principal.",
       "MaxLength": 64,
