@@ -1,0 +1,46 @@
+name: "Build Container"
+description: "Build Container using Buildah"
+inputs:
+  credentials:
+    description: "Docker Config file contents."
+    required: true
+  image:  
+    description: "Name of the image to build, without the tag."
+    required: true
+  target:
+    description: "Build target (Default 'app')."
+    required: true
+    default: "app"
+  tag-latest:
+    description: "Tag the image as latest."
+    required: false
+    default: 'false'
+outputs:
+  image:
+    description: "Name of the built container image"
+    value: ${{ steps.set_image.outputs.image }}
+runs:
+  using: "composite"
+  steps:
+    - uses: censys/shared-actions/variable-to-file@main
+      with:
+        contents: "${{ inputs.credentials }}"
+        file: "${HOME}/.docker/config.json"
+
+    - name: Build
+      shell: bash
+      run: |
+        buildah bud --squash --target=${{ inputs.target }} -t ${{ inputs.image }}:${GITHUB_SHA} .
+        buildah push ${{ inputs.image }}:${GITHUB_SHA}
+    
+    - name: Tag Latest
+      shell: bash
+      if: ${{ inputs.tag-latest == 'true' }}
+      run: |
+        buildah tag ${{ inputs.image }}:${GITHUB_SHA} ${{ inputs.image }}:latest
+        buildah push ${{ inputs.image }}:latest
+
+    - name: Set Image Output
+      shell: bash
+      id: set_image
+      run: echo "image=${{ inputs.image }}:${GITHUB_SHA}" >> $GITHUB_OUTPUT

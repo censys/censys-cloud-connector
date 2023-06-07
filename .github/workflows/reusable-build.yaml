@@ -1,0 +1,37 @@
+name: "Build Cloud Connector"
+
+on:
+  workflow_call:
+    inputs:
+      tag-latest:
+        description: "Tag the image as latest."
+        required: false
+        default: 'false'
+        type: boolean
+    outputs:
+      image:
+        description: "Name of the built container image"
+        value: ${{ jobs.build.outputs.image }}
+
+jobs:
+  build:
+    runs-on: self-hosted
+    outputs:
+      image: ${{ steps.build.outputs.image }}
+    container:
+      image: gcr.io/censys-internal/censys.io/buildah:2022-01-08_21-43-42
+      env:
+        STORAGE_DRIVER: overlay
+      options: --privileged
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build
+        id: build
+        uses: ./.github/actions/container-build-buildah
+        with:
+          credentials: ${{ secrets.DOCKER_AUTH_CONFIG }}
+          image: gcr.io/censys-io/censys-cloud-connector
+          target: app
+          tag-latest: ${{ github.event.inputs.tag-latest }}

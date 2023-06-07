@@ -1,0 +1,39 @@
+name: "Cloud Connector Pull Request"
+
+on:
+  pull_request:
+
+concurrency:
+  group: "${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    uses: ./.github/workflows/reusable-build.yaml
+    secrets: inherit
+
+  unit-tests:
+    runs-on: self-hosted
+    needs: build
+    container:
+      image: ${{ needs.build.outputs.image }}
+    steps:
+      - name: Test
+        run: |
+          cd /app
+          poetry install --with test
+          poetry run pytest
+  
+  lint:
+    runs-on: self-hosted
+    needs: build
+    container:
+      image: ${{ needs.build.outputs.image }}
+    steps:
+      - name: Lint
+        run: |
+          cd /app
+          poetry run black --check .
+          poetry run isort --check .
+          poetry run flake8 .
+          poetry run mypy -p censys.cloud_connectors
