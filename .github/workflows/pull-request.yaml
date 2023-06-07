@@ -1,0 +1,21 @@
+name: "Cloud Connector Pull Request"
+
+on:
+  pull_request:
+
+concurrency:
+  group: "${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    uses: ./.github/workflows/reusable-build.yaml
+    secrets: inherit
+    with:
+      tag-pr: "true"
+
+  test:
+    uses: ./.github/workflows/reusable-test.yaml
+  
+  lint:
+    uses: ./.github/workflows/reusable-lint.yaml

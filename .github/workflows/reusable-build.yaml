@@ -1,0 +1,61 @@
+name: "Build Cloud Connector"
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "Additional tag to apply to the image"
+        required: false
+        default: ""
+        type: string
+      tag-pr:
+        description: "Whether to tag the image with the PR number"
+        required: false
+        default: "false"
+        type: string
+      version:
+        description: "Whether to tag the image with the version"
+        required: false
+        default: "false"
+        type: string
+    outputs:
+      image:
+        description: "Name of the built container image"
+        value: ${{ jobs.build.outputs.image }}
+
+jobs:
+  build:
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.build.outputs.image }}
+    container:
+      image: ghcr.io/censys/buildah:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      env:
+        STORAGE_DRIVER: overlay
+      options: --privileged
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build
+        id: build
+        uses: ./.github/actions/container-build-buildah
+        with:
+          credentials: ${{ secrets.DOCKER_AUTH_CONFIG }}
+          image: gcr.io/censys-io/censys-cloud-connector
+          target: app
+          tag: ${{ github.event.inputs.tag }}
+          tag-pr: ${{ github.event.inputs.tag-pr }}
+          version: ${{ github.event.inputs.version }}
+
+      - name: Tag Version
+        id: tag-version
+        if: ${{ github.event.inputs.version == 'true' }}
+        uses: ./.github/actions/create-version-tag

@@ -17,11 +17,6 @@ install:  ## Install the connector dependencies
 	@if [ -z $(POETRY) ]; then echo "Poetry could not be found. See https://python-poetry.org/docs/"; exit 2; fi
 	$(POETRY) install
 
-.PHONY: dev
-dev:  ## Install the connector with development dependencies
-	@if [ -z $(POETRY) ]; then echo "Poetry could not be found. See https://python-poetry.org/docs/"; exit 2; fi
-	$(POETRY) install --with dev,test
-
 .PHONY: install-aws
 install-aws:  ## Install the connector with aws dependencies
 	@if [ -z $(POETRY) ]; then echo "Poetry could not be found. See https://python-poetry.org/docs/"; exit 2; fi
@@ -74,14 +69,10 @@ lint:
 
 .PHONY: test
 test:  ## Runs tests
-	@if [ -z $(POETRY) ]; then echo "Poetry could not be found. See https://python-poetry.org/docs/"; exit 2; fi
-	$(POETRY) install --with test
 	$(POETRY) run pytest --no-cov
 
 .PHONY: test-cov
 test-cov:  ## Runs tests and generates coverage report
-	@if [ -z $(POETRY) ]; then echo "Poetry could not be found. See https://python-poetry.org/docs/"; exit 2; fi
-	$(POETRY) install --with test
 	$(POETRY) run pytest --cov --cov-report html
 
 .PHONY: build-image
