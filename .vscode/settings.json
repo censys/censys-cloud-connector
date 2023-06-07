@@ -30,6 +30,7 @@
     "boto",
     "boto3",
     "botocore",
+    "buildah",
     "capsys",
     "censys",
     "cloudbuild",
