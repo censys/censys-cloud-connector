@@ -3,10 +3,15 @@ name: "Build Cloud Connector"
 on:
   workflow_call:
     inputs:
-      tag-latest:
-        description: "Tag the image as latest."
+      tag:
+        description: "Additional tag to apply to the image"
         required: false
-        default: 'false'
+        default: ''
+        type: string
+      version:
+        description: "Version of the image to build"
+        required: false
+        default: ''
         type: string
     outputs:
       image:
@@ -15,6 +20,7 @@ on:
 
 jobs:
   build:
+    timeout-minutes: 20
     runs-on: self-hosted
     outputs:
       image: ${{ steps.build.outputs.image }}
@@ -34,4 +40,5 @@ jobs:
           credentials: ${{ secrets.DOCKER_AUTH_CONFIG }}
           image: gcr.io/censys-io/censys-cloud-connector
           target: app
-          tag-latest: ${{ github.event.inputs.tag-latest }}
+          tag: ${{ github.event.inputs.tag }}
+          version: ${{ github.event.inputs.version }}

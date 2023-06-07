@@ -13,6 +13,7 @@ jobs:
     secrets: inherit
 
   unit-tests:
+    timeout-minutes: 5
     runs-on: self-hosted
     needs: build
     container:
@@ -25,6 +26,7 @@ jobs:
           poetry run pytest
   
   lint:
+    timeout-minutes: 5
     runs-on: self-hosted
     needs: build
     container:
