@@ -630,7 +630,6 @@ class AwsCloudConnector(CloudConnector):
 
     def get_route53_instances(self):
         """Retrieve Route 53 data and emit seeds."""
-        # Route53 domains have been removed until a client need is identified.
         self.get_route53_domains()
         self.get_route53_zones()
 
