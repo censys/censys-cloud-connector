@@ -51,7 +51,7 @@ docs:  ## Build the documentation
 .PHONY: clean
 clean:
 	find . -type d -name "__pycache__" | xargs rm -rf {};
-	rm -rf .coverage .mypy_cache
+	rm -rf .coverage .mypy_cache .venv
 
 .PHONY: lock
 lock:
