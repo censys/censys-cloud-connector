@@ -26,7 +26,7 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - uses: censys/shared-actions/variable-to-file@main
+    - uses: ./.github/actions/variable-to-file
       with:
         contents: "${{ inputs.credentials }}"
         file: "${HOME}/.docker/config.json"

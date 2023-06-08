@@ -24,7 +24,7 @@ jobs:
           cd /app
           poetry install --with test
           poetry run pytest
-  
+
   lint:
     timeout-minutes: 5
     runs-on: self-hosted
