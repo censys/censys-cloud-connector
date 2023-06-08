@@ -21,7 +21,7 @@ on:
 jobs:
   build:
     timeout-minutes: 20
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     outputs:
       image: ${{ steps.build.outputs.image }}
     container:

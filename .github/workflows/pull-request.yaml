@@ -14,10 +14,13 @@ jobs:
 
   unit-tests:
     timeout-minutes: 5
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: build
     container:
       image: ${{ needs.build.outputs.image }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.github_token }}
     steps:
       - name: Test
         run: |
@@ -27,10 +30,13 @@ jobs:
 
   lint:
     timeout-minutes: 5
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: build
     container:
       image: ${{ needs.build.outputs.image }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.github_token }}
     steps:
       - name: Lint
         run: |
