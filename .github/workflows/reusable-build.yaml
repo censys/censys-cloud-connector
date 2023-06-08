@@ -6,12 +6,12 @@ on:
       tag:
         description: "Additional tag to apply to the image"
         required: false
-        default: ''
+        default: ""
         type: string
       version:
-        description: "Version of the image to build"
+        description: "Whether to tag the image with the version"
         required: false
-        default: ''
+        default: "false"
         type: string
     outputs:
       image:
@@ -42,3 +42,8 @@ jobs:
           target: app
           tag: ${{ github.event.inputs.tag }}
           version: ${{ github.event.inputs.version }}
+
+      - name: Tag Version
+        id: tag-version
+        if: ${{ github.event.inputs.version == 'true' }}
+        uses: ./.github/actions/create-version-tag
