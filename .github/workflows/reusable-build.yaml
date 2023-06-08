@@ -25,7 +25,7 @@ jobs:
     outputs:
       image: ${{ steps.build.outputs.image }}
     container:
-      image: gcr.io/censys-internal/censys.io/buildah:2022-01-08_21-43-42
+      image: ghcr.io/censys/buildah:latest
       env:
         STORAGE_DRIVER: overlay
       options: --privileged
