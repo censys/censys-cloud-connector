@@ -18,6 +18,10 @@ on:
         description: "Name of the built container image"
         value: ${{ jobs.build.outputs.image }}
 
+permissions:
+  contents: read
+  packages: read
+
 jobs:
   build:
     timeout-minutes: 20
@@ -28,7 +32,7 @@ jobs:
       image: ghcr.io/censys/buildah:latest
       credentials:
         username: ${{ github.actor }}
-        password: ${{ secrets.github_token }}
+        password: ${{ secrets.GITHUB_TOKEN }}
       env:
         STORAGE_DRIVER: overlay
       options: --privileged
