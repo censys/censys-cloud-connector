@@ -18,9 +18,6 @@ jobs:
     needs: build
     container:
       image: ${{ needs.build.outputs.image }}
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.github_token }}
     steps:
       - name: Test
         run: |
@@ -34,9 +31,6 @@ jobs:
     needs: build
     container:
       image: ${{ needs.build.outputs.image }}
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.github_token }}
     steps:
       - name: Lint
         run: |
