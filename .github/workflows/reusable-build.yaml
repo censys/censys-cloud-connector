@@ -18,10 +18,6 @@ on:
         description: "Name of the built container image"
         value: ${{ jobs.build.outputs.image }}
 
-permissions:
-  contents: read
-  packages: read
-
 jobs:
   build:
     timeout-minutes: 20
@@ -36,6 +32,9 @@ jobs:
       env:
         STORAGE_DRIVER: overlay
       options: --privileged
+    permissions:
+      contents: read
+      packages: read
     steps:
       - name: Checkout
         uses: actions/checkout@v3
