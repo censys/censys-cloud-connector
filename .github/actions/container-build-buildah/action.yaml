@@ -15,6 +15,10 @@ inputs:
     description: "Additional tag to apply to the image."
     required: false
     default: ""
+  tag-pr:
+    description: "Whether to tag the image with the PR number."
+    required: false
+    default: "false"
   version:
     description: "Whether to tag the image with the version."
     required: false
@@ -50,6 +54,14 @@ runs:
       run: |
         buildah tag ${{ inputs.image }}:${GITHUB_SHA} ${{ inputs.image }}:${{ inputs.tag }}
         buildah push ${{ inputs.image }}:${{ inputs.tag }}
+
+    - name: Tag PR
+      shell: bash
+      if: ${{ inputs.tag-pr == 'true' }}
+      run: |
+        PR_NUMBER=pr-$(echo $GITHUB_REF | cut -d '/' -f3)
+        buildah tag ${{ inputs.image }}:${GITHUB_SHA} ${{ inputs.image }}:${PR_NUMBER}
+        buildah push ${{ inputs.image }}:${PR_NUMBER}}
 
     - name: Tag Version
       shell: bash

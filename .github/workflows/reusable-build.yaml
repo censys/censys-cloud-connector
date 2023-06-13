@@ -3,16 +3,6 @@ name: "Build Cloud Connector"
 on:
   workflow_call:
     inputs:
-      test:
-        description: "Whether to run tests"
-        required: false
-        default: "false"
-        type: string
-      lint:
-        description: "Whether to run lint"
-        required: false
-        default: "false"
-        type: string
       tag:
         description: "Additional tag to apply to the image"
         required: false
@@ -48,22 +38,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-
-      - name: Test
-        id: test
-        if: ${{ github.event.inputs.test == 'true' }}
-        uses: ./.github/actions/container-test-buildah
-        with:
-          image: gcr.io/censys-io/censys-cloud-connector
-          target: test
-      
-      - name: Lint
-        id: lint
-        if: ${{ github.event.inputs.lint == 'true' }}
-        uses: ./.github/actions/container-test-buildah
-        with:
-          image: gcr.io/censys-io/censys-cloud-connector
-          target: lint
 
       - name: Build
         id: build

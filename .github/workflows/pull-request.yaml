@@ -12,5 +12,4 @@ jobs:
     uses: ./.github/workflows/reusable-build.yaml
     secrets: inherit
     with:
-      test: "true"
-      lint: "true"
+      tag-pr: "true"
