@@ -41,7 +41,7 @@ classifiers = [
 censys-cc = "censys.cloud_connectors.common.cli:main"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.9,<4.0"
 aiometer = "^0.4.0"
 backoff = "^2.2.1"
 censys = "^2.2.2"
@@ -143,6 +143,7 @@ python_version = "3.9"
 strict_optional = true
 warn_redundant_casts = true
 warn_unused_configs = true
+check_untyped_defs = true
 
 [[tool.mypy.overrides]]
 module = [
