@@ -49,6 +49,16 @@ COPY tests/ /app/tests/
 RUN poetry run pytest
 
 
+# Target with linting
+FROM dev as lint
+
+# Run the tests
+RUN poetry run black --check .
+RUN poetry run isort --check .
+RUN poetry run flake8 .
+RUN poetry run mypy -p censys.cloud_connectors
+
+
 # Target for the final image
 FROM ${BASE_IMAGE} as app
 

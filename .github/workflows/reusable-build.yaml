@@ -3,8 +3,18 @@ name: "Build Cloud Connector"
 on:
   workflow_call:
     inputs:
+      image:
+        description: "Name of the image to build"
+        required: false
+        default: "gcr.io/censys-io/censys-cloud-connector"
+        type: string
       test:
         description: "Whether to run tests"
+        required: false
+        default: "false"
+        type: string
+      lint:
+        description: "Whether to run lint"
         required: false
         default: "false"
         type: string
@@ -44,14 +54,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Test
+        id: test
+        if: ${{ github.event.inputs.test == 'true' }}
+        uses: ./.github/actions/container-test-buildah
+        with:
+          image: ${{ github.event.inputs.image }}
+          target: test
+      
+      - name: Lint
+        id: lint
+        if: ${{ github.event.inputs.lint == 'true' }}
+        uses: ./.github/actions/container-test-buildah
+        with:
+          image: ${{ github.event.inputs.image }}
+          target: lint
+
       - name: Build
         id: build
         uses: ./.github/actions/container-build-buildah
         with:
           credentials: ${{ secrets.DOCKER_AUTH_CONFIG }}
-          image: gcr.io/censys-io/censys-cloud-connector
+          image: ${{ github.event.inputs.image }}
           target: app
-          test: ${{ github.event.inputs.test }}
           tag: ${{ github.event.inputs.tag }}
           version: ${{ github.event.inputs.version }}
 

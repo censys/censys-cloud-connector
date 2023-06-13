@@ -13,19 +13,4 @@ jobs:
     secrets: inherit
     with:
       test: "true"
-
-  lint:
-    timeout-minutes: 5
-    runs-on: ubuntu-latest
-    needs: build
-    container:
-      image: ${{ needs.build.outputs.image }}
-    steps:
-      - name: Lint
-        run: |
-          cd /app
-          source .venv/bin/activate
-          black --check .
-          isort --check .
-          flake8 .
-          mypy -p censys.cloud_connectors
+      lint: "true"
