@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Interact with the Censys Search API through the command line."""
+import asyncio
 import sys
 from typing import Optional
 
@@ -28,7 +29,10 @@ def main(manual_args: Optional[list[str]] = None):
         sys.exit(0)
 
     try:
-        args.func(args)
+        if asyncio.iscoroutinefunction(args.func):
+            asyncio.run(args.func(args))
+        else:
+            args.func(args)
     except KeyboardInterrupt:  # pragma: no cover
         sys.exit(1)
 

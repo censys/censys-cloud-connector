@@ -1,7 +1,7 @@
 """Class for performing healthchecks on Cloud Connectors."""
 import traceback
 from types import TracebackType
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Union
 
 import requests
 
@@ -21,7 +21,7 @@ class Healthcheck:
         settings: Settings,
         provider_specific_settings: ProviderSpecificSettings,
         provider: Optional[dict] = None,
-        exception_map: Optional[dict[Exception, ErrorCodes]] = None,
+        exception_map: Optional[dict[Union[Exception, Any], ErrorCodes]] = None,
         **kwargs,
     ) -> None:
         """Initialize the Healthcheck.

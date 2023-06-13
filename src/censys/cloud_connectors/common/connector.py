@@ -2,9 +2,11 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from enum import Enum
+from functools import partial
 from logging import Logger
-from typing import Callable, Optional, Union
+from typing import Any, Callable, Coroutine, Optional, Union
 
+import aiometer
 from requests.exceptions import JSONDecodeError
 
 from censys.asm import Seeds
@@ -29,9 +31,9 @@ class CloudConnector(ABC):
     seeds_api: Seeds
     seeds: dict[str, set[Seed]]
     cloud_assets: dict[str, set[CloudAsset]]
-    seed_scanners: dict[str, Callable[[], None]]
-    cloud_asset_scanners: dict[str, Callable[[], None]]
-    current_service: Optional[Union[str, Enum]]
+    seed_scanners: dict[str, Callable[..., Coroutine[Any, Any, Any]]]
+    cloud_asset_scanners: dict[str, Callable[..., Coroutine[Any, Any, Any]]]
+    # current_service: Optional[Union[str, Enum]]
 
     def __init__(self, settings: Settings):
         """Initialize the Cloud Connector.
@@ -63,35 +65,43 @@ class CloudConnector(ABC):
 
         self.seeds = defaultdict(set)
         self.cloud_assets = defaultdict(set)
-        self.current_service = None
 
-    def get_seeds(self) -> None:
-        """Gather seeds."""
-        for seed_type, seed_scanner in self.seed_scanners.items():
-            self.current_service = seed_type
-            if (
-                self.provider_settings.ignore
-                and seed_type in self.provider_settings.ignore
-            ):
-                self.logger.debug(f"Skipping {seed_type}")
-                continue
-            self.logger.debug(f"Scanning {seed_type}")
-            seed_scanner()
-        self.current_service = None
+    async def get_seeds(self, provider_settings, **kwargs) -> None:
+        """Gather seeds.
 
-    def get_cloud_assets(self) -> None:
-        """Gather cloud assets."""
-        for cloud_asset_type, cloud_asset_scanner in self.cloud_asset_scanners.items():
-            self.current_service = cloud_asset_type
-            if (
-                self.provider_settings.ignore
-                and cloud_asset_type in self.provider_settings.ignore
-            ):
-                self.logger.debug(f"Skipping {cloud_asset_type}")
-                continue
-            self.logger.debug(f"Scanning {cloud_asset_type}")
-            cloud_asset_scanner()
-        self.current_service = None
+        Args:
+            provider_settings (ProviderSpecificSettings): The provider settings.
+            **kwargs: Any additional keyword arguments.
+        """
+        await aiometer.run_all(
+            [  # type: ignore
+                partial(
+                    seed_scanner, provider_settings, current_service=seed_type, **kwargs
+                )
+                for seed_type, seed_scanner in self.seed_scanners.items()
+            ],
+            max_at_once=self.settings.max_concurrent_scans,
+        )
+
+    async def get_cloud_assets(self, provider_settings, **kwargs) -> None:
+        """Gather cloud assets.
+
+        Args:
+            provider_settings (ProviderSpecificSettings): The provider settings.
+            **kwargs: Any additional keyword arguments.
+        """
+        await aiometer.run_all(
+            [  # type: ignore
+                partial(
+                    cloud_asset_scanner,
+                    provider_settings,
+                    current_service=cloud_asset_type,
+                    **kwargs,
+                )
+                for cloud_asset_type, cloud_asset_scanner in self.cloud_asset_scanners.items()
+            ],
+            max_at_once=self.settings.max_concurrent_scans,
+        )
 
     def get_event_context(
         self,
@@ -111,7 +121,7 @@ class CloudConnector(ABC):
             "event_type": event_type,
             "connector": self,
             "provider": self.provider,
-            "service": service or self.current_service,
+            "service": service,
         }
 
     def dispatch_event(
@@ -158,7 +168,7 @@ class CloudConnector(ABC):
             EventTypeEnum.CLOUD_ASSET_FOUND, cloud_asset=cloud_asset, **kwargs
         )
 
-    def submit_seeds(self):
+    async def submit_seeds(self):
         """Submit the seeds to the Censys ASM."""
         submitted_seeds = 0
         for label, seeds in self.seeds.items():
@@ -172,7 +182,7 @@ class CloudConnector(ABC):
         self.logger.info(f"Submitted {submitted_seeds} seeds.")
         self.dispatch_event(EventTypeEnum.SEEDS_SUBMITTED, count=submitted_seeds)
 
-    def submit_cloud_assets(self):
+    async def submit_cloud_assets(self):
         """Submit the cloud assets to the Censys ASM."""
         submitted_assets = 0
         for uid, cloud_assets in self.cloud_assets.items():
@@ -181,7 +191,7 @@ class CloudConnector(ABC):
                     "cloudConnectorUid": uid,
                     "cloudAssets": [asset.to_dict() for asset in cloud_assets],
                 }
-                self._add_cloud_assets(data)
+                await self._add_cloud_assets(data)
                 submitted_assets += len(cloud_assets)
             except (CensysAsmException, JSONDecodeError) as e:
                 self.logger.error(f"Error submitting cloud assets for {uid}: {e}")
@@ -190,7 +200,7 @@ class CloudConnector(ABC):
             EventTypeEnum.CLOUD_ASSETS_SUBMITTED, count=submitted_assets
         )
 
-    def _add_cloud_assets(self, data: dict) -> dict:
+    async def _add_cloud_assets(self, data: dict) -> dict:
         """Add cloud assets to the Censys ASM.
 
         Args:
@@ -218,26 +228,31 @@ class CloudConnector(ABC):
         self.seeds.clear()
         self.cloud_assets.clear()
 
-    def submit(self):  # pragma: no cover
+    async def submit(self):  # pragma: no cover
         """Submit the seeds and cloud assets to the Censys ASM."""
         if self.settings.dry_run:
             self.logger.info("Dry run enabled. Skipping submission.")
         else:
             self.logger.info("Submitting seeds and assets...")
-            self.submit_seeds()
-            self.submit_cloud_assets()
+            await self.submit_seeds()
+            await self.submit_cloud_assets()
         self.clear()
 
-    def scan(self):
-        """Scan the seeds and cloud assets."""
+    async def scan(self, provider_settings, **kwargs):
+        """Scan the seeds and cloud assets.
+
+        Args:
+            provider_settings (ProviderSpecificSettings): The provider settings.
+            **kwargs: Any additional keyword arguments.
+        """
         self.logger.info("Gathering seeds and assets...")
         self.dispatch_event(EventTypeEnum.SCAN_STARTED)
-        self.get_seeds()
-        self.get_cloud_assets()
-        self.submit()
+        await self.get_seeds(provider_settings, **kwargs)
+        await self.get_cloud_assets(provider_settings, **kwargs)
+        await self.submit()
         self.dispatch_event(EventTypeEnum.SCAN_FINISHED)
 
     @abstractmethod
-    def scan_all(self):
+    async def scan_all(self):
         """Scan all the seeds and cloud assets."""
         pass
