@@ -13,3 +13,6 @@ jobs:
     secrets: inherit
     with:
       tag-pr: "true"
+
+  test:
+    uses: ./.github/workflows/reusable-test.yaml
