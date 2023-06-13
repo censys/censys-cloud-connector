@@ -32,33 +32,6 @@ RUN apk add --update --no-cache make g++ openssl-dev libffi-dev rust cargo
 RUN pip3 install --upgrade --ignore-installed "pip==$PIP_VERSION" "setuptools==$SETUPTOOLS_VERSION" "poetry==$POETRY_VERSION" && poetry install --without dev
 
 
-# Target with dev dependencies
-FROM builder as dev
-
-# Install Python dev dependencies
-RUN poetry install --with dev
-
-
-# Target with tests
-FROM dev as test
-
-# Copy the tests
-COPY tests/ /app/tests/
-
-# Run the tests
-RUN poetry run pytest
-
-
-# Target with linting
-FROM dev as lint
-
-# Run the tests
-RUN poetry run black --check .
-RUN poetry run isort --check .
-RUN poetry run flake8 .
-RUN poetry run mypy -p censys.cloud_connectors
-
-
 # Target for the final image
 FROM ${BASE_IMAGE} as app
 

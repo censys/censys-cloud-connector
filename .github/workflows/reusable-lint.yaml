@@ -1,10 +1,10 @@
-name: "Test Cloud Connector"
+name: "Lint Cloud Connector"
 
 on:
   workflow_call:
 
 jobs:
-  test:
+  lint:
     timeout-minutes: 20
     runs-on: ubuntu-latest
     strategy:
@@ -26,5 +26,9 @@ jobs:
       - name: Install dependencies
         run: poetry install
 
-      - name: Test
-        run: poetry run pytest
+      - name: Lint
+        run: |
+          poetry run black --check .
+          poetry run isort --check .
+          poetry run flake8 .
+          poetry run mypy -p censys.cloud_connectors

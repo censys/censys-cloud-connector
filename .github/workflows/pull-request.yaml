@@ -16,3 +16,6 @@ jobs:
 
   test:
     uses: ./.github/workflows/reusable-test.yaml
+  
+  lint:
+    uses: ./.github/workflows/reusable-lint.yaml
