@@ -36,7 +36,7 @@ runs:
     - name: "Login to Docker Registry"
       shell: bash
       run: |
-        buildah login -u oauth2accesstoken -p "${{ steps.auth.outputs.token }}" https://gcr.io
+        buildah login -u oauth2accesstoken -p "${{ steps.auth.outputs.access_token }}" gcr.io
 
     - name: Build
       shell: bash
