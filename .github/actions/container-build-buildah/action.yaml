@@ -11,6 +11,14 @@ inputs:
     description: "Build target (Default 'app')."
     required: true
     default: "app"
+  test:
+    description: "Whether to run tests."
+    required: false
+    default: "false"
+  test-target:
+    description: "Test target (Default 'test')."
+    required: false
+    default: "test"
   tag:
     description: "Additional tag to apply to the image."
     required: false
@@ -43,6 +51,13 @@ runs:
       run: |
         buildah bud --squash --target=${{ inputs.target }} -t ${{ inputs.image }}:${GITHUB_SHA} .
         buildah push ${{ inputs.image }}:${GITHUB_SHA}
+    
+    - name: Test
+      shell: bash
+      if: ${{ inputs.test == 'true' }}
+      run: |
+        buildah bud --squash --target=${{ inputs.test-target }} -t ${{ inputs.image }}:${GITHUB_SHA}-test .
+        buildah rmi ${{ inputs.image }}:${GITHUB_SHA}-test
 
     - name: Tag
       shell: bash

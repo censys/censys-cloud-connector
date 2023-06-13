@@ -3,6 +3,11 @@ name: "Build Cloud Connector"
 on:
   workflow_call:
     inputs:
+      test:
+        description: "Whether to run tests"
+        required: false
+        default: "false"
+        type: string
       tag:
         description: "Additional tag to apply to the image"
         required: false
@@ -46,6 +51,7 @@ jobs:
           credentials: ${{ secrets.DOCKER_AUTH_CONFIG }}
           image: gcr.io/censys-io/censys-cloud-connector
           target: app
+          test: ${{ github.event.inputs.test }}
           tag: ${{ github.event.inputs.tag }}
           version: ${{ github.event.inputs.version }}
 
