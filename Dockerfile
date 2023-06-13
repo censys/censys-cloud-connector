@@ -42,5 +42,4 @@ USER censys
 WORKDIR /app
 COPY --from=builder --chown=censys /app ./
 
-CMD ["scan"]
-ENTRYPOINT ["/app/.venv/bin/censys-cc"]
+CMD ["/app/.venv/bin/censys-cc", "scan"]
