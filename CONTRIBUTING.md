@@ -3,7 +3,7 @@
 ## Helpful Commands
 
 ```sh
-poetry install --with dev,test
+poetry install
 poetry run flake8 .  # Run linter
 poetry run black .  # Run formatter
 poetry run isort .  # Run import formatter

@@ -73,11 +73,7 @@ pyupgrade = "^2.31.1"
 mypy = "^0.942"
 types-PyYAML = "^6.0.5"
 types-requests = "^2.27.14"
-
-[tool.poetry.group.test]
-optional = true
-
-[tool.poetry.group.test.dependencies]
+# Testing
 parameterized = "^0.8.1"
 pytest = "^7.1.1"
 pytest-cov = "^3.0.0"

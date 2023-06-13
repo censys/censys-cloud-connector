@@ -22,8 +22,7 @@ jobs:
       - name: Test
         run: |
           cd /app
-          poetry install --with test
-          poetry run pytest
+          pytest
 
   lint:
     timeout-minutes: 5
@@ -35,7 +34,7 @@ jobs:
       - name: Lint
         run: |
           cd /app
-          poetry run black --check .
-          poetry run isort --check .
-          poetry run flake8 .
-          poetry run mypy -p censys.cloud_connectors
+          black --check .
+          isort --check .
+          flake8 .
+          mypy -p censys.cloud_connectors
