@@ -26,10 +26,14 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - uses: ./.github/actions/variable-to-file
+    - name: Gcloud Auth
+      uses: 'google-github-actions/auth@v1'
       with:
-        contents: "${{ inputs.credentials }}"
-        file: "${HOME}/.docker/config.json"
+        credentials_json: '${{ inputs.credentials }}'
+    
+    - name: Configure Docker
+      shell: bash
+      run: gcloud auth configure-docker --quiet
 
     - name: Build
       shell: bash
