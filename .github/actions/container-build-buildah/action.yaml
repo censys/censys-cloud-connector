@@ -36,7 +36,8 @@ runs:
     - name: "Login to Docker Registry"
       shell: bash
       run: |
-        buildah login gcr.io --username oauth2accesstoken --password "${{ steps.auth.outputs.access_token }}"
+        mkdir -p ~/.docker
+        echo "{\"auths\":{\"gcr.io\":{\"auth\":\"$(echo -n oauth2accesstoken:${{ steps.auth.outputs.access_token }} | base64)\"}}}" > ~/.docker/config.json
 
     - name: Build
       shell: bash
