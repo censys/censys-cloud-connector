@@ -19,9 +19,15 @@ jobs:
     container:
       image: ${{ needs.build.outputs.image }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          path: /app
+
       - name: Test
         run: |
           cd /app
+          source .venv/bin/activate
           pytest
 
   lint:
@@ -34,6 +40,7 @@ jobs:
       - name: Lint
         run: |
           cd /app
+          source .venv/bin/activate
           black --check .
           isort --check .
           flake8 .
