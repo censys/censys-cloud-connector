@@ -26,14 +26,18 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Gcloud Auth
-      uses: 'google-github-actions/auth@v1'
+    - id: "auth"
+      name: "Authenticate to Google Cloud"
+      uses: "google-github-actions/auth@v1"
       with:
-        credentials_json: '${{ inputs.credentials }}'
-    
-    - name: Configure Docker
-      shell: bash
-      run: gcloud auth configure-docker --quiet
+        token_format: "access_token"
+        credentials_json: "${{ inputs.credentials }}"
+
+    - uses: "docker/login-action@v1"
+      with:
+        registry: "gcr.io"
+        username: "oauth2accesstoken"
+        password: "${{ steps.auth.outputs.access_token }}"
 
     - name: Build
       shell: bash
