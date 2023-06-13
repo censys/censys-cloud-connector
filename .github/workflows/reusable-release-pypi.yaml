@@ -1,15 +1,12 @@
-name: "Test Cloud Connector"
+name: "Release Cloud Connector to PyPi"
 
 on:
   workflow_call:
 
 jobs:
-  test:
+  release:
     timeout-minutes: 20
     runs-on: ubuntu-latest
-    # strategy:
-    #   matrix:
-    #     python-version: [3.9]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -20,12 +17,14 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          # python-version: ${{ matrix.python-version }}
           python-version: 3.9
           cache: "poetry"
 
       - name: Install dependencies
         run: poetry install
 
-      - name: Test
-        run: poetry run pytest
+      - name: Release
+        run: |
+          poetry build -n
+          poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
+          poetry publish -n
