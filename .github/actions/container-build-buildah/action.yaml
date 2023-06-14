@@ -42,20 +42,20 @@ runs:
       run: |
         buildah login -u oauth2accesstoken -p "${{ steps.auth.outputs.access_token }}" gcr.io
 
-    - name: Build
+    - name: Build Image
       shell: bash
       run: |
         buildah bud --squash --target=${{ inputs.target }} -t ${{ inputs.image }}:${GITHUB_SHA} .
         buildah push ${{ inputs.image }}:${GITHUB_SHA}
 
-    - name: Tag
+    - name: Tag Image
       shell: bash
       if: ${{ inputs.tag != '' }}
       run: |
         buildah tag ${{ inputs.image }}:${GITHUB_SHA} ${{ inputs.image }}:${{ inputs.tag }}
         buildah push ${{ inputs.image }}:${{ inputs.tag }}
 
-    - name: Tag PR
+    - name: Tag Image with PR Number
       shell: bash
       if: ${{ inputs.tag-pr == 'true' }}
       run: |
@@ -63,7 +63,7 @@ runs:
         buildah tag ${{ inputs.image }}:${GITHUB_SHA} ${{ inputs.image }}:${PR_NUMBER}
         buildah push ${{ inputs.image }}:${PR_NUMBER}}
 
-    - name: Tag Version
+    - name: Tag Image with Version
       shell: bash
       if: ${{ inputs.version == 'true' }}
       run: |
