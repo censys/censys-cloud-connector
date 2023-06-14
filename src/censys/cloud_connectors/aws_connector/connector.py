@@ -20,7 +20,6 @@ from mypy_boto3_elb import ElasticLoadBalancingClient
 from mypy_boto3_elbv2 import ElasticLoadBalancingv2Client
 from mypy_boto3_rds import RDSClient
 from mypy_boto3_route53 import Route53Client
-from mypy_boto3_route53domains import Route53DomainsClient
 from mypy_boto3_s3 import S3Client
 from mypy_boto3_sts import STSClient
 from mypy_boto3_sts.type_defs import CredentialsTypeDef
@@ -83,7 +82,7 @@ class AwsCloudConnector(CloudConnector):
             AwsResourceTypes.LOAD_BALANCER: self.get_load_balancers,
             AwsResourceTypes.NETWORK_INTERFACE: self.get_network_interfaces,
             AwsResourceTypes.RDS: self.get_rds_instances,
-            AwsResourceTypes.ROUTE53: self.get_route53_instances,
+            AwsResourceTypes.ROUTE53: self.get_route53_zones,
             AwsResourceTypes.ECS: self.get_ecs_instances,
         }
         self.cloud_asset_scanners = {
@@ -529,47 +528,6 @@ class AwsCloudConnector(CloudConnector):
         except ClientError as e:
             self.logger.error(f"Could not connect to RDS Service. Error: {e}")
 
-    def _get_route53_domains(self, client: Route53DomainsClient):
-        """Retrieve Paginated Route 53 Domains.
-
-        Args:
-            client (Route53DomainsClient): Route 53 Client.
-
-        Yields:
-            Generator[dict]: A Page of Route 53 Domains
-        """
-        next_page_marker = None
-        while True:
-            try:
-                if next_page_marker:
-                    data = client.list_domains(Marker=next_page_marker)
-                else:
-                    data = client.list_domains()
-
-                yield data
-
-                if not (next_page_marker := data.get("NextPageMarker")):
-                    break
-            except ClientError as e:
-                self.logger.error(f"Could not connect to Route 53 Domains. Error: {e}")
-                break
-
-    def get_route53_domains(self):
-        """Retrieve Route 53 Domains and emit seeds."""
-        client: Route53DomainsClient = self.get_aws_client(
-            service=AwsServices.ROUTE53_DOMAINS
-        )
-        label = self.format_label(SeedLabel.ROUTE53_DOMAINS)
-
-        for data in self._get_route53_domains(client):
-            for domain in data.get("Domains", []):
-                if domain_name := domain.get("DomainName"):
-                    with SuppressValidationError():
-                        domain_seed = DomainSeed(value=domain_name, label=label)
-                        self.add_seed(
-                            domain_seed, route53_domain_res=domain, aws_client=client
-                        )
-
     def _get_route53_zone_hosts(self, client: botocore.client.BaseClient) -> dict:
         """Retrieve Route 53 Zone hosts.
 
@@ -613,6 +571,12 @@ class AwsCloudConnector(CloudConnector):
                 if zone.get("Config", {}).get("PrivateZone"):
                     continue
 
+                # Add the zone itself as a seed
+                domain_name = zone.get("Name").rstrip(".")
+                with SuppressValidationError():
+                    domain_seed = DomainSeed(value=domain_name, label=label)
+                    self.add_seed(domain_seed, route53_zone_res=zone, aws_client=client)
+
                 id = zone.get("Id")
                 resource_sets = self._get_route53_zone_resources(client, id)
                 for resource_set in resource_sets.get("ResourceRecordSets", []):
@@ -627,11 +591,6 @@ class AwsCloudConnector(CloudConnector):
                         )
         except ClientError as e:
             self.logger.error(f"Could not connect to Route 53 Zones. Error: {e}")
-
-    def get_route53_instances(self):
-        """Retrieve Route 53 data and emit seeds."""
-        self.get_route53_domains()
-        self.get_route53_zones()
 
     def get_ecs_instances(self):
         """Retrieve Elastic Container Service data and emit seeds."""
