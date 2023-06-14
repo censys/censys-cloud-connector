@@ -7,7 +7,6 @@ from botocore.exceptions import ClientError
 from mypy_boto3_elb import ElasticLoadBalancingClient
 from mypy_boto3_elbv2 import ElasticLoadBalancingv2Client
 from mypy_boto3_route53 import Route53Client
-from mypy_boto3_route53domains import Route53DomainsClient
 from mypy_boto3_s3 import S3Client
 from requests import HTTPError
 
@@ -374,25 +373,19 @@ class AwsTagsPlugin(CloudConnectorPlugin):
             seed: Seed.
             kwargs: Additional event data.
         """
-        route53_domain_res = kwargs.get("route53_domain_res")
         route53_zone_res = kwargs.get("route53_zone_res")
-        if not route53_domain_res and not route53_zone_res:
+        if not route53_zone_res:
             return
         pre_processed_tags = None
-        if route53_domain_res:
-            domains_client: Route53DomainsClient = kwargs.get("aws_client")  # type: ignore
-            if not domains_client:
-                return
-            pre_processed_tags = domains_client.list_tags_for_domain(
-                DomainName=route53_domain_res["DomainName"]
-            )["TagList"]
-        elif route53_zone_res:
-            client: Route53Client = kwargs.get("aws_client")  # type: ignore
-            if not client:
-                return
-            pre_processed_tags = client.list_tags_for_resource(
-                ResourceType="hostedzone", ResourceId=route53_zone_res["Id"]
-            )["ResourceTagSet"]["Tags"]
+        client: Route53Client = kwargs.get("aws_client")  # type: ignore
+        if not client:
+            return
+        resource_id = route53_zone_res["Id"]
+        if resource_id.startswith("/hostedzone/"):
+            resource_id = resource_id.split("/hostedzone/")[1]
+        pre_processed_tags = client.list_tags_for_resource(
+            ResourceType="hostedzone", ResourceId=resource_id
+        )["ResourceTagSet"]["Tags"]
 
         if not pre_processed_tags:
             return

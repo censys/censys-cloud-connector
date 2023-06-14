@@ -427,47 +427,17 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
         # Assertions
         assert self.connector.seeds == {}
 
-    def test_route53_instances(self):
-        # Mock
-        mocked_scanners = self.mocker.patch.multiple(
-            self.connector,
-            get_route53_domains=self.mocker.Mock(),
-            get_route53_zones=self.mocker.Mock(),
-        )
-
-        # Actual call
-        self.connector.get_route53_instances()
-
-        # Assertions
-        for mocked_scanner in mocked_scanners.values():
-            mocked_scanner.assert_called_once_with()
-
-    def test_route53_domains_create_seeds(self):
-        # Test data
-        data = self.data["TEST_ROUTE53_DOMAINS"].copy()
-        test_label = f"AWS: Route53/Domains - 999999999999/{self.region}"
-        test_seed_values = ["example.net", "example.com"]
-
-        # Mock
-        self.mock_api_response("list_domains", data)
-
-        # Actual call
-        self.connector.get_route53_domains()
-
-        # Assertions
-        self.assert_seeds_with_values(
-            self.connector.seeds[test_label], test_seed_values
-        )
-
-    def test_route53_domains_pagination(self):
-        self.skipTest("TODO list_domains('NextPageMarker')")
-
     def test_route53_zones_creates_seeds(self):
         # Test data
         hosts = self.data["TEST_ROUTE53_ZONES_LIST_HOSTED_ZONES"].copy()
         resources = self.data["TEST_ROUTE53_ZONES_LIST_RESOURCE_RECORD_SETS"].copy()
         test_label = f"AWS: Route53/Zones - 999999999999/{self.region}"
         expected_calls = [
+            call(
+                DomainSeed(value="example.com", label=test_label),
+                route53_zone_res=self.mocker.ANY,
+                aws_client=self.mocker.ANY,
+            ),
             call(
                 DomainSeed(value="example.com", label=test_label),
                 route53_zone_res=self.mocker.ANY,
@@ -494,7 +464,7 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
 
         # Assertions
         mock_add_seed.assert_has_calls(expected_calls)
-        assert mock_add_seed.call_count == 2
+        assert mock_add_seed.call_count == 3
 
     def test_route53_zones_pagination(self):
         self.skipTest("TODO client.get_paginator")
