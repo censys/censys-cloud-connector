@@ -11,13 +11,13 @@ on:
       tag-pr:
         description: "Whether to tag the image with the PR number"
         required: false
-        default: "false"
-        type: string
+        default: false
+        type: boolean
       version:
         description: "Whether to tag the image with the version"
         required: false
-        default: "false"
-        type: string
+        default: false
+        type: boolean
     outputs:
       image:
         description: "Name of the built container image"
@@ -52,10 +52,10 @@ jobs:
           image: gcr.io/censys-io/censys-cloud-connector
           target: app
           tag: ${{ github.event.inputs.tag }}
-          tag-pr: ${{ github.event.inputs.tag-pr }}
-          version: ${{ github.event.inputs.version }}
+          tag-pr: "${{ github.event.inputs.tag-pr }}"
+          version: "${{ github.event.inputs.version }}"
 
       - name: Tag Version
         id: tag-version
-        if: ${{ github.event.inputs.version == 'true' }}
+        if: ${{ github.event.inputs.version }}
         uses: ./.github/actions/create-version-tag
