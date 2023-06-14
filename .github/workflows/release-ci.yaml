@@ -1,0 +1,19 @@
+name: "Cloud Connector Release CI"
+
+on: workflow_dispatch
+
+concurrency:
+  group: "${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    uses: ./.github/workflows/reusable-build.yaml
+    secrets: inherit
+    with:
+      tag: "latest"
+      version: "true"
+  
+  release:
+    uses: ./.github/workflows/reusable-release-pypi.yaml
+    secrets: inherit

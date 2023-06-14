@@ -1,0 +1,77 @@
+name: "Build Container"
+description: "Build Container using Buildah"
+inputs:
+  credentials:
+    description: "Docker Config file contents."
+    required: true
+  image:
+    description: "Name of the image to build, without the tag."
+    required: true
+  target:
+    description: "Build target (Default 'app')."
+    required: true
+    default: "app"
+  tag:
+    description: "Additional tag to apply to the image."
+    required: false
+    default: ""
+  tag-pr:
+    description: "Whether to tag the image with the PR number."
+    required: false
+    default: "false"
+  version:
+    description: "Whether to tag the image with the version."
+    required: false
+    default: "false"
+outputs:
+  image:
+    description: "Name of the built container image"
+    value: ${{ steps.set_image.outputs.image }}
+runs:
+  using: "composite"
+  steps:
+    - id: "auth"
+      name: "Authenticate to Google Cloud"
+      uses: "google-github-actions/auth@v1"
+      with:
+        token_format: "access_token"
+        credentials_json: "${{ inputs.credentials }}"
+
+    - name: "Login to Docker Registry"
+      shell: bash
+      run: |
+        buildah login -u oauth2accesstoken -p "${{ steps.auth.outputs.access_token }}" gcr.io
+
+    - name: Build Image
+      shell: bash
+      run: |
+        buildah bud --squash --target=${{ inputs.target }} -t ${{ inputs.image }}:${GITHUB_SHA} .
+        buildah push ${{ inputs.image }}:${GITHUB_SHA}
+
+    - name: Tag Image
+      shell: bash
+      if: ${{ inputs.tag != '' }}
+      run: |
+        buildah tag ${{ inputs.image }}:${GITHUB_SHA} ${{ inputs.image }}:${{ inputs.tag }}
+        buildah push ${{ inputs.image }}:${{ inputs.tag }}
+
+    - name: Tag Image with PR Number
+      shell: bash
+      if: ${{ inputs.tag-pr == 'true' }}
+      run: |
+        PR_NUMBER=pr-$(echo $GITHUB_REF | cut -d '/' -f3)
+        buildah tag ${{ inputs.image }}:${GITHUB_SHA} ${{ inputs.image }}:${PR_NUMBER}
+        buildah push ${{ inputs.image }}:${PR_NUMBER}}
+
+    - name: Tag Image with Version
+      shell: bash
+      if: ${{ inputs.version == 'true' }}
+      run: |
+        VERSION_TAG=v$(cat pyproject.toml | grep "^version = \"*\"" | cut -d'"' -f2)
+        buildah tag ${{ inputs.image }}:${GITHUB_SHA} ${{ inputs.image }}:${VERSION_TAG}
+        buildah push ${{ inputs.image }}:${VERSION_TAG}
+
+    - name: Set Image Output
+      shell: bash
+      id: set_image
+      run: echo "image=${{ inputs.image }}:${GITHUB_SHA}" >> $GITHUB_OUTPUT

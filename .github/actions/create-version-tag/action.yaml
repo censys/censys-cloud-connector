@@ -1,0 +1,18 @@
+name: "Create Version Tag"
+description: "Tag a Git commit with the current version"
+runs:
+  using: "composite"
+  steps:
+    - name: Tag
+      shell: bash
+      # We attempt to remove the old tag with :${TAG} and re-tag. if the remove fails, we just pipe to true
+      run: |
+        git config --global --add safe.directory '*'
+        git config --global user.email "ops@censys.io"
+        git config --global user.name "gitops"
+        set -u
+        TAG=v$(cat pyproject.toml | grep "^version = \"*\"" | cut -d'"' -f2)
+        echo "Creating ${TAG} at ${GITHUB_SHA::7} on ${{ github.ref_name }}"
+        git tag --annotate ${TAG} --message="Deployed at $(date -u)" ${GITHUB_SHA::7}
+        git push origin :${TAG} || true
+        git push origin ${TAG}
