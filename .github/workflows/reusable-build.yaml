@@ -51,11 +51,11 @@ jobs:
           credentials: ${{ secrets.DOCKER_AUTH_CONFIG }}
           image: gcr.io/censys-io/censys-cloud-connector
           target: app
-          tag: ${{ github.event.inputs.tag }}
-          tag-pr: "${{ github.event.inputs.tag-pr }}"
-          version: "${{ github.event.inputs.version }}"
+          tag: ${{ inputs.tag }}
+          tag-pr: "${{ inputs.tag-pr }}"
+          version: "${{ inputs.version }}"
 
       - name: Tag Version
         id: tag-version
-        if: ${{ github.event.inputs.version }}
+        if: ${{ inputs.version }}
         uses: ./.github/actions/create-version-tag
