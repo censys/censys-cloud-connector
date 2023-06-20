@@ -61,7 +61,7 @@ runs:
       run: |
         PR_NUMBER=pr-$(echo $GITHUB_REF | cut -d '/' -f3)
         buildah tag ${{ inputs.image }}:${GITHUB_SHA} ${{ inputs.image }}:${PR_NUMBER}
-        buildah push ${{ inputs.image }}:${PR_NUMBER}}
+        buildah push ${{ inputs.image }}:${PR_NUMBER}
 
     - name: Tag Image with Version
       shell: bash
