@@ -1,10 +1,11 @@
 """Base class for all cloud connectors."""
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from collections.abc import Coroutine
 from enum import Enum
 from functools import partial
 from logging import Logger
-from typing import Any, Callable, Coroutine, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import aiometer
 from requests.exceptions import JSONDecodeError

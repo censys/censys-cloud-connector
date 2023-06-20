@@ -1,19 +1,19 @@
 """AWS Cloud Connector."""
 import contextlib
-from collections.abc import Sequence
-from typing import AsyncGenerator, List, Optional
+from collections.abc import AsyncGenerator, Sequence
+from typing import List, Optional
 
 from aiobotocore.session import get_session
 from botocore.exceptions import ClientError
-from mypy_boto3_ec2.type_defs import (
+from types_aiobotocore_apigateway.client import APIGatewayClient
+from types_aiobotocore_apigatewayv2.client import ApiGatewayV2Client
+from types_aiobotocore_ec2.client import EC2Client
+from types_aiobotocore_ec2.type_defs import (
     FilterTypeDef,
     NetworkInterfaceTypeDef,
     TagDescriptionTypeDef,
     TagTypeDef,
 )
-from types_aiobotocore_apigateway.client import APIGatewayClient
-from types_aiobotocore_apigatewayv2.client import ApiGatewayV2Client
-from types_aiobotocore_ec2.client import EC2Client
 from types_aiobotocore_ecs.client import ECSClient
 from types_aiobotocore_elb.client import ElasticLoadBalancingClient
 from types_aiobotocore_elbv2.client import ElasticLoadBalancingv2Client
@@ -49,7 +49,7 @@ class AwsCloudConnector(CloudConnector):
     provider_settings: AwsSpecificSettings
 
     account_number: str
-    ignore_tags: List[str]
+    ignore_tags: list[str]
 
     def __init__(self, settings: Settings):
         """Initialize AWS Cloud Connectors.
@@ -70,7 +70,7 @@ class AwsCloudConnector(CloudConnector):
             AwsResourceTypes.STORAGE_BUCKET: self.get_s3_instances,
         }
 
-        self.ignored_tags: List[str] = []
+        self.ignored_tags: list[str] = []
         self.global_ignored_tags: set[str] = set(IGNORED_TAGS)
 
     async def scan(
@@ -107,73 +107,43 @@ class AwsCloudConnector(CloudConnector):
         )  # type: ignore
 
         for provider_setting in provider_settings.values():
-            if provider_setting.accounts:
-                for account in provider_setting.accounts:
+            accounts = provider_setting.accounts
+            if not accounts:
+                accounts = [None]
+            for account in accounts:
+                if account is not None:
                     self.account_number = account.account_number
                     self.ignored_tags = self.get_ignored_tags(account.ignore_tags)
-
-                    for region in provider_setting.regions:
-                        try:
-                            with Healthcheck(
-                                self.settings,
-                                provider_setting,
-                                provider={
-                                    "region": region,
-                                    "account_number": self.account_number,
-                                },
-                            ):
-                                credentials = await get_aws_credentials(
-                                    provider_setting, account, region
-                                )
-                                await self.scan(
-                                    provider_setting,
-                                    credentials,
-                                    region,
-                                    ignored_tags=self.ignored_tags,
-                                )
-                        except Exception as e:
-                            self.logger.error(
-                                f"Unable to scan account {self.account_number} in region {region}. Error: {e}"
-                            )
-                            self.dispatch_event(EventTypeEnum.SCAN_FAILED, exception=e)
-
-            else:
-                self.account_number = provider_setting.account_number
-                self.ignored_tags = self.get_ignored_tags(provider_setting.ignore_tags)
+                else:
+                    self.account_number = provider_setting.account_number
+                    self.ignored_tags = self.get_ignored_tags(
+                        provider_setting.ignore_tags
+                    )
 
                 for region in provider_setting.regions:
-                    credentials = await get_aws_credentials(
-                        provider_setting, None, region
-                    )
-                    await self.scan(
-                        provider_setting,
-                        credentials,
-                        region,
-                        ignored_tags=self.ignored_tags,
-                    )
-                    # try:
-                    #     with Healthcheck(
-                    #         self.settings,
-                    #         provider_setting,
-                    #         provider={
-                    #             "region": region,
-                    #             "account_number": self.account_number,
-                    #         },
-                    #     ):
-                    #         credentials = await get_aws_credentials(
-                    #             provider_setting, None, region
-                    #         )
-                    #         await self.scan(
-                    #             provider_setting,
-                    #             credentials,
-                    #             region,
-                    #             ignored_tags=self.ignored_tags,
-                    #         )
-                    # except Exception as e:
-                    #     self.logger.error(
-                    #         f"Unable to scan account {self.account_number} in region {region}. Error: {e}"
-                    #     )
-                    #     self.dispatch_event(EventTypeEnum.SCAN_FAILED, exception=e)
+                    try:
+                        with Healthcheck(
+                            self.settings,
+                            provider_setting,
+                            provider={
+                                "region": region,
+                                "account_number": self.account_number,
+                            },
+                        ):
+                            credentials = await get_aws_credentials(
+                                provider_setting, account, region
+                            )
+                            await self.scan(
+                                provider_setting,
+                                credentials,
+                                region,
+                                ignored_tags=self.ignored_tags,
+                            )
+                    except Exception as e:
+                        self.logger.error(
+                            f"Unable to scan account {self.account_number} in region {region}. Error: {e}"
+                        )
+                        self.dispatch_event(EventTypeEnum.SCAN_FAILED, exception=e)
 
     def format_label(self, service: SeedLabel, region: Optional[str] = None) -> str:
         """Format AWS label.

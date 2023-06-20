@@ -97,9 +97,8 @@ sphinx-design = "^0.3.0"
 sphinxcontrib-asciinema = "^0.3.6"
 
 [tool.poetry.group.aws.dependencies]
-boto3 = "^1.24.63"
-boto3-stubs = {extras = ["apigateway", "apigatewayv2", "ec2", "ecs", "elb", "elbv2", "rds", "route53", "route53domains", "s3", "sts"], version = "^1.24.63"}
 aioboto3 = "^11.2.0"
+types-aiobotocore = {extras = ["apigateway", "apigatewayv2", "ec2", "ecs", "elb", "elbv2", "rds", "route53", "s3", "sts"], version = "^2.5.0.post2"}
 
 [tool.poetry.group.azure.dependencies]
 azure-cli = "^2.48.1"

@@ -515,7 +515,7 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
         data = {"LocationConstraint": None}
         bucket_name = "test-bucket-1"
 
-        mock_client = self.mocker.patch("mypy_boto3_s3.client.S3Client", autospec=True)
+        mock_client = self.mocker.patch("types_aiobotocore_s3.client.S3Client", autospec=True)
         mock_bucket_location = self.mocker.patch.object(
             mock_client, "get_bucket_location", return_value=data
         )

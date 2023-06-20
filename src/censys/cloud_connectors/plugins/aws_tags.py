@@ -1,14 +1,14 @@
 """AWS Tags Cloud Connector Plugin."""
 import contextlib
 import urllib.parse
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 from botocore.exceptions import ClientError
-from mypy_boto3_elb import ElasticLoadBalancingClient
-from mypy_boto3_elbv2 import ElasticLoadBalancingv2Client
-from mypy_boto3_route53 import Route53Client
-from mypy_boto3_s3 import S3Client
 from requests import HTTPError
+from types_aiobotocore_elb.client import ElasticLoadBalancingClient
+from types_aiobotocore_elbv2.client import ElasticLoadBalancingv2Client
+from types_aiobotocore_route53.client import Route53Client
+from types_aiobotocore_s3.client import S3Client
 
 from censys.asm import AsmClient
 from censys.common.exceptions import (
@@ -87,7 +87,7 @@ class AwsTagsPlugin(CloudConnectorPlugin):
             )
         return self.client
 
-    def on_add_seed(
+    async def on_add_seed(
         self, context: EventContext, seed: Optional[Seed] = None, **kwargs
     ) -> None:
         """On add seed.
@@ -110,7 +110,7 @@ class AwsTagsPlugin(CloudConnectorPlugin):
         service: Optional[AwsResourceTypes] = context.get("service")  # type: ignore
         if service in tag_retrieval_handlers:
             try:
-                tag_retrieval_handlers[service](context, seed, **kwargs)
+                await tag_retrieval_handlers[service](context, seed, **kwargs)
             except CensysAsmException:
                 pass
             except Exception as e:
@@ -168,7 +168,9 @@ class AwsTagsPlugin(CloudConnectorPlugin):
         """
         return f"{tag_set['Key']}: {tag_set['Value']}"
 
-    def add_ip_tags(self, context: EventContext, seed: IpSeed, tag_set: dict) -> None:
+    def add_ip_tags(
+        self, context: EventContext, seed: IpSeed, tag_set: list[dict]
+    ) -> None:
         """Add IP tags.
 
         Args:
@@ -225,7 +227,7 @@ class AwsTagsPlugin(CloudConnectorPlugin):
         self._add_subdomain_tag(base_domain, domain_name, tag)
 
     def add_domain_tags(
-        self, context: EventContext, seed: DomainSeed, tag_set: list[dict]
+        self, context: EventContext, seed: DomainSeed, tag_set: list[Any]
     ):
         """Add domain tags.
 
@@ -243,7 +245,7 @@ class AwsTagsPlugin(CloudConnectorPlugin):
                 self.add_subdomain_tag(str(seed.value), tag_string)
 
     def add_cloud_asset_tags(
-        self, context: EventContext, cloud_asset: CloudAsset, tag_set: list[dict]
+        self, context: EventContext, cloud_asset: CloudAsset, tag_set: list[Any]
     ):
         """Add cloud asset tags.
 
@@ -290,7 +292,7 @@ class AwsTagsPlugin(CloudConnectorPlugin):
 
         self.add_domain_tags(context, seed, tag_set)
 
-    def _get_load_balancer_tags(
+    async def _get_load_balancer_tags(
         self, context: EventContext, seed: DomainSeed, **kwargs
     ) -> None:
         """Get Load Balancer tags.
@@ -301,23 +303,25 @@ class AwsTagsPlugin(CloudConnectorPlugin):
             kwargs: Additional event data.
         """
         elb_res: Optional[dict] = kwargs.get("elb_res")
-        aws_client = kwargs.get("aws_client")
+        aws_client = kwargs.get("aws_client")  # type: ignore[assignment]
         if not elb_res or not aws_client:
             return
 
         tag_set = None
         if load_balancer_arn := elb_res.get("LoadBalancerArn"):
             # V2 Load Balancer
-            aws_client: ElasticLoadBalancingv2Client = aws_client  # type: ignore
-            tag_set = aws_client.describe_tags(ResourceArns=[load_balancer_arn])[
-                "TagDescriptions"
-            ][0]["Tags"]
+            elbv2_client: ElasticLoadBalancingv2Client = aws_client
+            elbv2_tag_response = await elbv2_client.describe_tags(
+                ResourceArns=[load_balancer_arn]
+            )
+            tag_set = elbv2_tag_response["TagDescriptions"][0].get("Tags", [])
         elif load_balancer_name := elb_res.get("LoadBalancerName"):
             # V1 Load Balancer
-            aws_client: ElasticLoadBalancingClient = aws_client  # type: ignore
-            tag_set = aws_client.describe_tags(LoadBalancerNames=[load_balancer_name])[
-                "TagDescriptions"
-            ][0]["Tags"]
+            elbv1_client: ElasticLoadBalancingClient = aws_client
+            elbv1_tag_response = await elbv1_client.describe_tags(
+                LoadBalancerNames=[load_balancer_name]
+            )
+            tag_set = elbv1_tag_response["TagDescriptions"][0].get("Tags", [])
 
         if not tag_set:
             return
@@ -363,7 +367,7 @@ class AwsTagsPlugin(CloudConnectorPlugin):
 
         self.add_domain_tags(context, seed, tags)
 
-    def _get_route53_tags(
+    async def _get_route53_tags(
         self, context: EventContext, seed: DomainSeed, **kwargs
     ) -> None:
         """Get Route53 tags.
@@ -383,14 +387,19 @@ class AwsTagsPlugin(CloudConnectorPlugin):
         resource_id = route53_zone_res["Id"]
         if resource_id.startswith("/hostedzone/"):
             resource_id = resource_id.split("/hostedzone/")[1]
-        pre_processed_tags = client.list_tags_for_resource(
+        tag_response = await client.list_tags_for_resource(
             ResourceType="hostedzone", ResourceId=resource_id
-        )["ResourceTagSet"]["Tags"]
+        )
+        pre_processed_tags = tag_response["ResourceTagSet"].get("Tags", [])
 
         if not pre_processed_tags:
             return
 
-        tags = {tag["Key"]: tag["Value"] for tag in pre_processed_tags}
+        tags = {
+            tag_key: tag_value
+            for tag in pre_processed_tags
+            if tag and (tag_key := tag.get("Key")) and (tag_value := tag.get("Value"))
+        }
 
         self.add_domain_tags(context, seed, tags)  # type: ignore
 
@@ -413,7 +422,7 @@ class AwsTagsPlugin(CloudConnectorPlugin):
 
         self.add_domain_tags(context, seed, tag_set)
 
-    def _get_storage_bucket_tags(
+    async def _get_storage_bucket_tags(
         self, context: EventContext, cloud_asset: AwsStorageBucketAsset, **kwargs
     ) -> None:
         """Get S3 tags.
@@ -429,7 +438,8 @@ class AwsTagsPlugin(CloudConnectorPlugin):
             return
 
         try:
-            tag_set = client.get_bucket_tagging(Bucket=bucket_name).get("TagSet", [])
+            tag_response = await client.get_bucket_tagging(Bucket=bucket_name)
+            tag_set = tag_response.get("TagSet", [])
             self.add_cloud_asset_tags(context, cloud_asset, tag_set)  # type: ignore
         except ClientError:
             pass

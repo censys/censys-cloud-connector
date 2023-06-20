@@ -1,5 +1,6 @@
 """Azure Cloud Connector."""
-from typing import Any, AsyncGenerator, Optional
+from collections.abc import AsyncGenerator
+from typing import Any, Optional
 
 from azure.core.exceptions import (
     ClientAuthenticationError,
