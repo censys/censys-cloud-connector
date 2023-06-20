@@ -104,7 +104,9 @@ class GcpCloudConnector(CloudConnector):
         """Scan all Gcp Organizations."""
         provider_settings: dict[
             tuple, GcpSpecificSettings
-        ] = self.settings.providers.get(self.provider, {})
+        ] = self.settings.providers.get(
+            self.provider, {}
+        )  # type: ignore
         for provider_setting in provider_settings.values():
             await self.scan(provider_setting)
 

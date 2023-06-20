@@ -15,6 +15,7 @@
   "pythonTestExplorer.testFramework": "pytest",
   "cSpell.enabled": true,
   "cSpell.words": [
+    "aiobotocore",
     "apigatewayv",
     "autoupdate",
     "autouse",

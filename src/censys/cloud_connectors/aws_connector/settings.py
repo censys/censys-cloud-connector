@@ -37,7 +37,9 @@ class AwsSpecificSettings(ProviderSpecificSettings):
     secret_key: Optional[str] = Field(min_length=1)
     role_name: Optional[str] = Field(min_length=1)
     role_session_name: Optional[str] = Field(min_length=1)
-    ignore_tags: Optional[list[str]] = Field(min_length=1)
+    ignore_tags: list[str] = Field(
+        description="Tags to ignore", default=["censys-cloud-connector-ignore"]
+    )
 
     session_token: Optional[str] = Field(min_length=1)
     external_id: Optional[str] = Field(min_length=1)

@@ -22,7 +22,6 @@ async def cli_scan(args: argparse.Namespace):
     logger = get_logger(log_name="censys_cloud_connectors", level="INFO")
 
     logger.info("Censys Cloud Connectors Version: %s", __version__)
-    logger.info("Async scan started")
 
     try:
         settings = Settings(_env_file=".env")  # type: ignore
