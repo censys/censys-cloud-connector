@@ -1,6 +1,5 @@
-from unittest import TestCase
-
 import pytest
+from asynctest import TestCase
 
 from censys.common.exceptions import CensysAsmException, CensysException
 
@@ -8,21 +7,25 @@ from censys.cloud_connectors.common.cloud_asset import CloudAsset
 from censys.cloud_connectors.common.connector import CloudConnector
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.seed import Seed
-from censys.cloud_connectors.common.settings import Settings
+from censys.cloud_connectors.common.settings import ProviderSpecificSettings, Settings
 from tests.base_connector_case import BaseConnectorCase
 
 
 class ExampleCloudConnector(CloudConnector):
     provider = ProviderEnum.GCP
 
-    def get_seeds(self):
-        return super().get_seeds()
+    async def get_seeds(
+        self, provider_specific_settings: ProviderSpecificSettings
+    ) -> None:
+        return await super().get_seeds(provider_specific_settings)
 
-    def get_cloud_assets(self) -> None:
-        return super().get_cloud_assets()
+    async def get_cloud_assets(
+        self, provider_specific_settings: ProviderSpecificSettings
+    ) -> None:
+        return await super().get_cloud_assets(provider_specific_settings)
 
-    def scan_all(self):
-        return super().scan_all()
+    async def scan_all(self):
+        return await super().scan_all()
 
 
 class TestCloudConnector(BaseConnectorCase, TestCase):
@@ -72,19 +75,19 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
         assert len(self.connector.cloud_assets[test_uid]) == 1
         assert self.connector.cloud_assets[test_uid].pop() == asset
 
-    def test_submit_seeds(self):
+    async def test_submit_seeds(self):
         seed = Seed(type="TEST", value="test-value", label="test-label")
         self.connector.add_seed(seed)
         replace_seeds_mock = self.mocker.patch.object(
             self.connector.seeds_api, "replace_seeds_by_label"
         )
-        self.connector.submit_seeds()
+        await self.connector.submit_seeds()
         replace_seeds_mock.assert_called_once_with(
             self.connector.label_prefix + "test-label",
             [seed.to_dict()],
         )
 
-    def test_fail_submit_seeds(self):
+    async def test_fail_submit_seeds(self):
         seed = Seed(type="TEST", value="test-value", label="test-label")
         self.connector.add_seed(seed)
         replace_seeds_mock = self.mocker.patch.object(
@@ -92,10 +95,10 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
         )
         replace_seeds_mock.side_effect = CensysAsmException(404, "Test Exception")
         logger_mock = self.mocker.patch.object(self.connector.logger, "error")
-        self.connector.submit_seeds()
+        await self.connector.submit_seeds()
         logger_mock.assert_called_once()
 
-    def test_submit_cloud_assets(self):
+    async def test_submit_cloud_assets(self):
         # Test data
         asset = CloudAsset(
             type="TEST", value="test-value", csp_label=ProviderEnum.GCP, uid="test-uid"
@@ -106,7 +109,7 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
         add_cloud_mock = self.mocker.patch.object(self.connector, "_add_cloud_assets")
 
         # Actual call
-        self.connector.submit_cloud_assets()
+        await self.connector.submit_cloud_assets()
 
         # Assertions
         add_cloud_mock.assert_called_once_with(
@@ -116,7 +119,7 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
             }
         )
 
-    def test_fail_submit_cloud_assets(self):
+    async def test_fail_submit_cloud_assets(self):
         # Test data
         asset = CloudAsset(
             type="TEST", value="test-value", csp_label=ProviderEnum.GCP, uid="test-uid"
@@ -129,12 +132,12 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
         logger_mock = self.mocker.patch.object(self.connector.logger, "error")
 
         # Actual call
-        self.connector.submit_cloud_assets()
+        await self.connector.submit_cloud_assets()
 
         # Assertions
         logger_mock.assert_called_once()
 
-    def test_add_cloud_assets(self):
+    async def test_add_cloud_assets(self):
         # Test data
         test_data = {
             "cloudConnectorUid": "test-uid",
@@ -145,14 +148,14 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
         post_mock.return_value.json.return_value = {"status": "success"}
 
         # Actual call
-        self.connector._add_cloud_assets(test_data)
+        await self.connector._add_cloud_assets(test_data)
 
         # Assertions
         post_mock.assert_called_once_with(
             self.connector._add_cloud_asset_path, json=test_data
         )
 
-    def test_submit(self):
+    async def test_submit(self):
         # Mock
         submit_seeds_mock = self.mocker.patch.object(self.connector, "submit_seeds")
         submit_cloud_assets_mock = self.mocker.patch.object(
@@ -161,13 +164,13 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
         self.mocker.patch.object(self.connector.settings, "dry_run", False)
 
         # Actual call
-        self.connector.submit()
+        await self.connector.submit()
 
         # Assertions
         submit_seeds_mock.assert_called_once()
         submit_cloud_assets_mock.assert_called_once()
 
-    def test_submit_dry_run(self):
+    async def test_submit_dry_run(self):
         # Mock
         submit_seeds_mock = self.mocker.patch.object(self.connector, "submit_seeds")
         submit_cloud_assets_mock = self.mocker.patch.object(
@@ -176,13 +179,13 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
         self.mocker.patch.object(self.connector.settings, "dry_run", True)
 
         # Actual call
-        self.connector.submit()
+        await self.connector.submit()
 
         # Assertions
         submit_seeds_mock.assert_not_called()
         submit_cloud_assets_mock.assert_not_called()
 
-    def test_scan(self):
+    async def test_scan(self):
         # Mock
         get_seeds_mock = self.mocker.patch.object(self.connector, "get_seeds")
         get_cloud_assets_mock = self.mocker.patch.object(
@@ -191,7 +194,7 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
         submit_mock = self.mocker.patch.object(self.connector, "submit")
 
         # Actual call
-        self.connector.scan()
+        await self.connector.scan(None)
 
         # Assertions
         get_seeds_mock.assert_called_once()

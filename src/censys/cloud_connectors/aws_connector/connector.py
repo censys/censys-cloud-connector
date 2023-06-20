@@ -1,7 +1,7 @@
 """AWS Cloud Connector."""
 import contextlib
 from collections.abc import AsyncGenerator, Sequence
-from typing import List, Optional
+from typing import Optional
 
 from aiobotocore.session import get_session
 from botocore.exceptions import ClientError
@@ -109,17 +109,34 @@ class AwsCloudConnector(CloudConnector):
         for provider_setting in provider_settings.values():
             accounts = provider_setting.accounts
             if not accounts:
+                # If no accounts are configured, scan the default account
                 accounts = [None]
+            else:
+                # Scan the default account first, then scan the rest
+                accounts = [None, *accounts]
+
+            # Scan each account in the provider
             for account in accounts:
+
+                # Use the account number from the account if it is configured
                 if account is not None:
                     self.account_number = account.account_number
-                    self.ignored_tags = self.get_ignored_tags(account.ignore_tags)
+                    self.ignored_tags = (
+                        self.get_ignored_tags(account.ignore_tags)
+                        if account.ignore_tags
+                        else self.get_ignored_tags(provider_setting.ignore_tags)
+                    )
+
+                # Use the account number from the provider if it is not configured
                 else:
                     self.account_number = provider_setting.account_number
                     self.ignored_tags = self.get_ignored_tags(
                         provider_setting.ignore_tags
                     )
 
+                # TODO: Add support for global services
+
+                # Scan each region in the account
                 for region in provider_setting.regions:
                     try:
                         with Healthcheck(
@@ -130,9 +147,12 @@ class AwsCloudConnector(CloudConnector):
                                 "account_number": self.account_number,
                             },
                         ):
+                            # Get credentials for the account
                             credentials = await get_aws_credentials(
                                 provider_setting, account, region
                             )
+
+                            # Scan the account
                             await self.scan(
                                 provider_setting,
                                 credentials,
@@ -155,172 +175,8 @@ class AwsCloudConnector(CloudConnector):
         Returns:
             str: Formatted label.
         """
-        region_label = f"/{region}" if region != "" else ""
+        region_label = f"/{region}" if region else ""
         return f"AWS: {service} - {self.account_number}{region_label}"
-
-    # async def credentials(self) -> dict:
-    #     """Generate required credentials for AWS.
-
-    #     This method will attempt to use any active STS sessions before falling
-    #     back on the regular provider settings.
-
-    #     Returns:
-    #         dict: Boto Credential format.
-    #     """
-    #     # Role name is the credential field which causes STS to activate.
-    #     # Once activated the temporary STS creds will be used by all
-    #     # subsequent AWS service client calls.
-    #     if role_name := self.credential.get("role_name"):
-    #         self.logger.debug(f"Using STS for role {role_name}")
-    #         return await self.get_assume_role_credentials(role_name)
-
-    #     self.logger.debug("Using provider settings credentials")
-    #     return self.boto_cred(
-    #         self.region,
-    #         self.provider_settings.access_key,
-    #         self.provider_settings.secret_key,
-    #         self.provider_settings.session_token,
-    #     )
-
-    # async def get_aws_client_kwargs(
-    #     self, service: AwsServices, credentials: Optional[dict] = None
-    # ) -> dict:
-    #     """Creates an AWS client for the provided service.
-
-    #     Args:
-    #         service (AwsServices): The AWS service name.
-    #         credentials (AwsCredentials): Override credentials instead of using the default.
-
-    #     Raises:
-    #         Exception: If the client could not be created.
-
-    #     Returns:
-    #         dict: An AWS boto3 client.
-    #     """
-    #     try:
-    #         credentials = credentials or await self.credentials()
-    #         if credentials.get("aws_access_key_id"):
-    #             self.logger.debug(f"AWS Service {service} using access key credentials")
-    #             return credentials
-
-    #         # calling client without credentials follows the standard
-    #         # credential import path to source creds from the environment
-    #         self.logger.debug(
-    #             f"AWS Service {service} using external boto configuration"
-    #         )
-    #         return {}  # type: ignore
-    #     except Exception as e:
-    #         self.logger.error(
-    #             f"Could not connect with client type '{service}'. Error: {e}"
-    #         )
-    #         raise
-
-    # async def get_assume_role_credentials(self, role_name: str) -> dict:
-    #     """Acquire temporary STS credentials and cache them for the duration of the scan.
-
-    #     Args:
-    #         role_name (str): Role name.
-
-    #     Returns:
-    #         dict: STS credentials.
-
-    #     Raises:
-    #         Exception: If the credentials could not be created.
-    #     """
-    #     if self.temp_sts_cred:
-    #         self.logger.debug("Using cached temporary STS credentials")
-    #     else:
-    #         try:
-    #             temp_creds = await self.assume_role(role_name)
-    #             self.temp_sts_cred = self.boto_cred(
-    #                 self.region,
-    #                 temp_creds["AccessKeyId"],
-    #                 temp_creds["SecretAccessKey"],
-    #                 temp_creds["SessionToken"],
-    #             )
-    #             self.logger.debug(
-    #                 f"Created temporary STS credentials for role {role_name}"
-    #             )
-    #         except Exception as e:
-    #             self.logger.error(f"Failed to assume role: {e}")
-    #             raise
-
-    #     return self.temp_sts_cred
-
-    # def boto_cred(
-    #     self,
-    #     region_name: Optional[str] = None,
-    #     access_key: Optional[str] = None,
-    #     secret_key: Optional[str] = None,
-    #     session_token: Optional[str] = None,
-    # ) -> dict[str, Any]:
-    #     """Create a boto3 credential dict. Only params with values are included.
-
-    #     Args:
-    #         region_name (str): AWS region.
-    #         access_key (str): AWS access key.
-    #         secret_key (str): AWS secret key.
-    #         session_token (str): AWS session token.
-
-    #     Returns:
-    #         dict: boto3 credential dict.
-    #     """
-    #     cred = {}
-
-    #     if region_name:
-    #         cred["region_name"] = region_name
-
-    #     if access_key:
-    #         cred["aws_access_key_id"] = access_key
-
-    #     if secret_key:
-    #         cred["aws_secret_access_key"] = secret_key
-
-    #     if session_token:
-    #         cred["aws_session_token"] = session_token
-
-    #     return cred
-
-    # async def assume_role(
-    #     self, role_name: str = AwsDefaults.ROLE_NAME.value
-    # ) -> CredentialsTypeDef:
-    #     """Acquire temporary credentials generated by Secure Token Service (STS).
-
-    #     This will always use the primary AWS account credentials when querying
-    #     the STS service.
-
-    #     Args:
-    #         role_name (str): Role name to assume. Defaults to "CensysCloudConnectorRole".
-
-    #     Returns:
-    #         CredentialsTypeDef: Temporary credentials.
-    #     """
-    #     credentials = self.boto_cred(
-    #         self.region,
-    #         self.provider_settings.access_key,
-    #         self.provider_settings.secret_key,
-    #         self.provider_settings.session_token,
-    #     )
-
-    #     # pass in explicit boto creds to force a new STS session
-    #     aws_kwargs = await self.get_aws_client_kwargs(
-    #         service=AwsServices.SECURE_TOKEN_SERVICE,  # type: ignore
-    #         credentials=credentials,
-    #     )
-    #     async with get_session().create_client("sts", **aws_kwargs) as client:  # type: ignore
-    #         client: STSClient  # type: ignore[no-redef]
-    #         role: dict[str, Any] = {
-    #             "RoleArn": f"arn:aws:iam::{self.account_number}:role/{role_name}",
-    #             "RoleSessionName": self.credential["role_session_name"]
-    #             or AwsDefaults.ROLE_SESSION_NAME.value,
-    #         }
-
-    #         temp_creds = await client.assume_role(**role)
-
-    #         self.logger.debug(
-    #             f"Assume role acquired temporary credentials for role {role_name}"
-    #         )
-    #         return temp_creds["Credentials"]
 
     async def get_api_gateway_domains_v1(
         self,
@@ -341,10 +197,6 @@ class AwsCloudConnector(CloudConnector):
         """
         label = self.format_label(SeedLabel.API_GATEWAY, region)
 
-        # aws_kwargs = await self.get_aws_client_kwargs(
-        #     service=AwsServices.API_GATEWAY,  # type: ignore
-        #     credentials=credentials,
-        # )
         async with get_session().create_client(
             "apigateway", **credentials
         ) as client:  # type: ignore
@@ -380,10 +232,6 @@ class AwsCloudConnector(CloudConnector):
         """
         label = self.format_label(SeedLabel.API_GATEWAY, region)
 
-        # aws_kwargs = await self.get_aws_client_kwargs(
-        #     service=AwsServices.API_GATEWAY_V2,  # type: ignore
-        #     credentials=credentials,
-        # )
         async with get_session().create_client(
             "apigatewayv2", **credentials
         ) as client:  # type: ignore
@@ -442,10 +290,6 @@ class AwsCloudConnector(CloudConnector):
         """
         label = self.format_label(SeedLabel.LOAD_BALANCER, region)
 
-        # aws_kwargs = await self.get_aws_client_kwargs(
-        #     service=AwsServices.LOAD_BALANCER,  # type: ignore
-        #     credentials=credentials,
-        # )
         async with get_session().create_client(
             "elb",
             **credentials,
@@ -481,10 +325,6 @@ class AwsCloudConnector(CloudConnector):
         """
         label = self.format_label(SeedLabel.LOAD_BALANCER, region)
 
-        # aws_kwargs = await self.get_aws_client_kwargs(
-        #     service=AwsServices.LOAD_BALANCER_V2,  # type: ignore
-        #     credentials=credentials,
-        # )
         async with get_session().create_client(
             "elbv2",
             **credentials,
@@ -582,10 +422,6 @@ class AwsCloudConnector(CloudConnector):
         """
         interfaces = {}
 
-        # aws_kwargs = await self.get_aws_client_kwargs(
-        #     service=AwsServices.EC2,  # type: ignore
-        #     credentials=credentials,
-        # )
         async with get_session().create_client(
             "ec2",
             **credentials,
@@ -634,9 +470,6 @@ class AwsCloudConnector(CloudConnector):
         Yields:
             AsyncGenerator[TagDescriptionTypeDef]: Tags.
         """
-        # aws_kwargs = await self.get_aws_client_kwargs(
-        #     service=AwsServices.EC2,  # type: ignore
-        # )
         async with get_session().create_client(
             "ec2",
             **credentials,
@@ -720,9 +553,6 @@ class AwsCloudConnector(CloudConnector):
         """
         label = self.format_label(SeedLabel.RDS, region)
 
-        # aws_kwargs = await self.get_aws_client_kwargs(
-        #     service=AwsServices.RDS,  # type: ignore
-        # )
         async with get_session().create_client(
             "rds",
             **credentials,
@@ -761,9 +591,6 @@ class AwsCloudConnector(CloudConnector):
         """
         label = self.format_label(SeedLabel.ROUTE53_ZONES, region)
 
-        # aws_kwargs = await self.get_aws_client_kwargs(
-        #     service=AwsServices.ROUTE53_ZONES,  # type: ignore
-        # )
         async with get_session().create_client(
             "route53",
             **credentials,
@@ -829,16 +656,12 @@ class AwsCloudConnector(CloudConnector):
         """
         label = self.format_label(SeedLabel.ECS, region)
 
-        # ecs_aws_kwargs = await self.get_aws_client_kwargs(
-        #     service=AwsServices.ECS,  # type: ignore
-        # )
-        # ec2_aws_kwargs = await self.get_aws_client_kwargs(
-        #     service=AwsServices.EC2,  # type: ignore
-        # )
-        async with get_session().create_client(
+        session = get_session()
+
+        async with session.create_client(
             "ecs",
             **credentials,
-        ) as ecs, get_session().create_client(
+        ) as ecs, session.create_client(
             "ec2",
             **credentials,
         ) as ec2:  # type: ignore
@@ -911,9 +734,6 @@ class AwsCloudConnector(CloudConnector):
             ignored_tags (list[str], optional): List of tags to ignore. Defaults to IGNORED_TAGS.
             current_service (str): Current service.
         """
-        # aws_kwargs = await self.get_aws_client_kwargs(
-        #     service=AwsServices.STORAGE_BUCKET,  # type: ignore
-        # )
         async with get_session().create_client(
             "s3",
             **credentials,
@@ -927,12 +747,12 @@ class AwsCloudConnector(CloudConnector):
                     if not bucket_name:
                         continue
 
-                    region = await self.get_s3_region(client, bucket_name)
-                    label = self.format_label(SeedLabel.STORAGE_BUCKET, region)
+                    s3_region = await self.get_s3_region(client, bucket_name)
+                    label = self.format_label(SeedLabel.STORAGE_BUCKET, s3_region)
 
                     with SuppressValidationError():
                         bucket_asset = AwsStorageBucketAsset(  # type: ignore
-                            value=AwsStorageBucketAsset.url(bucket_name, region),
+                            value=AwsStorageBucketAsset.url(bucket_name, s3_region),
                             uid=label,
                             scan_data={
                                 "accountNumber": self.account_number,

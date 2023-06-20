@@ -75,8 +75,10 @@ mypy = "^0.942"
 types-PyYAML = "^6.0.5"
 types-requests = "^2.27.14"
 # Testing
+asynctest = "^0.13.0"
 parameterized = "^0.8.1"
 pytest = "^7.1.1"
+pytest-asyncio = "^0.21.0"
 pytest-cov = "^3.0.0"
 pytest-datadir = "^1.3.1"
 pytest-mock = "^3.7.0"
@@ -151,6 +153,7 @@ module = [
     "importlib_metadata",
     # Tests
     "parameterized",
+    "asynctest",
     # GCP
     "google.oauth2",
     # Azure

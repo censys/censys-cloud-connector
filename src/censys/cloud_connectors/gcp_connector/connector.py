@@ -370,7 +370,7 @@ class GcpCloudConnector(CloudConnector):
                 if self_link := resource_properties.get("selfLink"):
                     scan_data["selfLink"] = self_link
                 with SuppressValidationError():
-                    bucket_asset = GcpStorageBucketAsset(
+                    bucket_asset = GcpStorageBucketAsset(  # type: ignore[call-arg]
                         # TODO: Update when API can accept other urls
                         value=f"https://storage.googleapis.com/{bucket_name}",
                         uid=self.format_label(provider_settings, list_assets_result),

@@ -104,17 +104,6 @@ async def get_aws_credentials(
                 region=region,
             )
 
-        # If neither the provider nor the account have credentials, but the provider has a role, assume it using local credentials
-        if provider_has_role:
-            assert provider_settings.role_name
-            assert provider_settings.role_session_name
-            return await assume_role(
-                account.account_number,
-                provider_settings.role_name,
-                provider_settings.role_session_name,
-                region=region,
-            )
-
         # If neither the provider nor the account have credentials, but the account has a role, assume it using local credentials
         if account_has_role:
             assert account.role_name
@@ -126,8 +115,19 @@ async def get_aws_credentials(
                 region=region,
             )
 
+        # If neither the provider nor the account have credentials, but the provider has a role, assume it using local credentials
+        if provider_has_role:
+            assert provider_settings.role_name
+            assert provider_settings.role_session_name
+            return await assume_role(
+                account.account_number,
+                provider_settings.role_name,
+                provider_settings.role_session_name,
+                region=region,
+            )
+
         # If neither the provider nor the account have credentials or roles, use local credentials
-        return {}
+        return {}  # pragma: no cover
 
     # If the provider has a role and credentials, assume it using the provider credentials
     if provider_has_role and provider_has_credentials:
@@ -193,8 +193,6 @@ async def assume_role(
     Returns:
         AwsCredentials: The AWS credentials.
     """
-    session = get_session()
-
     # Format the role arn
     role_arn = f"arn:aws:iam::{account_number}:role/{role_name}"
 
@@ -211,7 +209,7 @@ async def assume_role(
         client_kwargs["region_name"] = region
 
     # Create the sts client
-    async with session.create_client("sts", **client_kwargs) as client:
+    async with get_session().create_client("sts", **client_kwargs) as client:
         client: STSClient  # type: ignore[no-redef]
         # Assume the role
         response = await client.assume_role(

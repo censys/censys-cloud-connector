@@ -6,6 +6,8 @@
   "python.linting.enabled": true,
   "python.linting.flake8Enabled": true,
   "python.linting.flake8Path": "${workspaceFolder}/.venv/bin/flake8",
+  "mypy-type-checker.path": ["${workspaceFolder}/.venv/bin/mypy"],
+  "mypy-type-checker.importStrategy": "fromEnvironment",
   "python.poetryPath": "poetry",
   "python.terminal.activateEnvironment": true,
   "python.testing.pytestArgs": ["--no-cov"],
@@ -17,6 +19,7 @@
   "cSpell.words": [
     "aiobotocore",
     "apigatewayv",
+    "asynctest",
     "autoupdate",
     "autouse",
     "aws",

@@ -15,7 +15,7 @@ from azure.mgmt.sql.aio import SqlManagementClient
 from azure.mgmt.storage.aio import StorageManagementClient
 from azure.mgmt.storage.models import StorageAccount
 from azure.storage.blob import ContainerProperties
-from azure.storage.blob.aio import BlobServiceClient, ContainerClient
+from azure.storage.blob.aio import BlobServiceClient
 
 from censys.cloud_connectors.common.cloud_asset import AzureContainerAsset
 from censys.cloud_connectors.common.connector import CloudConnector
@@ -306,6 +306,23 @@ class AzureCloudConnector(CloudConnector):
             await blob_service_client.close()
             return
 
+    async def get_storage_container_url(
+        self, blob_service_client: BlobServiceClient, container: ContainerProperties
+    ) -> str:
+        """Get Azure container URL.
+
+        Args:
+            blob_service_client (BlobServiceClient): Blob service client.
+            container (ContainerProperties): Azure container properties.
+
+        Returns:
+            str: Azure container URL.
+        """
+        container_client = blob_service_client.get_container_client(container)
+        container_url = container_client.url
+        await container_client.close()
+        return container_url
+
     async def get_storage_containers(
         self,
         _: AzureSpecificSettings,
@@ -342,12 +359,10 @@ class AzureCloudConnector(CloudConnector):
                 account_url = account.primary_endpoints.blob
             blob_service_client = BlobServiceClient(account_url, credentials)  # type: ignore
             async for container in self._list_containers(blob_service_client, account):  # type: ignore
-                container_client: Optional[ContainerClient] = None
                 try:
-                    container_client = blob_service_client.get_container_client(
-                        container
+                    container_url = await self.get_storage_container_url(
+                        blob_service_client, container
                     )
-                    container_url = container_client.url
                     with SuppressValidationError():
                         container_asset = AzureContainerAsset(  # type: ignore
                             value=container_url,
@@ -359,14 +374,10 @@ class AzureCloudConnector(CloudConnector):
                             },
                         )
                         self.add_cloud_asset(container_asset, service=current_service)
-                    await container_client.close()
                 except ServiceRequestError as error:  # pragma: no cover
                     self.logger.error(
                         f"Failed to get Azure container {container} for {account.name}: {error.message}"
                     )
-                finally:
-                    if container_client:
-                        await container_client.close()
 
             await blob_service_client.close()
 

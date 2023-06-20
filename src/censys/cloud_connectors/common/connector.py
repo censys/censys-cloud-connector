@@ -80,6 +80,11 @@ class CloudConnector(ABC):
                     seed_scanner, provider_settings, current_service=seed_type, **kwargs
                 )
                 for seed_type, seed_scanner in self.seed_scanners.items()
+                if (
+                    self.provider_settings.ignore
+                    and seed_type not in self.provider_settings.ignore
+                )
+                or not self.provider_settings.ignore
             ],
             max_at_once=self.settings.max_concurrent_scans,
         )
@@ -100,6 +105,11 @@ class CloudConnector(ABC):
                     **kwargs,
                 )
                 for cloud_asset_type, cloud_asset_scanner in self.cloud_asset_scanners.items()
+                if (
+                    self.provider_settings.ignore
+                    and cloud_asset_type not in self.provider_settings.ignore
+                )
+                or not self.provider_settings.ignore
             ],
             max_at_once=self.settings.max_concurrent_scans,
         )

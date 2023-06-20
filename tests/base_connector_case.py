@@ -43,17 +43,10 @@ class BaseConnectorCase(BaseCase):
         Raises:
             AssertionError: If the seeds do not have the expected values.
         """
-        # seeds_len = len(seeds)
-        # values_len = len(values)
-        # assert seeds_len == values_len, f"Expected {values_len} seeds, got {seeds_len}"
         seed_values = [seed.value for seed in seeds]
         seed_values.sort()
         values.sort()
         assert values == seed_values, f"Expected {values}, got {seed_values}"
-        # for seed in seeds:
-        #     assert (
-        #         seed.value in values
-        #     ), f"The seed {seed.value} is not in the expected values {values}"
 
     def mock_healthcheck(self) -> MagicMock:
         """Mock the healthcheck.
