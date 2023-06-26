@@ -10,6 +10,7 @@ from azure.core.exceptions import (
 from azure.identity.aio import ClientSecretCredential
 from azure.mgmt.containerinstance.aio import ContainerInstanceManagementClient
 from azure.mgmt.dns.aio import DnsManagementClient
+from azure.mgmt.dns.models import ZoneListResult
 from azure.mgmt.network.aio import NetworkManagementClient
 from azure.mgmt.sql.aio import SqlManagementClient
 from azure.mgmt.storage.aio import StorageManagementClient
@@ -98,7 +99,8 @@ class AzureCloudConnector(CloudConnector):
                     await self.scan(provider_setting, credentials, subscription_id)
                 except Exception as e:
                     self.logger.error(
-                        f"Unable to scan Azure Subscription {subscription_id}. Error: {e}"
+                        f"Unable to scan Azure Subscription {subscription_id}."
+                        f" Error: {e}"
                     )
                     self.dispatch_event(EventTypeEnum.SCAN_FAILED, exception=e)
 
@@ -221,6 +223,27 @@ class AzureCloudConnector(CloudConnector):
 
         await sql_client.close()
 
+    async def _list_dns_zones(
+        self, dns_client: DnsManagementClient
+    ) -> AsyncGenerator[ZoneListResult, None]:
+        """List all DNS zones.
+
+        Args:
+            dns_client (DnsManagementClient): Azure DNS client.
+
+        Yields:
+            AsyncGenerator[ZoneListResult, None]: DNS zones.
+        """
+        try:
+            async for zone in dns_client.zones.list():
+                yield zone
+        except HttpResponseError as error:
+            self.logger.error(
+                f"Failed to get Azure DNS records: {error.reason} or the subscription"
+                " does not have access to the Microsoft.Network resource provider."
+            )
+            await dns_client.close()
+
     async def get_dns_records(
         self,
         _: AzureSpecificSettings,
@@ -237,18 +260,7 @@ class AzureCloudConnector(CloudConnector):
         """
         dns_client = DnsManagementClient(credentials, subscription_id)  # type: ignore
 
-        try:
-            # zones = list(dns_client.zones.list())
-            zones = dns_client.zones.list()
-        except HttpResponseError as error:
-            # TODO: Better error handling here
-            self.logger.error(
-                f"Failed to get Azure DNS records: {error.message}", exc_info=True
-            )
-            await dns_client.close()
-            return
-
-        async for zone in zones:
+        async for zone in self._list_dns_zones(dns_client):
             zone_dict = zone.as_dict()
             # TODO: Do we need to check if zone is public? (ie. do we care?)
             if zone_dict.get("zone_type") != "Public":  # pragma: no cover
@@ -305,7 +317,6 @@ class AzureCloudConnector(CloudConnector):
                 f"Failed to get Azure containers for {account.name}: {error.message}"
             )
             await blob_service_client.close()
-            return
 
     async def get_storage_container_url(
         self, blob_service_client: BlobServiceClient, container: ContainerProperties
@@ -377,7 +388,8 @@ class AzureCloudConnector(CloudConnector):
                         self.add_cloud_asset(container_asset, service=current_service)
                 except ServiceRequestError as error:  # pragma: no cover
                     self.logger.error(
-                        f"Failed to get Azure container {container} for {account.name}: {error.message}"
+                        f"Failed to get Azure container {container} for {account.name}:"
+                        f" {error.message}"
                     )
 
             await blob_service_client.close()
