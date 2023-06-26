@@ -1,4 +1,5 @@
 """Azure specific setup CLI."""
+import contextlib
 from typing import Optional
 
 from azure.core.exceptions import ClientAuthenticationError, HttpResponseError
@@ -193,7 +194,8 @@ class AzureSetupCli(ProviderSetupCli):
         for subscription_id in provider_setting.subscription_id:
             network_client = NetworkManagementClient(credential, subscription_id)
             res = network_client.public_ip_addresses.list_all()
-            next(res)
+            with contextlib.suppress(StopIteration):
+                next(res)
         return True
 
     def setup_with_cli(self) -> None:
