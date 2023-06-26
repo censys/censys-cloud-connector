@@ -107,6 +107,7 @@ class AwsCloudConnector(CloudConnector):
         )
 
         for provider_setting in provider_settings.values():
+            self.provider_settings = provider_setting
             accounts: list[Union[None, AwsAccount]]
             if provider_setting.accounts:
                 # Scan the default account first, then scan the rest

@@ -86,6 +86,7 @@ class AzureCloudConnector(CloudConnector):
             self.provider, {}  # type: ignore
         )
         for provider_setting in provider_settings.values():
+            self.provider_settings = provider_setting
             credentials = ClientSecretCredential(
                 tenant_id=provider_setting.tenant_id,
                 client_id=provider_setting.client_id,

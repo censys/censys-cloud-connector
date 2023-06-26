@@ -74,27 +74,3 @@ class TestAwsSettings(BaseCase, TestCase):
         expected = (account,)
         settings = self.aws_settings({"account_number": account})
         assert settings.get_provider_key() == expected
-
-    # def test_ignore_tags_provider(self):
-    #     expected = ["test-provider-ignore-tag"]
-    #     settings = self.aws_settings(
-    #         {
-    #             "ignore_tags": expected,
-    #         }
-    #     )
-    #     creds = next(settings.get_credentials())
-    #     assert creds["ignore_tags"] == expected
-
-    # def test_ignore_tags_account_overrides_provider(self):
-    #     child = {
-    #         "account_number": "123123123123",
-    #         "ignore_tags": ["test-account-ignore-tag"],
-    #     }
-    #     primary = {
-    #         "ignore_tags": ["test-primary-ignore-tag"],
-    #         "accounts": [child],
-    #     }
-    #     settings = self.aws_settings(primary)
-    #     creds = list(settings.get_credentials())
-    #     assert creds[0]["ignore_tags"] == primary["ignore_tags"]
-    #     assert creds[1]["ignore_tags"] == child["ignore_tags"]

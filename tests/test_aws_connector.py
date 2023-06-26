@@ -741,6 +741,8 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
         self.connector.ignored_tags = ["non-existent-tag"]
         assert not self.connector.has_ignored_tag(["tag-name"])
 
+    # TODO: Add ignore tag tests for updated credential logic
+
     def test_extract_tags_from_tagset(self):
         tag_set = [{"Key": "tag-1"}, {"Key": "tag-2"}]
         tags = self.connector.extract_tags_from_tagset(tag_set)  # type: ignore[arg-type]

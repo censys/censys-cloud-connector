@@ -107,31 +107,3 @@ class AwsSpecificSettings(ProviderSpecificSettings):
             data["accounts"][index] = AwsAccount(**account)
 
         return cls(**data)
-
-    # def get_credentials(self):
-    #     """Generator for all configured credentials. Any values within the accounts block will take precedence over the overall values.
-
-    #     Yields:
-    #         dict[str, Any]
-    #     """
-    #     yield {
-    #         "account_number": self.account_number,
-    #         "access_key": self.access_key,
-    #         "secret_key": self.secret_key,
-    #         "role_name": self.role_name,
-    #         "role_session_name": self.role_session_name,
-    #         "ignore_tags": self.ignore_tags,
-    #     }
-
-    #     if self.accounts:
-    #         for account in self.accounts:
-    #             yield {
-    #                 "account_number": (account.account_number or self.account_number),
-    #                 "access_key": account.access_key,
-    #                 "secret_key": account.secret_key,
-    #                 "role_name": (account.role_name or self.role_name),
-    #                 "role_session_name": (
-    #                     account.role_session_name or self.role_session_name
-    #                 ),
-    #                 "ignore_tags": (account.ignore_tags or self.ignore_tags),
-    #             }

@@ -108,6 +108,7 @@ class GcpCloudConnector(CloudConnector):
             self.provider, {}  # type: ignore
         )
         for provider_setting in provider_settings.values():
+            self.provider_settings = provider_setting
             await self.scan(provider_setting)
 
     def format_label(
