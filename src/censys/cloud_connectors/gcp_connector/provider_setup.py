@@ -128,7 +128,8 @@ class GcpSetupCli(ProviderSetupCli):
         res = self.run_command(GcloudCommands.GET_CONFIG_VALUE.generate(key="project"))
         if res.returncode != 0:
             self.print_info(
-                "If you are unsure of the project id, go to https://console.cloud.google.com/iam-admin/settings."
+                "If you are unsure of the project id, go to"
+                " https://console.cloud.google.com/iam-admin/settings."
             )
             return None
         return res.stdout.strip()
@@ -308,7 +309,8 @@ class GcpSetupCli(ProviderSetupCli):
         """
         commands = [
             # Adds a comment about scope
-            "# Grants the service account the required roles from the organization level"
+            "# Grants the service account the required roles from the organization"
+            " level"
         ]
         for role in roles:
             commands.append(
@@ -551,7 +553,9 @@ class GcpSetupCli(ProviderSetupCli):
                     "message": "Confirm or name service account:",
                     "default": "censys-cloud-connector",
                     "validate": validate_service_account_name,
-                    "invalid_message": "Service account name must be between 6 and 30 characters.",
+                    "invalid_message": (
+                        "Service account name must be between 6 and 30 characters."
+                    ),
                 }
             ]
         )
@@ -608,7 +612,12 @@ class GcpSetupCli(ProviderSetupCli):
     def setup_with_cli(self) -> None:
         """Setup with gcloud CLI."""
         self.print_info(
-            "Before you begin you'll need to have identified the following:\n  [info]-[/info] The Google Cloud organization administrator account which will execute scripts that configure the Censys Cloud Connector.\n  [info]-[/info] The project that will be used to run the Censys Cloud Connector. Please note that the cloud connector will be scoped to the organization."
+            "Before you begin you'll need to have identified the following:\n "
+            " [info]-[/info] The Google Cloud organization administrator account which"
+            " will execute scripts that configure the Censys Cloud Connector.\n "
+            " [info]-[/info] The project that will be used to run the Censys Cloud"
+            " Connector. Please note that the cloud connector will be scoped to the"
+            " organization."
         )
         if not self.is_gcloud_installed():
             self.print_warning(GcpMessages.INSTALL_GCLOUD_INSTRUCTIONS)

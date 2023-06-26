@@ -62,7 +62,9 @@ class AzureSetupCli(ProviderSetupCli):
                 {
                     "type": "confirm",
                     "name": "use_subscription",
-                    "message": f"Confirm subscription {subscriptions[0]['display_name']}:",
+                    "message": (
+                        f"Confirm subscription {subscriptions[0]['display_name']}:"
+                    ),
                     "default": True,
                 }
             ]
@@ -150,7 +152,9 @@ class AzureSetupCli(ProviderSetupCli):
                 {
                     "type": "confirm",
                     "name": "create_service_principal",
-                    "message": "Confirm creation of service principal with above command:",
+                    "message": (
+                        "Confirm creation of service principal with above command:"
+                    ),
                     "default": True,
                 }
             ]
@@ -213,7 +217,8 @@ class AzureSetupCli(ProviderSetupCli):
         service_principal = self.create_service_principal(selected_subscriptions)
         if service_principal is None:
             self.print_error(
-                "Service principal not created. Please try again or manually create a service principal"
+                "Service principal not created. Please try again or manually create a"
+                " service principal"
             )
             exit(1)
 

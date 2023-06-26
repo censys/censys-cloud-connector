@@ -96,7 +96,10 @@ class GcpCloudConnector(CloudConnector):
                 )
         except Exception as e:
             self.logger.error(
-                f"Unable to scan GCP organization {provider_settings.organization_id}. Error: {e}",
+                (
+                    "Unable to scan GCP organization"
+                    f" {provider_settings.organization_id}. Error: {e}"
+                ),
             )
             self.dispatch_event(EventTypeEnum.SCAN_FAILED, exception=e)
 
@@ -180,7 +183,8 @@ class GcpCloudConnector(CloudConnector):
                     network_interfaces = json.loads(network_interfaces)
                 except json.JSONDecodeError:
                     self.logger.error(
-                        f"Failed to parse network_interfaces for {list_assets_result.asset.name}"
+                        "Failed to parse network_interfaces for"
+                        f" {list_assets_result.asset.name}"
                     )
                     continue
                 if (
@@ -260,7 +264,8 @@ class GcpCloudConnector(CloudConnector):
                     private_cluster_config = json.loads(private_cluster_config)
                 except json.decoder.JSONDecodeError:  # pragma: no cover
                     self.logger.debug(
-                        f"Failed to parse privateClusterConfig: {private_cluster_config}"
+                        "Failed to parse privateClusterConfig:"
+                        f" {private_cluster_config}"
                     )
                     continue
                 if ip_address := private_cluster_config.get("publicEndpoint"):

@@ -74,7 +74,10 @@ class TestEnums(TestCase):
             ),
             (
                 GcloudCommands.ADD_ORG_IAM_POLICY,
-                "gcloud organizations add-iam-policy-binding my-org --member 'user:my-user' --role 'roles/viewer'",
+                (
+                    "gcloud organizations add-iam-policy-binding my-org --member"
+                    " 'user:my-user' --role 'roles/viewer'"
+                ),
                 {
                     "organization_id": "my-org",
                     "member": "user:my-user",
@@ -83,7 +86,10 @@ class TestEnums(TestCase):
             ),
             (
                 GcloudCommands.ADD_ORG_IAM_POLICY,
-                "gcloud organizations add-iam-policy-binding my-org --member 'user:my-user' --role 'roles/viewer' --quiet",
+                (
+                    "gcloud organizations add-iam-policy-binding my-org --member"
+                    " 'user:my-user' --role 'roles/viewer' --quiet"
+                ),
                 {
                     "organization_id": "my-org",
                     "member": "user:my-user",
@@ -93,7 +99,11 @@ class TestEnums(TestCase):
             ),
             (
                 GcloudCommands.CREATE_SERVICE_ACCOUNT,
-                "gcloud iam service-accounts create my-service-account --display-name 'My Service Account' --description 'My Service Account Description'",
+                (
+                    "gcloud iam service-accounts create my-service-account"
+                    " --display-name 'My Service Account' --description 'My Service"
+                    " Account Description'"
+                ),
                 {
                     "name": TEST_SERVICE_ACCOUNT,
                     "display_name": "My Service Account",
@@ -102,7 +112,11 @@ class TestEnums(TestCase):
             ),
             (
                 GcloudCommands.CREATE_SERVICE_ACCOUNT,
-                "gcloud iam service-accounts create my-service-account --display-name 'My Service Account' --description 'My Service Account Description' --project my-project",
+                (
+                    "gcloud iam service-accounts create my-service-account"
+                    " --display-name 'My Service Account' --description 'My Service"
+                    " Account Description' --project my-project"
+                ),
                 {
                     "name": TEST_SERVICE_ACCOUNT,
                     "display_name": "My Service Account",
@@ -112,12 +126,19 @@ class TestEnums(TestCase):
             ),
             (
                 GcloudCommands.ENABLE_SERVICE_ACCOUNT,
-                "gcloud iam service-accounts enable my-service-account@my-project.iam.gserviceaccount.com",
+                (
+                    "gcloud iam service-accounts enable"
+                    " my-service-account@my-project.iam.gserviceaccount.com"
+                ),
                 {"service_account_email": TEST_SERVICE_ACCOUNT_EMAIL},
             ),
             (
                 GcloudCommands.CREATE_SERVICE_ACCOUNT_KEY,
-                "gcloud iam service-accounts keys create my-service-account.json --iam-account my-service-account@my-project.iam.gserviceaccount.com",
+                (
+                    "gcloud iam service-accounts keys create my-service-account.json"
+                    " --iam-account"
+                    " my-service-account@my-project.iam.gserviceaccount.com"
+                ),
                 {
                     "key_file": "my-service-account.json",
                     "service_account_email": TEST_SERVICE_ACCOUNT_EMAIL,
@@ -172,7 +193,10 @@ class TestEnums(TestCase):
             ),
             (
                 GcpApiIds.SECURITYCENTER,
-                "gcloud services enable securitycenter.googleapis.com --project my-project",
+                (
+                    "gcloud services enable securitycenter.googleapis.com --project"
+                    " my-project"
+                ),
             ),
         ]
     )
@@ -238,11 +262,17 @@ class TestEnums(TestCase):
             ),
             (
                 GcpSecurityCenterResourceTypes.DNS_ZONE,
-                'securityCenterProperties.resource_type : "google.cloud.dns.ManagedZone"',
+                (
+                    "securityCenterProperties.resource_type :"
+                    ' "google.cloud.dns.ManagedZone"'
+                ),
             ),
             (
                 GcpSecurityCenterResourceTypes.STORAGE_BUCKET,
-                'securityCenterProperties.resource_type : "google.cloud.storage.Bucket"',
+                (
+                    "securityCenterProperties.resource_type :"
+                    ' "google.cloud.storage.Bucket"'
+                ),
             ),
         ]
     )

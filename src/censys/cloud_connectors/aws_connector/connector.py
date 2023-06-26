@@ -161,7 +161,8 @@ class AwsCloudConnector(CloudConnector):
                             )
                     except Exception as e:
                         self.logger.error(
-                            f"Unable to scan account {self.account_number} in region {region}. Error: {e}"
+                            f"Unable to scan account {self.account_number} in region"
+                            f" {region}. Error: {e}"
                         )
                         self.dispatch_event(EventTypeEnum.SCAN_FAILED, exception=e)
 
@@ -441,7 +442,8 @@ class AwsCloudConnector(CloudConnector):
 
                     if self.network_interfaces_ignored_tags(network):
                         self.logger.debug(
-                            f"Skipping ignored tag for network interface {network_interface_id}"
+                            "Skipping ignored tag for network interface"
+                            f" {network_interface_id}"
                         )
                         continue
 
@@ -477,7 +479,7 @@ class AwsCloudConnector(CloudConnector):
             ec2: EC2Client  # type: ignore[no-redef]
 
             try:
-                async for page in ec2.get_paginator("describe_tags",).paginate(
+                async for page in ec2.get_paginator("describe_tags").paginate(
                     Filters=[
                         {
                             "Name": "resource-type",

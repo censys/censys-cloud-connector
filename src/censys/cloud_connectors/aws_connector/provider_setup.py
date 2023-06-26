@@ -47,7 +47,8 @@ class AwsSetupCli(ProviderSetupCli):
             str: Role session name.
         """
         self.print_info(
-            "AWS recommends setting 'Role Session Name' to the name or identifier that is associated with the user who is using your application."
+            "AWS recommends setting 'Role Session Name' to the name or identifier that"
+            " is associated with the user who is using your application."
         )
         answers = self.prompt(
             {
@@ -55,7 +56,9 @@ class AwsSetupCli(ProviderSetupCli):
                 "name": "answer",
                 "message": "Enter role session name to use:",
                 "default": AwsDefaults.ROLE_SESSION_NAME.value,
-                "invalid_message": "Role session name must be between 1 and 64 characters.",
+                "invalid_message": (
+                    "Role session name must be between 1 and 64 characters."
+                ),
                 "validate": lambda name: re.match(r"^[\w+=,.@-]{2,64}$", name),
             }
         )
@@ -107,7 +110,10 @@ class AwsSetupCli(ProviderSetupCli):
                 "name": "accounts",
                 "max_height": "70%",
                 "message": "Select accounts(s):",
-                "instruction": "Use <up> and <down> to scroll, <space> to select, <ctrl>+<r> to select all, <enter> to continue.",
+                "instruction": (
+                    "Use <up> and <down> to scroll, <space> to select, <ctrl>+<r> to"
+                    " select all, <enter> to continue."
+                ),
                 "choices": accounts,
                 "multiselect": True,
                 "validate": lambda regions: len(regions) > 0,
@@ -142,7 +148,10 @@ class AwsSetupCli(ProviderSetupCli):
                 "name": "accounts",
                 "max_height": "70%",
                 "message": "Select accounts(s):",
-                "instruction": "Use <up> and <down> to scroll, <space> to select, <ctrl>+<r> to select all, <enter> to continue.",
+                "instruction": (
+                    "Use <up> and <down> to scroll, <space> to select, <ctrl>+<r> to"
+                    " select all, <enter> to continue."
+                ),
                 "choices": accounts,
                 "multiselect": True,
                 "validate": lambda regions: len(regions) > 0,
@@ -245,7 +254,10 @@ class AwsSetupCli(ProviderSetupCli):
                 "name": "answer",
                 "message": "Enter an existing IAM Role name to use:",
                 "default": AwsDefaults.ROLE_NAME.value,
-                "invalid_message": "Role name must be between 1 and 64 characters. Use alphanumeric and '+=,.@-_' characters.",
+                "invalid_message": (
+                    "Role name must be between 1 and 64 characters. Use alphanumeric"
+                    " and '+=,.@-_' characters."
+                ),
                 "validate": self.aws.valid_role_name,
             }
         )
@@ -319,7 +331,8 @@ class AwsSetupCli(ProviderSetupCli):
             regions = self.aws.get_regions()
         except Exception:
             self.print_error(
-                "Unable to load regions from AWS. Please check your credentials and try again."
+                "Unable to load regions from AWS. Please check your credentials and try"
+                " again."
             )
             exit(1)
 
@@ -329,7 +342,10 @@ class AwsSetupCli(ProviderSetupCli):
                 "name": "regions",
                 "max_height": "70%",
                 "message": "Select region(s):",
-                "instruction": "Fuzzy search enabled. Use <up> and <down> to scroll, <space> to select, <ctrl>+<r> to select all, <enter> to continue.",
+                "instruction": (
+                    "Fuzzy search enabled. Use <up> and <down> to scroll, <space> to"
+                    " select, <ctrl>+<r> to select all, <enter> to continue."
+                ),
                 "choices": regions,
                 "multiselect": True,
                 "validate": lambda regions: len(regions) > 0,
@@ -411,7 +427,10 @@ class AwsSetupCli(ProviderSetupCli):
             {
                 "type": "confirm",
                 "name": "answer",
-                "message": f"Do you want to run the Cloud Connector using the credentials from profile '{profile}'?",
+                "message": (
+                    "Do you want to run the Cloud Connector using the credentials from"
+                    f" profile '{profile}'?"
+                ),
                 "default": False,
             }
         )
@@ -530,7 +549,8 @@ class AwsSetupCli(ProviderSetupCli):
             if len(choices) == 1:
                 name = choices[0]["name"]
                 self.print_info(
-                    f"There is only one AWS credential profile called '{name}' available."
+                    f"There is only one AWS credential profile called '{name}'"
+                    " available."
                 )
 
             choice = self.prompt_select_one(
