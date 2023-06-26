@@ -795,5 +795,5 @@ class GcpSetupCli(ProviderSetupCli):
         )
 
         get_credentials_from = answers.get("get_credentials_from")
-        if func := choices.get(get_credentials_from):
+        if get_credentials_from and (func := choices.get(get_credentials_from)):
             func()

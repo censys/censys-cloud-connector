@@ -1,7 +1,7 @@
 """AWS Cloud Connector."""
 import contextlib
 from collections.abc import AsyncGenerator, Sequence
-from typing import Optional
+from typing import Optional, Union
 
 from aiobotocore.session import get_session
 from botocore.exceptions import ClientError
@@ -31,7 +31,7 @@ from censys.cloud_connectors.common.settings import Settings
 
 from .credentials import AwsCredentials, get_aws_credentials
 from .enums import AwsResourceTypes, SeedLabel
-from .settings import AwsSpecificSettings
+from .settings import AwsAccount, AwsSpecificSettings
 
 VALID_RECORD_TYPES = ["A", "CNAME"]
 IGNORED_TAGS = ["censys-cloud-connector-ignore"]
@@ -73,13 +73,13 @@ class AwsCloudConnector(CloudConnector):
         self.ignored_tags: list[str] = []
         self.global_ignored_tags: set[str] = set(IGNORED_TAGS)
 
-    async def scan(
+    async def scan(  # type: ignore
         self,
         provider_setting: AwsSpecificSettings,
         credentials: AwsCredentials,
         region: str,
         ignored_tags: list[str],
-    ):
+    ):  # type: ignore
         """Scan AWS.
 
         Args:
@@ -103,21 +103,20 @@ class AwsCloudConnector(CloudConnector):
         provider_settings: dict[
             tuple, AwsSpecificSettings
         ] = self.settings.providers.get(
-            self.provider, {}
-        )  # type: ignore
+            self.provider, {}  # type: ignore
+        )
 
         for provider_setting in provider_settings.values():
-            accounts = provider_setting.accounts
-            if not accounts:
+            accounts: list[Union[None, AwsAccount]]
+            if provider_setting.accounts:
+                # Scan the default account first, then scan the rest
+                accounts = [None, *provider_setting.accounts]
+            else:
                 # If no accounts are configured, scan the default account
                 accounts = [None]
-            else:
-                # Scan the default account first, then scan the rest
-                accounts = [None, *accounts]
 
             # Scan each account in the provider
             for account in accounts:
-
                 # Use the account number from the account if it is configured
                 if account is not None:
                     self.account_number = account.account_number

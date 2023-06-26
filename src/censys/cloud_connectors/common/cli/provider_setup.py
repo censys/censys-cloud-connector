@@ -156,7 +156,7 @@ def backoff_wrapper(
                 progress.start_task(task)
                 _task = task
 
-                @backoff.on_exception(**default_kwargs)
+                @backoff.on_exception(**default_kwargs)  # type: ignore
                 def _method():
                     res = method(*args, **kwargs)
                     progress.advance(task)

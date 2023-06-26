@@ -51,7 +51,7 @@ class AzureCloudConnector(CloudConnector):
             AzureResourceTypes.STORAGE_ACCOUNTS: self.get_storage_containers,
         }
 
-    async def scan(
+    async def scan(  # type: ignore
         self,
         provider_settings: AzureSpecificSettings,
         credentials: ClientSecretCredential,
@@ -82,9 +82,9 @@ class AzureCloudConnector(CloudConnector):
         """Scan all Azure Subscriptions."""
         provider_settings: dict[
             tuple, AzureSpecificSettings
-        ] = self.settings.providers.get(
-            self.provider, {}
-        )  # type: ignore
+        ] = self.settings.providers.get(  # type: ignore
+            self.provider, {}  # type: ignore
+        )
         for provider_setting in provider_settings.values():
             credentials = ClientSecretCredential(
                 tenant_id=provider_setting.tenant_id,

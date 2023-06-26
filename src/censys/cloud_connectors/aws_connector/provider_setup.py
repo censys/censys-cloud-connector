@@ -15,7 +15,6 @@ BACKOFF_TRIES = 3
 
 has_boto = False
 try:
-
     # note: boto exceptions are dynamically created; there aren't actual classes to import
     from botocore.exceptions import ClientError
 
@@ -524,7 +523,7 @@ class AwsSetupCli(ProviderSetupCli):
         Returns:
             str: Profile name.
         """
-        profile = ""
+        profile: Optional[str] = None
 
         try:
             choices = self.get_profile_choices()
@@ -539,7 +538,7 @@ class AwsSetupCli(ProviderSetupCli):
                 choices,
                 default=os.getenv("AWS_PROFILE"),
             )
-            if type(choice) is dict:
+            if isinstance(choice, dict):
                 # if there is only 1 choice prompt select one returns a dict, otherwise a string
                 profile = choice["value"]
             else:
@@ -576,5 +575,5 @@ class AwsSetupCli(ProviderSetupCli):
         )
 
         answer = answers.get("answer")
-        if func := choices.get(answer):
+        if answer and (func := choices.get(answer)):
             func()

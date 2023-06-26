@@ -1,7 +1,7 @@
 """Gcp Cloud Connector."""
 import json
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 from google.api_core import exceptions
 from google.cloud import securitycenter_v1
@@ -50,7 +50,7 @@ class GcpCloudConnector(CloudConnector):
             GcpSecurityCenterResourceTypes.STORAGE_BUCKET: self.get_storage_buckets,
         }
 
-    async def scan(self, provider_settings: GcpSpecificSettings):
+    async def scan(self, provider_settings: GcpSpecificSettings):  # type: ignore
         """Scan Gcp.
 
         Scans Gcp for assets and seeds.
@@ -105,8 +105,8 @@ class GcpCloudConnector(CloudConnector):
         provider_settings: dict[
             tuple, GcpSpecificSettings
         ] = self.settings.providers.get(
-            self.provider, {}
-        )  # type: ignore
+            self.provider, {}  # type: ignore
+        )
         for provider_setting in provider_settings.values():
             await self.scan(provider_setting)
 
@@ -360,7 +360,9 @@ class GcpCloudConnector(CloudConnector):
             if (bucket_name := resource_properties.get("id")) and (
                 project_number := resource_properties.get("projectNumber")
             ):
-                scan_data = {"accountNumber": int(project_number)}
+                scan_data: dict[str, Union[str, int]] = {
+                    "accountNumber": int(project_number)
+                }
                 if (
                     project_name := list_assets_result.asset.security_center_properties.resource_project_display_name
                 ):

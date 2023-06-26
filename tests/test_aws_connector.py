@@ -1,26 +1,21 @@
 import json
 from typing import Any
-from unittest.mock import MagicMock, Mock, call
+from unittest.mock import MagicMock, call
 
 import asynctest
 from asynctest import TestCase
 from botocore.exceptions import ClientError
-from parameterized import parameterized
 
 from censys.cloud_connectors.aws_connector.connector import AwsCloudConnector
 from censys.cloud_connectors.aws_connector.credentials import (
     AwsCredentials,
     get_aws_credentials,
 )
-from censys.cloud_connectors.aws_connector.enums import (
-    AwsResourceTypes,
-    AwsServices,
-    SeedLabel,
-)
+from censys.cloud_connectors.aws_connector.enums import AwsResourceTypes, SeedLabel
 from censys.cloud_connectors.aws_connector.settings import AwsSpecificSettings
 from censys.cloud_connectors.common.cloud_asset import AwsStorageBucketAsset
 from censys.cloud_connectors.common.enums import ProviderEnum
-from censys.cloud_connectors.common.seed import DomainSeed, IpSeed
+from censys.cloud_connectors.common.seed import IpSeed
 from tests.base_connector_case import BaseConnectorCase
 
 
