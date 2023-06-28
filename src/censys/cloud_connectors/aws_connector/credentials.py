@@ -52,20 +52,6 @@ async def get_aws_credentials(
         account_has_credentials = bool(account.access_key and account.secret_key)
         account_has_role = bool(account.role_name and account.role_session_name)
 
-        # If the account has a role and credentials, assume it using the account credentials
-        if account_has_credentials and account_has_role:
-            # TODO: This should never happen
-            assert account.role_name
-            assert account.role_session_name
-            return await assume_role(
-                account.account_number,
-                account.role_name,
-                account.role_session_name,
-                access_key=account.access_key,
-                secret_key=account.secret_key,
-                region=region,
-            )
-
         # If the provider has a role and the account has credentials, assume it using the account credentials
         if provider_has_role and account_has_credentials:
             assert provider_settings.role_name

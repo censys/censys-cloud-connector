@@ -27,6 +27,28 @@ class AwsAccount(BaseModel):
     role_session_name: Optional[str] = Field(min_length=1)
     ignore_tags: list[str] = Field(description="Tags to ignore", default_factory=list)
 
+    @root_validator
+    def validate_account_numbers(cls, values: dict[str, Any]) -> dict:
+        """Validate.
+
+        Args:
+            values (dict): Settings
+
+        Raises:
+            ValueError: Invalid settings.
+
+        Returns:
+            dict: Settings
+        """
+        has_key = values.get("access_key") and values.get("secret_key")
+        has_role = values.get("role_name")
+        has_both = has_key and has_role
+
+        if has_both:
+            raise ValueError(AwsMessages.KEY_OR_ROLE_REQUIRED.value)
+
+        return values
+
 
 class AwsSpecificSettings(ProviderSpecificSettings):
     """AWS specific settings."""
