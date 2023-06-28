@@ -264,7 +264,6 @@ class ProviderSetupCli(BaseCli):
                 question["type"] = "input"
                 question["message"] = "Enter a " + question["message"]  # type: ignore
 
-                # TODO: Is this something we want?
                 if "secret" in field.name.lower():
                     question["type"] = "password"
             elif lenient_issubclass(field_type, Path):

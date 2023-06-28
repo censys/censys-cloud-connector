@@ -262,7 +262,6 @@ class AzureCloudConnector(CloudConnector):
 
         async for zone in self._list_dns_zones(dns_client):
             zone_dict = zone.as_dict()
-            # TODO: Do we need to check if zone is public? (ie. do we care?)
             if zone_dict.get("zone_type") != "Public":  # pragma: no cover
                 continue
             zone_resource_group = zone_dict.get("id").split("/")[4]
