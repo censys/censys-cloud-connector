@@ -25,7 +25,7 @@ class AwsAccount(BaseModel):
     secret_key: Optional[str] = Field(min_length=1)
     role_name: Optional[str] = Field(min_length=1)
     role_session_name: Optional[str] = Field(min_length=1)
-    ignore_tags: list[str] = Field(description="Tags to ignore", default=DEFAULT_IGNORE)
+    ignore_tags: list[str] = Field(description="Tags to ignore", default_factory=list)
 
 
 class AwsSpecificSettings(ProviderSpecificSettings):

@@ -20,6 +20,7 @@ class TestAwsCredentials(BaseCase, TestCase):
     @parameterized.expand(
         [
             (
+                # Account has access key and secret key and specifies a role to assume
                 "account-creds-assume-account-role",
                 {"region_name": "us-east-1"},
                 {

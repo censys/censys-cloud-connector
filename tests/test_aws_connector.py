@@ -1,12 +1,16 @@
 import json
-from typing import Any
+from typing import Any, Optional, TypedDict
 from unittest.mock import MagicMock, call
 
 import asynctest
 from asynctest import TestCase
 from botocore.exceptions import ClientError
+from parameterized import parameterized
 
-from censys.cloud_connectors.aws_connector.connector import AwsCloudConnector
+from censys.cloud_connectors.aws_connector.connector import (
+    IGNORED_TAGS,
+    AwsCloudConnector,
+)
 from censys.cloud_connectors.aws_connector.credentials import (
     AwsCredentials,
     get_aws_credentials,
@@ -17,6 +21,20 @@ from censys.cloud_connectors.common.cloud_asset import AwsStorageBucketAsset
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.seed import IpSeed
 from tests.base_connector_case import BaseConnectorCase
+
+
+class ExpectedScan(TypedDict, total=False):
+    """Expected scan details."""
+
+    account_number: str
+    access_key: Optional[str]
+    secret_key: Optional[str]
+    sts_client_access_key: Optional[str]
+    sts_client_secret_key: Optional[str]
+    role_name: Optional[str]
+    role_session_name: Optional[str]
+    ignored_tags: Optional[list[str]]
+    regions: list[str]
 
 
 class TestAwsConnector(BaseConnectorCase, TestCase):
@@ -125,7 +143,6 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
 
         # Mock scan
         mock_healthcheck = self.mock_healthcheck()
-        # mock_scan = self.mocker.patch.object(self.connector, "scan")
         with asynctest.patch.object(self.connector, "scan") as mock_scan:
             # Actual call
             await self.connector.scan_all()
@@ -133,6 +150,221 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
         # Assertions
         expected_calls = 3
         assert mock_scan.call_count == expected_calls
+        self.assert_healthcheck_called(mock_healthcheck, expected_calls)
+
+    def get_settings_file(self, file_name) -> list[AwsSpecificSettings]:
+        """Read a test providers.yml file.
+
+        Args:
+            file_name (str): Filename.
+
+        Returns:
+            list[AwsSpecificSettings]: List of AWS provider settings.
+        """
+        # Clear existing settings
+        self.settings.providers.clear()
+
+        # Read test settings
+        self.settings.providers_config_file = self.shared_datadir / "aws" / file_name
+        self.settings.read_providers_config_file([ProviderEnum.AWS])
+
+        # Get settings
+        provider_settings = self.settings.providers[ProviderEnum.AWS]
+        settings: list[AwsSpecificSettings] = list(provider_settings.values())  # type: ignore
+        return settings
+
+    def build_credentials(
+        self, scan: ExpectedScan, region: Optional[str] = None
+    ) -> AwsCredentials:
+        """Build credentials from scan data.
+
+        Args:
+            scan (ExpectedScan): Scan data.
+            region (Optional[str], optional): Region. Defaults to None.
+
+        Returns:
+            AwsCredentials: AWS credentials.
+        """
+        credentials: AwsCredentials = {}
+        if access_key := scan.get("access_key"):
+            credentials["aws_access_key_id"] = access_key
+        if secret_key := scan.get("secret_key"):
+            credentials["aws_secret_access_key"] = secret_key
+        if scan.get("role_name"):
+            credentials["aws_access_key_id"] = "example-access-key-assumed-1"
+            credentials["aws_secret_access_key"] = "example-secret-key-assumed-1"
+            credentials["aws_session_token"] = "example-session-token-assumed-1"
+        if region:
+            credentials["region_name"] = region
+        return credentials
+
+    @parameterized.expand(
+        [
+            (
+                "accounts_inherit_role_and_creds.yml",
+                [
+                    {
+                        "account_number": "111111111111",
+                        "sts_client_access_key": "example-access-key-1",
+                        "sts_client_secret_key": "example-secret-key-1",
+                        "role_name": "test-primary-role-name",
+                        "ignored_tags": ["test-primary-ignore-tag-1"],
+                        "regions": ["test-region"],
+                    },
+                    {
+                        "account_number": "111111111112",
+                        "sts_client_access_key": "example-access-key-1",
+                        "sts_client_secret_key": "example-secret-key-1",
+                        "role_name": "example-role-2",
+                        "ignored_tags": ["test-primary-ignore-tag-1"],
+                        "regions": ["test-region"],
+                    },
+                    {
+                        "account_number": "111111111113",
+                        "sts_client_access_key": "example-access-key-1",
+                        "sts_client_secret_key": "example-secret-key-1",
+                        "role_name": "example-role-3",
+                        "ignored_tags": ["test-primary-ignore-tag-1"],
+                        "regions": ["test-region"],
+                    },
+                ],
+            ),
+            (
+                "accounts_inherit_role.yml",
+                [
+                    {
+                        "account_number": "111111111111",
+                        "role_name": "test-primary-role-name",
+                        "ignored_tags": ["test-primary-ignore-tag-1"],
+                        "regions": ["test-region"],
+                    },
+                    {
+                        "account_number": "111111111112",
+                        "role_name": "test-primary-role-name",
+                        "ignored_tags": ["test-primary-ignore-tag-1"],
+                        "regions": ["test-region"],
+                    },
+                    {
+                        "account_number": "111111111113",
+                        "role_name": "test-primary-role-name",
+                        "ignored_tags": ["test-primary-ignore-tag-1"],
+                        "regions": ["test-region"],
+                    },
+                ],
+            ),
+            (
+                "accounts_key.yml",
+                [
+                    {
+                        "account_number": "111111111111",
+                        "access_key": "example-access-key-1",
+                        "secret_key": "example-secret-key-1",
+                        "regions": ["test-region"],
+                    },
+                    {
+                        "account_number": "111111111112",
+                        "access_key": "example-access-key-2",
+                        "secret_key": "example-secret-key-2",
+                        "regions": ["test-region"],
+                    },
+                ],
+            ),
+            (
+                "accounts_override_role.yml",
+                [
+                    {
+                        "account_number": "111111111111",
+                        "role_name": "test-primary-role-name",
+                        "regions": ["test-region"],
+                    },
+                    {
+                        "account_number": "111111111112",
+                        "role_name": "test-override-role",
+                        "regions": ["test-region"],
+                    },
+                ],
+            ),
+            (
+                "accounts_override.yml",
+                [
+                    {
+                        "account_number": "111111111111",
+                        "sts_client_access_key": "test-primary-access-key",
+                        "sts_client_secret_key": "test-primary-secret-key",
+                        "role_name": "test-primary-role-name",
+                        "ignored_tags": [
+                            "test-primary-ignore-tag-1",
+                        ],
+                        "regions": ["test-region"],
+                    },
+                    {
+                        "account_number": "111111111112",
+                        "sts_client_access_key": "test-primary-access-key",
+                        "sts_client_secret_key": "test-primary-secret-key",
+                        "role_name": "test-override-role",
+                        "ignored_tags": [
+                            "test-override-ignore-tag-1",
+                            "test-primary-ignore-tag-1",
+                        ],
+                        "regions": ["test-region"],
+                    },
+                ],
+            ),
+        ]
+    )
+    async def test_scan_all_with_providers_yaml(
+        self, providers_file: str, scans: list[ExpectedScan]
+    ):
+        # Test data
+        self.get_settings_file(providers_file)
+
+        def assume_role_static(
+            account_number: str,
+            role_name: str,
+            role_session_name: str,
+            access_key: Optional[str] = None,
+            secret_key: Optional[str] = None,
+            region: Optional[str] = None,
+        ) -> AwsCredentials:
+            return {
+                "aws_access_key_id": "example-access-key-assumed-1",
+                "aws_secret_access_key": "example-secret-key-assumed-1",
+                "aws_session_token": "example-session-token-assumed-1",
+                "region_name": region,
+            }
+
+        # Mock
+        mock_assume_role = self.mocker.patch(
+            "censys.cloud_connectors.aws_connector.credentials.assume_role",
+            new_callable=asynctest.CoroutineMock,
+        )
+        mock_assume_role.side_effect = assume_role_static
+        mock_healthcheck = self.mock_healthcheck()
+        with asynctest.patch.object(
+            self.connector, "scan", new_callable=asynctest.CoroutineMock
+        ) as mock_scan:
+            mock_scan: asynctest.CoroutineMock  # type: ignore[no-redef]
+            # Actual call
+            await self.connector.scan_all()
+
+        print(mock_scan.call_args_list)
+
+        # Assertions
+        expected_calls = 0
+        for scan in scans:
+            for region in scan["regions"]:
+                credentials: AwsCredentials = self.build_credentials(scan, region)
+                scan_ignored_tags = scan.get("ignored_tags") or []
+                ignored_tags = [*IGNORED_TAGS, *scan_ignored_tags]
+                ignored_tags.sort()
+                mock_scan.assert_any_await(
+                    scan["account_number"],
+                    self.connector.provider_settings,
+                    credentials,
+                    region,
+                    ignored_tags=ignored_tags,
+                )
+                expected_calls += 1
         self.assert_healthcheck_called(mock_healthcheck, expected_calls)
 
     # TODO test multiple account_numbers with multiple regions

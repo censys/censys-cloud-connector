@@ -6,7 +6,6 @@ from censys.cloud_connectors.aws_connector.settings import (
     AwsAccount,
     AwsSpecificSettings,
 )
-from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.settings import Settings
 from tests.base_case import BaseCase
 
@@ -46,21 +45,6 @@ class TestAwsSettings(BaseCase, TestCase):
         return AwsSpecificSettings(
             **settings,
         )
-
-    def get_settings_file(self, file_name) -> list[AwsSpecificSettings]:
-        """Read a test providers.yml file.
-
-        Args:
-            file_name (str): Filename.
-
-        Returns:
-            list[AwsSpecificSettings]: List of AWS provider settings.
-        """
-        self.settings.providers_config_file = self.shared_datadir / "aws" / file_name
-        self.settings.read_providers_config_file([ProviderEnum.AWS])
-        provider_settings = self.settings.providers[ProviderEnum.AWS]
-        settings: list[AwsSpecificSettings] = list(provider_settings.values())  # type: ignore
-        return settings
 
     def test_missing_role_and_access_key(self):
         with pytest.raises(ValueError, match="Specify either access_key"):

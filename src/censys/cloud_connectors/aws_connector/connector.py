@@ -75,6 +75,7 @@ class AwsCloudConnector(CloudConnector):
 
     async def scan(  # type: ignore
         self,
+        account_number: str,
         provider_setting: AwsSpecificSettings,
         credentials: AwsCredentials,
         region: str,
@@ -83,14 +84,13 @@ class AwsCloudConnector(CloudConnector):
         """Scan AWS.
 
         Args:
+            account_number (str): AWS account number.
             provider_setting (AwsSpecificSettings): AWS provider settings.
             credentials (AwsCredentials): AWS credentials.
             region (str): AWS region.
             ignored_tags (list[str], optional): List of tags to ignore. Defaults to IGNORED_TAGS.
         """
-        self.logger.info(
-            f"Scanning AWS account {self.account_number} in region {region}"
-        )
+        self.logger.info(f"Scanning AWS account {account_number} in region {region}")
         await super().scan(
             provider_setting,
             credentials=credentials,
@@ -118,21 +118,23 @@ class AwsCloudConnector(CloudConnector):
 
             # Scan each account in the provider
             for account in accounts:
+                # Clear the ignored tags list
+                self.ignored_tags = []
                 # Use the account number from the account if it is configured
                 if account is not None:
                     self.account_number = account.account_number
-                    self.ignored_tags = (
-                        self.get_ignored_tags(account.ignore_tags)
-                        if account.ignore_tags
-                        else self.get_ignored_tags(provider_setting.ignore_tags)
-                    )
+                    if account.ignore_tags:
+                        self.ignored_tags.extend(account.ignore_tags)
 
                 # Use the account number from the provider if it is not configured
                 else:
                     self.account_number = provider_setting.account_number
-                    self.ignored_tags = self.get_ignored_tags(
-                        provider_setting.ignore_tags
-                    )
+
+                # Add the provider level ignored tags
+                self.ignored_tags = self.get_ignored_tags(
+                    [*provider_setting.ignore_tags, *self.ignored_tags]
+                )
+                self.ignored_tags.sort()
 
                 # TODO: Add support for global services
 
@@ -154,6 +156,7 @@ class AwsCloudConnector(CloudConnector):
 
                             # Scan the account
                             await self.scan(
+                                self.account_number,
                                 provider_setting,
                                 credentials,
                                 region,

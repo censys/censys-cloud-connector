@@ -54,6 +54,7 @@ async def get_aws_credentials(
 
         # If the account has a role and credentials, assume it using the account credentials
         if account_has_credentials and account_has_role:
+            # TODO: This should never happen
             assert account.role_name
             assert account.role_session_name
             return await assume_role(
@@ -126,6 +127,16 @@ async def get_aws_credentials(
                 region=region,
             )
 
+        # If the account has credentials, but no role, use them
+        if account_has_credentials:
+            assert account.access_key
+            assert account.secret_key
+            return {
+                "aws_access_key_id": account.access_key,
+                "aws_secret_access_key": account.secret_key,
+                "region_name": region,
+            }
+
         # If neither the provider nor the account have credentials or roles, use local credentials
         return {}  # pragma: no cover
 
@@ -163,10 +174,12 @@ async def get_aws_credentials(
     if provider_has_credentials:
         assert provider_settings.access_key
         assert provider_settings.secret_key
-        credentials = {
-            "aws_access_key_id": provider_settings.access_key,
-            "aws_secret_access_key": provider_settings.secret_key,
-        }
+        credentials.update(
+            {
+                "aws_access_key_id": provider_settings.access_key,
+                "aws_secret_access_key": provider_settings.secret_key,
+            }
+        )
 
     # If the provider has neither credentials nor a role, use local credentials
     return credentials

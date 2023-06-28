@@ -1,0 +1,14 @@
+# Use local credentials to assume role into both the primary account (111111111111)
+# and the secondary accounts (111111111112 and 111111111113).
+- provider: AWS
+  account_number: 111111111111
+  # These are the role name and session name used to assume role into each account including the primary account
+  role_name: test-primary-role-name
+  role_session_name: test-primary-role-session-name
+  ignore_tags:
+  - test-primary-ignore-tag-1
+  regions:
+  - test-region
+  accounts:
+  - account_number: 111111111112
+  - account_number: 111111111113
