@@ -1,0 +1,48 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Censys CC Scan Debug",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/.venv/bin/censys-cc",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.env",
+            "justMyCode": false,
+            "args": ["scan"]
+        },
+        {
+            "name": "Censys CC Scan Debug (AWS)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/.venv/bin/censys-cc",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.env",
+            "justMyCode": false,
+            "args": ["scan", "-p", "aws"]
+        },
+        {
+            "name": "Censys CC Scan Debug (Azure)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/.venv/bin/censys-cc",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.env",
+            "justMyCode": false,
+            "args": ["scan", "-p", "azure"]
+        },
+        {
+            "name": "Censys CC Scan Debug (GCP)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/.venv/bin/censys-cc",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.env",
+            "justMyCode": false,
+            "args": ["scan", "-p", "gcp"]
+        }
+    ]
+}
