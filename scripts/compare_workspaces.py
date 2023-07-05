@@ -4,7 +4,6 @@
 # It will print out the differences between the two workspaces.
 
 import argparse
-import json
 from typing import Optional
 
 from jsondiff import diff
@@ -89,7 +88,8 @@ def compare_seeds(workspace_1_api_key: str, workspace_2_api_key: str) -> Optiona
         return None
 
     # Print the difference
-    print(json.dumps(difference, indent=4))
+    print("The difference between the two workspaces' seeds is:")
+    print(difference)
 
     return difference
 
@@ -123,7 +123,8 @@ def compare_object_storage_assets(
         return None
 
     # Print the difference
-    print(json.dumps(difference, indent=4))
+    print("The difference between the two workspaces' object storage assets is:")
+    print(difference)
 
     return difference
 
