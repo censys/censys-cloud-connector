@@ -54,7 +54,7 @@ class CloudConnector(ABC):
         self.seeds_api = Seeds(
             settings.censys_api_key,
             url=settings.censys_asm_api_base_url,
-            user_agent=settings.censys_user_agent,
+            user_agent=Seeds.DEFAULT_USER_AGENT + " " + settings.censys_user_agent,
             cookies=settings.censys_cookies,
         )
         self._add_cloud_asset_path = (
