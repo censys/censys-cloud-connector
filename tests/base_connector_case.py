@@ -83,11 +83,6 @@ class BaseConnectorCase(BaseCase):
         ), f"Expected {count} calls, got {healthcheck.return_value.__exit__.call_count}"
 
     def test_init(self) -> None:
-        # Test data
-        add_cloud_asset_path = (
-            "https://app.censys.io/api/beta/cloudConnector/addCloudAssets"
-        )
-
         # Assert that the connector is initialized correctly
         assert issubclass(self.connector_cls, CloudConnector)
         assert isinstance(self.connector, self.connector_cls)
@@ -104,9 +99,11 @@ class BaseConnectorCase(BaseCase):
         assert (
             self.connector.seeds_api._api_key == self.default_settings["censys_api_key"]
         )
+        # Assert that the Beta API client is initialized correctly
+        assert self.connector.beta_api is not None
         assert (
-            self.connector._add_cloud_asset_path == add_cloud_asset_path
-        ), f"Expected {add_cloud_asset_path}, got {self.connector._add_cloud_asset_path}"
+            self.connector.beta_api._api_key == self.default_settings["censys_api_key"]
+        )
 
         # Assert that the connector has no seeds and cloud_assets
         assert list(self.connector.seeds.keys()) == []

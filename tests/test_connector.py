@@ -103,17 +103,16 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
         self.connector.add_cloud_asset(asset)
 
         # Mock
-        add_cloud_mock = self.mocker.patch.object(self.connector, "_add_cloud_assets")
+        add_cloud_mock = self.mocker.patch.object(
+            self.connector.beta_api, "add_cloud_assets"
+        )
 
         # Actual call
         self.connector.submit_cloud_assets()
 
         # Assertions
         add_cloud_mock.assert_called_once_with(
-            {
-                "cloudConnectorUid": self.connector.label_prefix + "test-uid",
-                "cloudAssets": [asset.to_dict()],
-            }
+            self.connector.label_prefix + "test-uid", [asset.to_dict()]
         )
 
     def test_fail_submit_cloud_assets(self):
@@ -124,7 +123,9 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
         self.connector.add_cloud_asset(asset)
 
         # Mock
-        add_cloud_mock = self.mocker.patch.object(self.connector, "_add_cloud_assets")
+        add_cloud_mock = self.mocker.patch.object(
+            self.connector.beta_api, "add_cloud_assets"
+        )
         add_cloud_mock.side_effect = CensysAsmException(404, "Test Exception")
         logger_mock = self.mocker.patch.object(self.connector.logger, "error")
 
@@ -133,24 +134,6 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
 
         # Assertions
         logger_mock.assert_called_once()
-
-    def test_add_cloud_assets(self):
-        # Test data
-        test_data = {
-            "cloudConnectorUid": "test-uid",
-        }
-
-        # Mock
-        post_mock = self.mocker.patch.object(self.connector.seeds_api._session, "post")
-        post_mock.return_value.json.return_value = {"status": "success"}
-
-        # Actual call
-        self.connector._add_cloud_assets(test_data)
-
-        # Assertions
-        post_mock.assert_called_once_with(
-            self.connector._add_cloud_asset_path, json=test_data
-        )
 
     def test_submit(self):
         # Mock

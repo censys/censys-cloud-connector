@@ -8,7 +8,6 @@ from mypy_boto3_elb import ElasticLoadBalancingClient
 from mypy_boto3_elbv2 import ElasticLoadBalancingv2Client
 from mypy_boto3_route53 import Route53Client
 from mypy_boto3_s3 import S3Client
-from requests import HTTPError
 
 from censys.asm import AsmClient
 from censys.common.exceptions import (
@@ -252,18 +251,15 @@ class AwsTagsPlugin(CloudConnectorPlugin):
             cloud_asset: Cloud asset.
             tag_set: Tags.
         """
-        settings = context["connector"].settings
         client = self.get_client(context)
         url_encoded_object_storage_key = urllib.parse.quote_plus(
             cloud_asset.value + "/"
         )
         for tag in tag_set:
-            res = client.domains._session.post(
-                f"{settings.censys_asm_api_base_url}/beta/assets/object-storages/{url_encoded_object_storage_key}/tags",
-                json={"name": self.format_tag_set_as_string(tag)},
-            )
-            with contextlib.suppress(HTTPError):
-                res.raise_for_status()
+            with contextlib.suppress(CensysAsmException):
+                client.object_storages.add_tag(
+                    url_encoded_object_storage_key, self.format_tag_set_as_string(tag)
+                )
 
     def _get_api_gateway_tags(
         self, context: EventContext, seed: DomainSeed, **kwargs
