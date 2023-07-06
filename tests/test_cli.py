@@ -1,6 +1,7 @@
-from unittest import TestCase
+import asyncio
 
 import pytest
+from asynctest import TestCase
 from parameterized import parameterized
 
 from censys.cloud_connectors.common.cli import main
@@ -95,7 +96,7 @@ class TestConfigCli(BaseCase, TestCase):
 
 
 class TestScanCli(BaseCase, TestCase):
-    def test_cli_scan(self):
+    async def test_cli_scan(self):
         # Mock
         mock_args = self.mocker.MagicMock()
         mock_args.provider = None
@@ -105,10 +106,11 @@ class TestScanCli(BaseCase, TestCase):
             "censys.cloud_connectors.common.cli.commands.scan.Settings"
         )
         mock_settings.return_value.read_providers_config_file = self.mocker.Mock()
-        mock_settings.return_value.scan_all = self.mocker.Mock()
+        mock_settings.return_value.scan_all.return_value = asyncio.Future()
+        mock_settings.return_value.scan_all.return_value.set_result(None)
 
         # Actual call
-        scan.cli_scan(mock_args)
+        await scan.cli_scan(mock_args)
 
         # Assertions
         mock_settings.return_value.read_providers_config_file.assert_called_once_with(
@@ -116,7 +118,7 @@ class TestScanCli(BaseCase, TestCase):
         )
         mock_settings.return_value.scan_all.assert_called_once()
 
-    def test_cli_scan_provider_option(self):
+    async def test_cli_scan_provider_option(self):
         # Mock
         mock_args = self.mocker.MagicMock()
         mock_args.provider = [ProviderEnum.AZURE]
@@ -126,10 +128,11 @@ class TestScanCli(BaseCase, TestCase):
             "censys.cloud_connectors.common.cli.commands.scan.Settings"
         )
         mock_settings.return_value.read_providers_config_file = self.mocker.Mock()
-        mock_settings.return_value.scan_all = self.mocker.Mock()
+        mock_settings.return_value.scan_all.return_value = asyncio.Future()
+        mock_settings.return_value.scan_all.return_value.set_result(None)
 
         # Actual call
-        scan.cli_scan(mock_args)
+        await scan.cli_scan(mock_args)
 
         # Assertions
         mock_settings.return_value.read_providers_config_file.assert_called_once_with(

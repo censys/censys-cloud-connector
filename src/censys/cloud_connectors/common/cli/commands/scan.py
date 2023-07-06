@@ -1,7 +1,5 @@
 """Censys Cloud Connectors scan command."""
 import argparse
-import sched
-import time
 from datetime import datetime
 from typing import Optional
 
@@ -14,14 +12,13 @@ from censys.cloud_connectors.common.plugins import CloudConnectorPluginRegistry
 from censys.cloud_connectors.common.settings import Settings
 
 
-def cli_scan(args: argparse.Namespace):
+async def cli_scan(args: argparse.Namespace):
     """Scan with Censys Cloud Connectors.
 
     Args:
         args (argparse.Namespace): Namespace.
 
     """
-    scheduler = sched.scheduler(time.time, time.sleep)
     logger = get_logger(log_name="censys_cloud_connectors", level="INFO")
 
     logger.info("Censys Cloud Connectors Version: %s", __version__)
@@ -42,18 +39,7 @@ def cli_scan(args: argparse.Namespace):
         logger.error(e)
         return
 
-    settings.scan_all()
-
-    while args.scan_interval:
-        scheduler.enter(args.scan_interval * 3600.0, 1, settings.scan_all)
-        logger.info(
-            f"Finished scanning at time: {datetime.now().isoformat(' ', 'seconds')}. Sleeping for {args.scan_interval} hour(s)."
-        )
-        try:
-            scheduler.run()
-        except KeyboardInterrupt:  # pragma: no cover
-            logger.info("Exiting...")
-            return
+    await settings.scan_all()
 
     logger.info(
         f"Finished scanning at time: {datetime.now().isoformat(' ', 'seconds')}."
@@ -85,21 +71,4 @@ def include_cli(parent_parser: argparse._SubParsersAction):
         default=None,
     )
 
-    def interval_type(val) -> float:
-        val = float(val)
-        if val < 1:
-            raise argparse.ArgumentTypeError(
-                "Scan interval must be greater than or equal to 1 hour."
-            )
-        return val
-
-    config_parser.add_argument(
-        "-d",
-        "--daemon",
-        help="run on a scheduled interval (must be greater than or equal to 1 hour)",
-        dest="scan_interval",
-        nargs="?",
-        type=interval_type,
-        const=1,
-    )
     config_parser.set_defaults(func=cli_scan)

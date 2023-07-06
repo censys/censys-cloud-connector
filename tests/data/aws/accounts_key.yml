@@ -1,3 +1,4 @@
+# The root access key is not overridden by the child account.
 - provider: AWS
   account_number: 111111111111
   access_key: example-access-key-1

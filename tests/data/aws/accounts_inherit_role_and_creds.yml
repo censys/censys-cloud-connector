@@ -1,7 +1,9 @@
 - provider: AWS
   account_number: 111111111111
+  # These keys are used to assume role into each account
   access_key: test-primary-access-key
   secret_key: test-primary-secret-key
+  # These are the role name and session name used to assume role into each account
   role_name: test-primary-role-name
   role_session_name: test-primary-role-session-name
   ignore_tags:

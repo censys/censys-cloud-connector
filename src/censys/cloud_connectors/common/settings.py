@@ -182,6 +182,11 @@ class Settings(BaseSettings):
         env="HEALTHCHECK_ENABLED",
         description="Enable healthcheck",
     )
+    max_concurrent_scans: int = Field(
+        default=10,
+        env="MAX_CONCURRENT_SCANS",
+        description="Maximum number of concurrent scans",
+    )
 
     # Verification timeout
     validation_timeout: int = Field(
@@ -268,7 +273,7 @@ class Settings(BaseSettings):
         with open(self.providers_config_file, "w") as f:
             yaml.safe_dump(all_providers, f, default_flow_style=False, sort_keys=False)
 
-    def scan_all(self):
+    async def scan_all(self):
         """Scan all providers.
 
         Raises:
@@ -284,4 +289,4 @@ class Settings(BaseSettings):
                     f"Connector module not found for provider: {provider}"
                 ) from e
             connector: "CloudConnector" = connector_cls(self)
-            connector.scan_all()
+            await connector.scan_all()

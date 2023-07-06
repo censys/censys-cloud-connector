@@ -8,6 +8,8 @@ from censys.cloud_connectors.aws_connector.enums import AwsMessages, AwsResource
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.settings import ProviderSpecificSettings
 
+DEFAULT_IGNORE = ["censys-cloud-connector-ignore"]
+
 
 class AwsAccountNumber(ConstrainedStr):
     """Account Number."""
@@ -23,7 +25,29 @@ class AwsAccount(BaseModel):
     secret_key: Optional[str] = Field(min_length=1)
     role_name: Optional[str] = Field(min_length=1)
     role_session_name: Optional[str] = Field(min_length=1)
-    ignore_tags: Optional[list[str]] = Field(min_length=1)
+    ignore_tags: list[str] = Field(description="Tags to ignore", default_factory=list)
+
+    @root_validator
+    def validate_account_numbers(cls, values: dict[str, Any]) -> dict:
+        """Validate.
+
+        Args:
+            values (dict): Settings
+
+        Raises:
+            ValueError: Invalid settings.
+
+        Returns:
+            dict: Settings
+        """
+        has_key = values.get("access_key") and values.get("secret_key")
+        has_role = values.get("role_name")
+        has_both = has_key and has_role
+
+        if has_both:
+            raise ValueError(AwsMessages.KEY_OR_ROLE_REQUIRED.value)
+
+        return values
 
 
 class AwsSpecificSettings(ProviderSpecificSettings):
@@ -37,7 +61,7 @@ class AwsSpecificSettings(ProviderSpecificSettings):
     secret_key: Optional[str] = Field(min_length=1)
     role_name: Optional[str] = Field(min_length=1)
     role_session_name: Optional[str] = Field(min_length=1)
-    ignore_tags: Optional[list[str]] = Field(min_length=1)
+    ignore_tags: list[str] = Field(description="Tags to ignore", default=DEFAULT_IGNORE)
 
     session_token: Optional[str] = Field(min_length=1)
     external_id: Optional[str] = Field(min_length=1)
@@ -105,31 +129,3 @@ class AwsSpecificSettings(ProviderSpecificSettings):
             data["accounts"][index] = AwsAccount(**account)
 
         return cls(**data)
-
-    def get_credentials(self):
-        """Generator for all configured credentials. Any values within the accounts block will take precedence over the overall values.
-
-        Yields:
-            dict[str, Any]
-        """
-        yield {
-            "account_number": self.account_number,
-            "access_key": self.access_key,
-            "secret_key": self.secret_key,
-            "role_name": self.role_name,
-            "role_session_name": self.role_session_name,
-            "ignore_tags": self.ignore_tags,
-        }
-
-        if self.accounts:
-            for account in self.accounts:
-                yield {
-                    "account_number": (account.account_number or self.account_number),
-                    "access_key": account.access_key,
-                    "secret_key": account.secret_key,
-                    "role_name": (account.role_name or self.role_name),
-                    "role_session_name": (
-                        account.role_session_name or self.role_session_name
-                    ),
-                    "ignore_tags": (account.ignore_tags or self.ignore_tags),
-                }

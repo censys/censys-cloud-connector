@@ -42,14 +42,28 @@
         "ManagedPolicyArns": ["arn:aws:iam::aws:policy/SecurityAudit"],
         "Policies": [
           {
-            "PolicyName": "CensysAPIGatewayPolicy",
+            "PolicyName": "CensysCloudConnectorPolicy",
             "PolicyDocument": {
               "Version": "2012-10-17",
               "Statement": [
                 {
                   "Sid": "CensysCloudConnectorPolicy",
                   "Effect": "Allow",
-                  "Action": ["apigateway:GET"],
+                  "Action": [
+                    "apigateway:GET",
+                    "ec2:DescribeTags",
+                    "ec2:DescribeNetworkInterfaces",
+                    "ecs:ListContainerInstances",
+                    "ecs:ListClusters",
+                    "elasticloadbalancing:DescribeLoadBalancers",
+                    "rds:DescribeDBInstances",
+                    "route53:ListHostedZones",
+                    "route53:ListResourceRecordSets",
+                    "route53domains:ListDomains",
+                    "s3:GetBucketLocation",
+                    "s3:ListAllMyBuckets",
+                    "s3:ListBucket"
+                  ],
                   "Resource": "*"
                 }
               ]

@@ -156,7 +156,7 @@ def backoff_wrapper(
                 progress.start_task(task)
                 _task = task
 
-                @backoff.on_exception(**default_kwargs)
+                @backoff.on_exception(**default_kwargs)  # type: ignore
                 def _method():
                     res = method(*args, **kwargs)
                     progress.advance(task)
@@ -264,7 +264,6 @@ class ProviderSetupCli(BaseCli):
                 question["type"] = "input"
                 question["message"] = "Enter a " + question["message"]  # type: ignore
 
-                # TODO: Is this something we want?
                 if "secret" in field.name.lower():
                     question["type"] = "password"
             elif lenient_issubclass(field_type, Path):

@@ -1,8 +1,10 @@
+import asyncio
 from collections import OrderedDict
 from tempfile import NamedTemporaryFile
-from unittest import TestCase
 
+import asynctest
 import pytest
+from asynctest import TestCase
 from parameterized import parameterized
 
 from censys.cloud_connectors.common.enums import ProviderEnum
@@ -83,16 +85,17 @@ class TestSettings(BaseCase, TestCase):
         assert_same_yaml(original_file, temp_file.name)
 
     @parameterized.expand(list(ProviderEnum))
-    def test_scan_all(self, provider: ProviderEnum):
+    async def test_scan_all(self, provider: ProviderEnum):
         self.settings.providers[provider] = {}
-        mock_connector = self.mocker.MagicMock()
-        mock_connector().scan_all.return_value = []
+        mock_connector = asynctest.MagicMock()
+        mock_connector().scan_all.return_value = asyncio.Future()
+        mock_connector().scan_all.return_value.set_result([])
         mock_provider = self.mocker.MagicMock()
         mock_provider.__connector__ = mock_connector
         mock_import_module = self.mocker.patch(
             "importlib.import_module", return_value=mock_provider
         )
-        self.settings.scan_all()
+        await self.settings.scan_all()
         mock_import_module.assert_called_once_with(provider.module_path())
         mock_connector().scan_all.assert_called_once()
 

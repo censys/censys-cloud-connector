@@ -16,10 +16,19 @@ class GcloudCommands(str, Enum):
     DESCRIBE_ORGANIZATION = "organizations describe {organization_id}"
     GET_PROJECT_ANCESTORS = "projects get-ancestors {project_id}"
     LIST_SERVICE_ACCOUNTS = "iam service-accounts list"
-    ADD_ORG_IAM_POLICY = "organizations add-iam-policy-binding {organization_id} --member '{member}' --role '{role}'"
-    CREATE_SERVICE_ACCOUNT = "iam service-accounts create {name} --display-name '{display_name}' --description '{description}'"
+    ADD_ORG_IAM_POLICY = (
+        "organizations add-iam-policy-binding {organization_id} --member '{member}'"
+        " --role '{role}'"
+    )
+    CREATE_SERVICE_ACCOUNT = (
+        "iam service-accounts create {name} --display-name '{display_name}'"
+        " --description '{description}'"
+    )
     ENABLE_SERVICE_ACCOUNT = "iam service-accounts enable {service_account_email}"
-    CREATE_SERVICE_ACCOUNT_KEY = "iam service-accounts keys create {key_file} --iam-account {service_account_email}"
+    CREATE_SERVICE_ACCOUNT_KEY = (
+        "iam service-accounts keys create {key_file} --iam-account"
+        " {service_account_email}"
+    )
 
     def __str__(self) -> str:
         """Return the string representation of the command.
@@ -133,11 +142,18 @@ class GcpSecurityCenterResourceTypes(str, Enum):
 class GcpMessages(str, Enum):
     """GCP messages."""
 
-    INSTALL_GCLOUD_INSTRUCTIONS = "Please install the [link=https://cloud.google.com/sdk/docs/downloads-interactive]gcloud SDK[/link] before continuing."
+    INSTALL_GCLOUD_INSTRUCTIONS = (
+        "Please install the"
+        " [link=https://cloud.google.com/sdk/docs/downloads-interactive]gcloud"
+        " SDK[/link] before continuing."
+    )
     LOGIN_INSTRUCTIONS = (
         f"Please login to your GCP account with the command: `{GcloudCommands.LOGIN}`."
     )
-    LOGIN_TRY_AGAIN = "Please login and try again. Or run the above commands in the Google Cloud Console."
+    LOGIN_TRY_AGAIN = (
+        "Please login and try again. Or run the above commands in the Google Cloud"
+        " Console."
+    )
     SAVING_KEY = "Saving key file into ./secrets/"
 
     ERROR_UNABLE_TO_GET_ACCOUNTS = "Unable to get list of authenticated GCP Accounts."

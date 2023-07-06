@@ -1,4 +1,5 @@
 """Cloud Connector Plugin Registry."""
+import asyncio
 from enum import Enum
 from logging import Logger
 from pathlib import Path
@@ -183,4 +184,7 @@ class CloudConnectorPluginRegistry:
             provider=context.get("provider"),
             service=context.get("service"),
         ):
-            handler(context, **kwargs)
+            if asyncio.iscoroutinefunction(handler):
+                asyncio.create_task(handler(context, **kwargs))
+            else:
+                handler(context, **kwargs)

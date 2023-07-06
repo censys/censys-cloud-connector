@@ -187,7 +187,10 @@ terraform.rc
 
 # IDE-maintained configuration
 .idea/
-.vscode/launch.json
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
 
 # Builds
 *.zip

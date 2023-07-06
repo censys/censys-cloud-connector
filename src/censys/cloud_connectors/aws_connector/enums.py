@@ -75,7 +75,10 @@ class AwsMessages(str, Enum):
         "Specify either access_key and secret_key or role_name and role_session_name"
     )
     PROVIDER_SETUP_DOC_LINK = "https://censys-cloud-connector.readthedocs.io/en/stable/aws/provider_setup.html"
-    TEMPORARY_CREDENTIAL_ERROR = "A temporary credential has been detected which is not supported. Please read our documentation on how to configure AWS IAM."
+    TEMPORARY_CREDENTIAL_ERROR = (
+        "A temporary credential has been detected which is not supported. Please read"
+        " our documentation on how to configure AWS IAM."
+    )
 
     def __str__(self) -> str:
         """Get the string representation of the message.

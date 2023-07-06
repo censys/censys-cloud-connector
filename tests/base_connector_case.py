@@ -43,17 +43,10 @@ class BaseConnectorCase(BaseCase):
         Raises:
             AssertionError: If the seeds do not have the expected values.
         """
-        # seeds_len = len(seeds)
-        # values_len = len(values)
-        # assert seeds_len == values_len, f"Expected {values_len} seeds, got {seeds_len}"
         seed_values = [seed.value for seed in seeds]
         seed_values.sort()
         values.sort()
         assert values == seed_values, f"Expected {values}, got {seed_values}"
-        # for seed in seeds:
-        #     assert (
-        #         seed.value in values
-        #     ), f"The seed {seed.value} is not in the expected values {values}"
 
     def mock_healthcheck(self) -> MagicMock:
         """Mock the healthcheck.
@@ -75,9 +68,10 @@ class BaseConnectorCase(BaseCase):
         assert (
             healthcheck.call_count == count
         ), f"Expected {count} calls, got {healthcheck.call_count}"
-        assert (
-            healthcheck.return_value.__enter__.call_count == count
-        ), f"Expected {count} calls, got {healthcheck.return_value.__enter__.call_count}"
+        assert healthcheck.return_value.__enter__.call_count == count, (
+            f"Expected {count} calls, got"
+            f" {healthcheck.return_value.__enter__.call_count}"
+        )
         assert (
             healthcheck.return_value.__exit__.call_count == count
         ), f"Expected {count} calls, got {healthcheck.return_value.__exit__.call_count}"
@@ -104,9 +98,10 @@ class BaseConnectorCase(BaseCase):
         assert (
             self.connector.seeds_api._api_key == self.default_settings["censys_api_key"]
         )
-        assert (
-            self.connector._add_cloud_asset_path == add_cloud_asset_path
-        ), f"Expected {add_cloud_asset_path}, got {self.connector._add_cloud_asset_path}"
+        assert self.connector._add_cloud_asset_path == add_cloud_asset_path, (
+            f"Expected {add_cloud_asset_path}, got"
+            f" {self.connector._add_cloud_asset_path}"
+        )
 
         # Assert that the connector has no seeds and cloud_assets
         assert list(self.connector.seeds.keys()) == []

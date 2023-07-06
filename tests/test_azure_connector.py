@@ -1,28 +1,27 @@
+import asyncio
 import json
-from unittest import TestCase
 from unittest.mock import MagicMock
 
+import asynctest
 import pytest
+from asynctest import TestCase
+from azure.core.exceptions import ClientAuthenticationError, HttpResponseError
+from azure.storage.blob import ContainerProperties
+from azure.storage.blob.aio import BlobServiceClient
 from parameterized import parameterized
 
+from censys.cloud_connectors.azure_connector import AzureCloudConnector
 from censys.cloud_connectors.azure_connector.enums import AzureResourceTypes
+from censys.cloud_connectors.azure_connector.settings import AzureSpecificSettings
 from censys.cloud_connectors.common.enums import ProviderEnum
 from tests.base_connector_case import BaseConnectorCase
 
-failed_import = False
-try:
-    from azure.core.exceptions import ClientAuthenticationError, HttpResponseError
 
-    from censys.cloud_connectors.azure_connector import AzureCloudConnector
-    from censys.cloud_connectors.azure_connector.settings import AzureSpecificSettings
-except ImportError:
-    failed_import = True
-
-
-@pytest.mark.skipif(failed_import, reason="Azure SDK not installed")
 class TestAzureCloudConnector(BaseConnectorCase, TestCase):
     connector: AzureCloudConnector
     connector_cls = AzureCloudConnector
+    test_subscription_id: str
+    test_credentials: MagicMock
 
     def setUp(self) -> None:
         super().setUp()
@@ -34,21 +33,27 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
         }
         self.connector = AzureCloudConnector(self.settings)
         # Set subscription_id as its required for certain calls
-        self.connector.subscription_id = self.data["TEST_CREDS"]["subscription_id"]
-        self.connector.credentials = self.mocker.MagicMock()
+        self.test_subscription_id = self.data["TEST_CREDS"]["subscription_id"]
+        self.test_credentials = self.mocker.MagicMock()
         self.connector.provider_settings = test_azure_settings
 
     def mock_asset(self, data: dict) -> MagicMock:
         asset = self.mocker.MagicMock()
         for key, value in data.items():
-            asset.__setattr__(key, value)
+            if isinstance(value, dict):
+                setattr(asset, key, self.mock_asset(value))
+            else:
+                setattr(asset, key, value)
         asset.as_dict.return_value = data
         return asset
 
     def mock_client(self, client_name: str) -> MagicMock:
-        return self.mocker.patch(
-            f"censys.cloud_connectors.azure_connector.connector.{client_name}"
+        mock = self.mocker.patch(
+            f"censys.cloud_connectors.azure_connector.connector.{client_name}",
+            new_callable=asynctest.MagicMock,
         )
+        mock.return_value.close = asynctest.CoroutineMock()
+        return mock
 
     def mock_healthcheck(self) -> MagicMock:
         """Mock the healthcheck.
@@ -61,7 +66,7 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
         )
 
     @parameterized.expand([(ClientAuthenticationError,)])
-    def test_scan_fail(self, exception):
+    async def test_scan_fail(self, exception):
         # Mock super().scan()
         mock_scan = self.mocker.patch.object(
             self.connector.__class__.__bases__[0],
@@ -72,13 +77,17 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
 
         # Actual call
         with pytest.raises(exception):
-            self.connector.scan()
+            await self.connector.scan(
+                self.connector.provider_settings,  # type: ignore[arg-type]
+                self.test_credentials,
+                self.test_subscription_id,
+            )
 
         # Assertions
         mock_scan.assert_called_once()
         self.assert_healthcheck_called(mock_healthcheck)
 
-    def test_scan_all(self):
+    async def test_scan_all(self):
         # Test data
         test_single_subscription = self.data["TEST_CREDS"]
         test_multiple_subscriptions = test_single_subscription.copy()
@@ -96,13 +105,13 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
         provider_settings: dict[tuple, AzureSpecificSettings] = {
             p.get_provider_key(): p for p in test_azure_settings
         }
-        self.connector.settings.providers[self.connector.provider] = provider_settings
+        self.connector.settings.providers[self.connector.provider] = provider_settings  # type: ignore[arg-type]
 
         # Mock scan
         mock_scan = self.mocker.patch.object(self.connector, "scan")
 
         # Actual call
-        self.connector.scan_all()
+        await self.connector.scan_all()
 
         # Assertions
         assert mock_scan.call_count == 3
@@ -113,10 +122,10 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
         test_asset = self.mock_asset({"location": test_location})
 
         # Actual call
-        label = self.connector.format_label(test_asset)
+        label = self.connector.format_label(test_asset, self.test_subscription_id)
 
         # Assertions
-        assert label == f"AZURE: {self.connector.subscription_id}/{test_location}"
+        assert label == f"AZURE: {self.test_subscription_id}/{test_location}"
 
     def test_format_label_no_location(self):
         # Test data
@@ -125,21 +134,24 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
 
         # Actual call
         with pytest.raises(ValueError, match="Asset has no location"):
-            self.connector.format_label(test_asset)
+            self.connector.format_label(test_asset, self.test_subscription_id)
 
-    def test_get_seeds(self):
+    async def test_get_seeds(self):
         # Test data
         self.connector.provider_settings = AzureSpecificSettings.from_dict(
             self.data["TEST_CREDS"]
         )
-        seed_scanners = {
-            AzureResourceTypes.PUBLIC_IP_ADDRESSES: self.mocker.Mock(),
-            AzureResourceTypes.CONTAINER_GROUPS: self.mocker.Mock(),
-            AzureResourceTypes.SQL_SERVERS: self.mocker.Mock(),
-            AzureResourceTypes.DNS_ZONES: self.mocker.Mock(),
-        }
 
         # Mock
+        seed_scanners = {
+            AzureResourceTypes.PUBLIC_IP_ADDRESSES: asynctest.MagicMock(),
+            AzureResourceTypes.CONTAINER_GROUPS: asynctest.MagicMock(),
+            AzureResourceTypes.SQL_SERVERS: asynctest.MagicMock(),
+            AzureResourceTypes.DNS_ZONES: asynctest.MagicMock(),
+        }
+        for scanner in seed_scanners.values():
+            scanner.return_value = asyncio.Future()
+            scanner.return_value.set_result(None)
         self.mocker.patch.object(
             self.connector,
             "seed_scanners",
@@ -147,19 +159,21 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
         )
 
         # Actual call
-        self.connector.get_seeds()
+        await self.connector.get_seeds(self.connector.provider_settings)
 
         # Assertions
         for mock in self.connector.seed_scanners.values():
             mock.assert_called_once()
 
-    def test_get_seeds_ignore(self):
+    async def test_get_seeds_ignore(self):
         # Test data
         self.connector.provider_settings = AzureSpecificSettings.from_dict(
             self.data["TEST_CREDS_IGNORE"]
         )
+
+        # Mock
         seed_scanners = {
-            resource_type: self.mocker.Mock()
+            resource_type: asynctest.MagicMock()
             for resource_type in [
                 AzureResourceTypes.PUBLIC_IP_ADDRESSES,
                 AzureResourceTypes.CONTAINER_GROUPS,
@@ -167,8 +181,9 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
                 AzureResourceTypes.DNS_ZONES,
             ]
         }
-
-        # Mock
+        for scanner in seed_scanners.values():
+            scanner.return_value = asyncio.Future()
+            scanner.return_value.set_result(None)
         self.mocker.patch.object(
             self.connector,
             "seed_scanners",
@@ -176,16 +191,19 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
         )
 
         # Actual call
-        self.connector.get_seeds()
+        await self.connector.get_seeds(self.connector.provider_settings)
 
         # Assertions
         for resource_type, mock in self.connector.seed_scanners.items():
-            if resource_type in self.connector.provider_settings.ignore:
+            if (
+                self.connector.provider_settings.ignore
+                and resource_type in self.connector.provider_settings.ignore
+            ):
                 mock.assert_not_called()
             else:
                 mock.assert_called_once()
 
-    def test_get_ip_addresses(self):
+    async def test_get_ip_addresses(self):
         # Test data
         test_list_all_response = []
         test_seed_values = []
@@ -195,28 +213,36 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
             test_ip_response["ip_address"] = ip_address
             test_seed_values.append(ip_address)
             test_list_all_response.append(self.mock_asset(test_ip_response))
-        test_label = self.connector.format_label(test_list_all_response[0])
+        test_label = self.connector.format_label(
+            test_list_all_response[0], self.test_subscription_id
+        )
 
         # Mock list_all
         mock_network_client = self.mock_client("NetworkManagementClient")
-        mock_public_ips = self.mocker.patch.object(
-            mock_network_client.return_value, "public_ip_addresses"
+        mock_public_ips_list_all = asynctest.MagicMock()
+        mock_public_ips_list_all.__aiter__.return_value = test_list_all_response
+        mock_network_client.return_value.public_ip_addresses.list_all.return_value = (
+            mock_public_ips_list_all
         )
-        mock_public_ips.list_all.return_value = test_list_all_response
 
         # Actual call
-        self.connector.get_ip_addresses()
+        await self.connector.get_ip_addresses(
+            self.connector.provider_settings,  # type: ignore[arg-type]
+            self.test_credentials,
+            self.test_subscription_id,
+            AzureResourceTypes.PUBLIC_IP_ADDRESSES,
+        )
 
         # Assertions
         mock_network_client.assert_called_with(
-            self.connector.credentials, self.connector.subscription_id
+            self.test_credentials, self.test_subscription_id
         )
-        mock_public_ips.list_all.assert_called_once()
+        mock_public_ips_list_all.__aiter__.assert_called_once()
         self.assert_seeds_with_values(
             self.connector.seeds[test_label], test_seed_values
         )
 
-    def test_get_clusters(self):
+    async def test_get_clusters(self):
         # Test data
         test_list_response = []
         test_seed_values = []
@@ -232,28 +258,36 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
             test_seed_values.append(domain)
             test_container_response["ip_address"] = ip_address_copy
             test_list_response.append(self.mock_asset(test_container_response))
-        test_label = self.connector.format_label(test_list_response[0])
+        test_label = self.connector.format_label(
+            test_list_response[0], self.test_subscription_id
+        )
 
         # Mock list
         mock_container_client = self.mock_client("ContainerInstanceManagementClient")
-        mock_container_groups = self.mocker.patch.object(
-            mock_container_client.return_value, "container_groups"
+        mock_container_groups_list = asynctest.MagicMock()
+        mock_container_groups_list.__aiter__.return_value = test_list_response
+        mock_container_client.return_value.container_groups.list.return_value = (
+            mock_container_groups_list
         )
-        mock_container_groups.list.return_value = test_list_response
 
         # Actual call
-        self.connector.get_clusters()
+        await self.connector.get_clusters(
+            self.connector.provider_settings,  # type: ignore[arg-type]
+            self.test_credentials,
+            self.test_subscription_id,
+            AzureResourceTypes.CONTAINER_GROUPS,
+        )
 
         # Assertions
         mock_container_client.assert_called_with(
-            self.connector.credentials, self.connector.subscription_id
+            self.test_credentials, self.test_subscription_id
         )
-        mock_container_groups.list.assert_called_once()
+        mock_container_groups_list.__aiter__.assert_called_once()
         self.assert_seeds_with_values(
             self.connector.seeds[test_label], test_seed_values
         )
 
-    def test_get_sql_servers(self):
+    async def test_get_sql_servers(self):
         # Test data
         test_list_response = []
         test_seed_values = []
@@ -263,29 +297,39 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
             test_server_response["fully_qualified_domain_name"] = domain
             test_seed_values.append(domain)
             test_list_response.append(self.mock_asset(test_server_response))
-        test_label = self.connector.format_label(test_list_response[0])
+        test_label = self.connector.format_label(
+            test_list_response[0], self.test_subscription_id
+        )
 
         # Mock list
         mock_sql_client = self.mock_client("SqlManagementClient")
-        mock_servers = self.mocker.patch.object(mock_sql_client.return_value, "servers")
-        mock_servers.list.return_value = test_list_response
+        mock_servers_list = asynctest.MagicMock()
+        mock_servers_list.__aiter__.return_value = test_list_response
+        mock_sql_client.return_value.servers.list.return_value = mock_servers_list
 
         # Actual call
-        self.connector.get_sql_servers()
+        await self.connector.get_sql_servers(
+            self.connector.provider_settings,  # type: ignore[arg-type]
+            self.test_credentials,
+            self.test_subscription_id,
+            AzureResourceTypes.SQL_SERVERS,
+        )
 
         # Assertions
         mock_sql_client.assert_called_with(
-            self.connector.credentials, self.connector.subscription_id
+            self.test_credentials, self.test_subscription_id
         )
-        mock_servers.list.assert_called_once()
+        mock_servers_list.__aiter__.assert_called_once()
         self.assert_seeds_with_values(
             self.connector.seeds[test_label], test_seed_values
         )
 
-    def test_get_dns_records(self):
+    async def test_get_dns_records(self):
         # Test data
         test_zones = [self.mock_asset(self.data["TEST_DNS_ZONE"])]
-        test_label = self.connector.format_label(test_zones[0])
+        test_label = self.connector.format_label(
+            test_zones[0], self.test_subscription_id
+        )
         test_list_records = []
         test_seed_values = []
         for data_key in [
@@ -306,26 +350,33 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
 
         # Mock list
         mock_dns_client = self.mock_client("DnsManagementClient")
-        mock_zones = self.mocker.patch.object(mock_dns_client.return_value, "zones")
-        mock_zones.list.return_value = test_zones
-        mock_records = self.mocker.patch.object(
-            mock_dns_client.return_value, "record_sets"
+        mock_zones_list = asynctest.MagicMock()
+        mock_zones_list.__aiter__.return_value = test_zones
+        mock_dns_client.return_value.zones.list.return_value = mock_zones_list
+        mock_record_sets = asynctest.MagicMock()
+        mock_record_sets.__aiter__.return_value = test_list_records
+        mock_dns_client.return_value.record_sets.list_all_by_dns_zone.return_value = (
+            mock_record_sets
         )
-        mock_records.list_all_by_dns_zone.return_value = test_list_records
 
         # Actual call
-        self.connector.get_dns_records()
+        await self.connector.get_dns_records(
+            self.connector.provider_settings,  # type: ignore[arg-type]
+            self.test_credentials,
+            self.test_subscription_id,
+            AzureResourceTypes.DNS_ZONES,
+        )
 
         # Assertions
         mock_dns_client.assert_called_with(
-            self.connector.credentials, self.connector.subscription_id
+            self.test_credentials, self.test_subscription_id
         )
-        mock_records.list_all_by_dns_zone.assert_called_once()
+        mock_zones_list.__aiter__.assert_called_once()
         self.assert_seeds_with_values(
             self.connector.seeds[test_label], test_seed_values
         )
 
-    def test_get_dns_records_fail(self):
+    async def test_get_dns_records_fail(self):
         # Mock list
         mock_dns_client = self.mock_client("DnsManagementClient")
         mock_zones = self.mocker.patch.object(mock_dns_client.return_value, "zones")
@@ -333,11 +384,16 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
         mock_error_logger = self.mocker.patch.object(self.connector.logger, "error")
 
         # Actual call
-        self.connector.get_dns_records()
+        await self.connector.get_dns_records(
+            self.connector.provider_settings,  # type: ignore[arg-type]
+            self.test_credentials,
+            self.test_subscription_id,
+            AzureResourceTypes.DNS_ZONES,
+        )
 
         # Assertions
         mock_dns_client.assert_called_with(
-            self.connector.credentials, self.connector.subscription_id
+            self.test_credentials, self.test_subscription_id
         )
         mock_zones.list.assert_called_once()
         mock_error_logger.assert_called_once()
@@ -345,16 +401,19 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
             "Failed to get Azure DNS records"
         )
 
-    def test_get_cloud_assets(self):
+    async def test_get_cloud_assets(self):
         # Test data
         self.connector.provider_settings = AzureSpecificSettings.from_dict(
             self.data["TEST_CREDS"]
         )
+
+        # Mock
         cloud_asset_scanners = {
             AzureResourceTypes.STORAGE_ACCOUNTS: self.mocker.Mock(),
         }
-
-        # Mock
+        for scanner in cloud_asset_scanners.values():
+            scanner.return_value = asyncio.Future()
+            scanner.return_value.set_result(None)
         self.mocker.patch.object(
             self.connector,
             "cloud_asset_scanners",
@@ -362,13 +421,13 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
         )
 
         # Actual call
-        self.connector.get_cloud_assets()
+        await self.connector.get_cloud_assets(self.connector.provider_settings)
 
         # Assertions
         for mock in cloud_asset_scanners.values():
             mock.assert_called_once()
 
-    def test_get_cloud_assets_ignore(self):
+    async def test_get_cloud_assets_ignore(self):
         # Test data
         self.connector.provider_settings = AzureSpecificSettings.from_dict(
             self.data["TEST_CREDS_IGNORE"]
@@ -380,12 +439,12 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
         )
 
         # Actual call
-        self.connector.get_cloud_assets()
+        await self.connector.get_cloud_assets(self.connector.provider_settings)
 
         # Assertions
         mock_storage_container.assert_not_called()
 
-    def test_get_storage_containers(self):
+    async def test_get_storage_containers(self):
         # Test data
         test_storage_accounts = []
         test_containers = []
@@ -402,35 +461,56 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
             test_container = self.data["TEST_STORAGE_CONTAINER"].copy()
             test_container["name"] = f"test-{i}"
             test_containers.append(self.mock_asset(test_container))
-        test_label = self.connector.format_label(test_storage_accounts[0])
+        test_label = self.connector.format_label(
+            test_storage_accounts[0], self.test_subscription_id
+        )
 
         # Mock list
         mock_storage_client = self.mock_client("StorageManagementClient")
-        mock_storage_accounts = self.mocker.patch.object(
-            mock_storage_client.return_value, "storage_accounts"
-        )
-        mock_storage_accounts.list.return_value = test_storage_accounts
+        mock_storage_client_iter = asynctest.MagicMock()
+        mock_storage_client_iter.__aiter__.return_value = test_storage_accounts
+        mock_storage_client_iter = (
+            mock_storage_client.return_value.storage_accounts.list.return_value
+        ) = mock_storage_client_iter
 
         # Mock list containers
         mock_blob_client = self.mock_client("BlobServiceClient")
-        mock_blob_client.return_value.list_containers.return_value = test_containers
+        mock_blob_client.return_value.list_containers.return_value.__aiter__.return_value = (
+            test_containers
+        )
+        mock_get_storage_container_url = asynctest.CoroutineMock()
 
-        def get_container_with_url(container):
-            container.url = f"https://{container.name}.blob.core.windows.net"
-            return container
+        def get_container_with_url(
+            _: BlobServiceClient, container: ContainerProperties
+        ) -> str:
+            return f"https://{container.name}.blob.core.windows.net"
 
-        mock_blob_client.return_value.get_container_client.side_effect = (
-            get_container_with_url
+        mock_get_storage_container_url.side_effect = get_container_with_url
+        self.mocker.patch.object(
+            self.connector,
+            "get_storage_container_url",
+            new_callable=self.mocker.PropertyMock(
+                return_value=mock_get_storage_container_url
+            ),
         )
 
         # Actual call
-        self.connector.get_storage_containers()
+        await self.connector.get_storage_containers(
+            self.connector.provider_settings,  # type: ignore[arg-type]
+            self.test_credentials,
+            self.test_subscription_id,
+            AzureResourceTypes.STORAGE_ACCOUNTS,
+        )
 
         # Assertions
         mock_storage_client.assert_called_with(
-            self.connector.credentials, self.connector.subscription_id
+            self.test_credentials, self.test_subscription_id
         )
         assert mock_blob_client.call_count == len(test_storage_accounts)
+        assert (
+            mock_blob_client.return_value.list_containers.return_value.__aiter__.call_count
+            == len(test_storage_accounts)
+        )
         self.assert_seeds_with_values(
             self.connector.seeds[test_label], test_seed_values
         )
