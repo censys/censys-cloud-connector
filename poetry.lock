@@ -2331,13 +2331,13 @@ files = [
 
 [[package]]
 name = "censys"
-version = "2.2.2"
+version = "2.2.4"
 description = "An easy-to-use and lightweight API wrapper for Censys APIs (censys.io)."
 optional = false
-python-versions = ">=3.7.2,<4.0.0"
+python-versions = ">=3.8,<4.0"
 files = [
-    {file = "censys-2.2.2-py3-none-any.whl", hash = "sha256:c735db4d384070b141aaa1a958e6935be640b7bf2cadf2ae6d769b2a9273a3b5"},
-    {file = "censys-2.2.2.tar.gz", hash = "sha256:3099c91db4a97018a000265a2279a8e413bf40664f0cdd6c6eee1b550d4bf9d5"},
+    {file = "censys-2.2.4-py3-none-any.whl", hash = "sha256:e8ae70185c9cc817956dd9b436ec1966ca797a6e59b9e29dbb5ac6dd3630c7d8"},
+    {file = "censys-2.2.4.tar.gz", hash = "sha256:2bcace81886b490b8e9b89e9269ee78ec7442631f5ac6e3fae8c94421a2b9d09"},
 ]
 
 [package.dependencies]
@@ -2345,7 +2345,7 @@ argcomplete = ">=2.0.0,<4.0.0"
 backoff = ">=2.0.0,<3.0.0"
 requests = ">=2.29.0"
 rich = ">=10.16.2"
-urllib3 = "<2.0.0"
+urllib3 = "<3.0.0"
 
 [[package]]
 name = "certifi"
@@ -5517,4 +5517,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "7cc4ce5110c5a5eca8acda5f34ed21ee9dcef052a70bbf62f0bbe4e0d8ec36c1"
+content-hash = "a9d64a6869fe80d0ba625f2f6a9f69d90d4399e26d6b08ed0407b32a1b1385fd"
