@@ -5,9 +5,7 @@ from enum import Enum
 from logging import Logger
 from typing import Callable, Optional, Union
 
-from requests.exceptions import JSONDecodeError
-
-from censys.asm import Seeds
+from censys.asm import Beta, Seeds
 from censys.common.exceptions import CensysAsmException
 
 from .cloud_asset import CloudAsset
@@ -27,6 +25,7 @@ class CloudConnector(ABC):
     settings: Settings
     logger: Logger
     seeds_api: Seeds
+    beta_api: Beta
     seeds: dict[str, set[Seed]]
     cloud_assets: dict[str, set[CloudAsset]]
     seed_scanners: dict[str, Callable[[], None]]
@@ -57,8 +56,11 @@ class CloudConnector(ABC):
             user_agent=Seeds.DEFAULT_USER_AGENT + " " + settings.censys_user_agent,
             cookies=settings.censys_cookies,
         )
-        self._add_cloud_asset_path = (
-            f"{settings.censys_asm_api_base_url}/beta/cloudConnector/addCloudAssets"
+        self.beta_api = Beta(
+            settings.censys_api_key,
+            url=settings.censys_asm_api_base_url,
+            user_agent=Beta.DEFAULT_USER_AGENT + " " + settings.censys_user_agent,
+            cookies=settings.censys_cookies,
         )
 
         self.seeds = defaultdict(set)
@@ -177,41 +179,16 @@ class CloudConnector(ABC):
         submitted_assets = 0
         for uid, cloud_assets in self.cloud_assets.items():
             try:
-                data = {
-                    "cloudConnectorUid": uid,
-                    "cloudAssets": [asset.to_dict() for asset in cloud_assets],
-                }
-                self._add_cloud_assets(data)
+                self.beta_api.add_cloud_assets(
+                    uid, [asset.to_dict() for asset in cloud_assets]
+                )
                 submitted_assets += len(cloud_assets)
-            except (CensysAsmException, JSONDecodeError) as e:
+            except CensysAsmException as e:
                 self.logger.error(f"Error submitting cloud assets for {uid}: {e}")
         self.logger.info(f"Submitted {submitted_assets} cloud assets.")
         self.dispatch_event(
             EventTypeEnum.CLOUD_ASSETS_SUBMITTED, count=submitted_assets
         )
-
-    def _add_cloud_assets(self, data: dict) -> dict:
-        """Add cloud assets to the Censys ASM.
-
-        Args:
-            data (dict): The data to add.
-
-        Returns:
-            dict: The response from the Censys ASM.
-
-        Raises:
-            CensysAsmException: If the response is not valid.
-        """
-        res = self.seeds_api._session.post(self._add_cloud_asset_path, json=data)
-        json_data = res.json()
-        if error_message := json_data.get("error"):
-            raise CensysAsmException(
-                res.status_code,
-                error_message,
-                res.text,
-                error_code=json_data.get("errorCode"),
-            )
-        return json_data
 
     def clear(self):
         """Clear the seeds and cloud assets."""
