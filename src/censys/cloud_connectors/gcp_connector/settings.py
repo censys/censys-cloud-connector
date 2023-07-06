@@ -19,7 +19,6 @@ class GcpSpecificSettings(ProviderSpecificSettings):
 
     organization_id: int = Field(
         gt=1,
-        lt=10**12,
         description="GCP organization ID.",
     )
     service_account_json_file: Path = Field(
