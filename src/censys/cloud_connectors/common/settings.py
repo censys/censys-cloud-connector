@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING, Any, DefaultDict, Optional, Union
 import yaml
 from pydantic import BaseSettings, Field, validate_arguments, validator
 
+from censys.common.version import __version__ as censys_common_version
+
 from .. import __version__ as censys_cloud_connectors_version
 from .enums import ProviderEnum
 
@@ -148,7 +150,7 @@ class Settings(BaseSettings):
         description="Censys ASM API Base URL",
     )
     censys_user_agent: str = Field(
-        default=f"censys-cloud-connector/{censys_cloud_connectors_version}",
+        default=f"censys-python/{censys_common_version} censys-cloud-connector/{censys_cloud_connectors_version}",
         env="CENSYS_USER_AGENT",
         description="Censys User Agent",
     )

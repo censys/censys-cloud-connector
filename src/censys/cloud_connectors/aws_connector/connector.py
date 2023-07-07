@@ -1,7 +1,7 @@
 """AWS Cloud Connector."""
 import contextlib
 from collections.abc import Generator, Sequence
-from typing import Any, Optional, TypeVar
+from typing import Any, Optional, TypeVar, Union
 
 import boto3
 import botocore
@@ -393,7 +393,7 @@ class AwsCloudConnector(CloudConnector):
         label = self.format_label(SeedLabel.NETWORK_INTERFACE)
 
         interfaces = self.describe_network_interfaces()
-        instance_tags = self.get_resource_tags()
+        instance_tags, instance_tag_sets = self.get_resource_tags()
 
         for ip_address, record in interfaces.items():
             instance_id = record["InstanceId"]
@@ -406,7 +406,7 @@ class AwsCloudConnector(CloudConnector):
 
             with SuppressValidationError():
                 ip_seed = IpSeed(value=ip_address, label=label)
-                self.add_seed(ip_seed, tags=tags)
+                self.add_seed(ip_seed, tags=instance_tag_sets.get(instance_id))
 
     def describe_network_interfaces(self) -> dict:
         """Retrieve EC2 Elastic Network Interfaces (ENI) data.
@@ -415,7 +415,7 @@ class AwsCloudConnector(CloudConnector):
             dict: Network Interfaces.
         """
         ec2: EC2Client = self.get_aws_client(AwsServices.EC2)
-        interfaces = {}
+        interfaces: dict[str, dict[str, Union[None, str, list]]] = {}
 
         # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html#EC2.Client.describe_network_interfaces
         filters: Sequence[FilterTypeDef] = [
@@ -446,7 +446,7 @@ class AwsCloudConnector(CloudConnector):
         return interfaces
 
     def get_resource_tags_paginated(
-        self, resource_types: list[str] = None
+        self, resource_types: Optional[list[str]] = None
     ) -> Generator[TagDescriptionTypeDef, None, None]:
         """Retrieve EC2 resource tags paginated.
 
@@ -469,20 +469,23 @@ class AwsCloudConnector(CloudConnector):
             tags = page.get("Tags", [])
             yield from tags
 
-    def get_resource_tags(self, resource_types: list[str] = None) -> dict:
+    def get_resource_tags(
+        self, resource_types: Optional[list[str]] = None
+    ) -> tuple[dict, dict]:
         """Get EC2 resource tags based on resource types.
 
         Args:
-            resource_types (list[str]): Resource type filter.
+            resource_types (Optional[list[str]]): Resource type filter.
 
         Returns:
-            dict: Tags grouped by resource keys.
+            tuple[dict, dict]: Instance tags and tag sets.
         """
         resource_tags: dict = {}
+        resource_tag_sets: dict = {}
 
         for tag in self.get_resource_tags_paginated(resource_types):
             # Tags come in two formats:
-            # 1. Tag = { Key = "Name", Value= "actual-tag-name" }
+            # 1. Tag = { Key = "Name", Value = "actual-tag-name" }
             # 2. Tag = { Key = "actual-key-name", Value = "tag-value-that-is-unused-here"}
             tag_name = tag.get("Key")
             if tag_name == "Name":
@@ -492,10 +495,12 @@ class AwsCloudConnector(CloudConnector):
             resource_id = tag.get("ResourceId")
             if _resource_tags := resource_tags.get(resource_id):
                 _resource_tags.append(tag_name)
+                resource_tag_sets[resource_id].append(tag)
             else:
                 resource_tags[resource_id] = [tag_name]
+                resource_tag_sets[resource_id] = [tag]
 
-        return resource_tags
+        return resource_tags, resource_tag_sets
 
     def network_interfaces_ignored_tags(self, data: NetworkInterfaceTypeDef) -> bool:
         """Check if network interface has ignored tags.

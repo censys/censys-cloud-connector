@@ -167,7 +167,9 @@ class AwsTagsPlugin(CloudConnectorPlugin):
         """
         return f"{tag_set['Key']}: {tag_set['Value']}"
 
-    def add_ip_tags(self, context: EventContext, seed: IpSeed, tag_set: dict) -> None:
+    def add_ip_tags(
+        self, context: EventContext, seed: IpSeed, tag_set: list[dict]
+    ) -> None:
         """Add IP tags.
 
         Args:
@@ -236,6 +238,8 @@ class AwsTagsPlugin(CloudConnectorPlugin):
         client = self.get_client(context)
         for tag in tag_set:
             tag_string = self.format_tag_set_as_string(tag)
+            # We first try to add the tag to the domain itself
+            # If that fails, we try to add the tag to the subdomain at the base domain
             try:
                 client.domains.add_tag(str(seed.value), tag_string)
             except CensysDomainNotFoundException:
@@ -256,6 +260,8 @@ class AwsTagsPlugin(CloudConnectorPlugin):
             cloud_asset.value + "/"
         )
         for tag in tag_set:
+            # We need to suppress the exception here incase the tag is already added
+            # or if the tag is invalid
             with contextlib.suppress(CensysAsmException):
                 client.object_storages.add_tag(
                     url_encoded_object_storage_key, self.format_tag_set_as_string(tag)
@@ -334,7 +340,12 @@ class AwsTagsPlugin(CloudConnectorPlugin):
         if not tags:
             return
 
-        self.add_ip_tags(context, seed, tags)
+        # Filter out AWS internal tags
+        filtered_tags = [tag for tag in tags if not tag["Key"].startswith("aws:")]
+        if not filtered_tags:
+            return
+
+        self.add_ip_tags(context, seed, filtered_tags)
 
     def _get_rds_tags(
         self,
@@ -386,9 +397,7 @@ class AwsTagsPlugin(CloudConnectorPlugin):
         if not pre_processed_tags:
             return
 
-        tags = {tag["Key"]: tag["Value"] for tag in pre_processed_tags}
-
-        self.add_domain_tags(context, seed, tags)  # type: ignore
+        self.add_domain_tags(context, seed, pre_processed_tags)  # type: ignore
 
     def _get_ecs_tags(self, context: EventContext, seed: DomainSeed, **kwargs) -> None:
         """Get ECS tags.
@@ -418,6 +427,9 @@ class AwsTagsPlugin(CloudConnectorPlugin):
             context: Event context.
             cloud_asset: Cloud asset.
             kwargs: Additional event data.
+
+        Raises:
+            ClientError: If the bucket does not exist.
         """
         bucket_name = kwargs.get("bucket_name")
         client: S3Client = kwargs.get("aws_client")  # type: ignore
@@ -426,9 +438,22 @@ class AwsTagsPlugin(CloudConnectorPlugin):
 
         try:
             tag_set = client.get_bucket_tagging(Bucket=bucket_name).get("TagSet", [])
-            self.add_cloud_asset_tags(context, cloud_asset, tag_set)  # type: ignore
-        except ClientError:
-            pass
+            if not tag_set:
+                return
+
+            # Filter out AWS internal tags
+            filtered_tags = [
+                tag for tag in tag_set if not tag["Key"].startswith("aws:")
+            ]
+            if not filtered_tags:
+                return
+
+            self.add_cloud_asset_tags(context, cloud_asset, filtered_tags)  # type: ignore
+        except ClientError as e:
+            # If there are no tag sets, it will raise a ClientError with the code "NoSuchTagSet"
+            if e.response.get("Error", {}).get("Code") == "NoSuchTagSet":
+                return
+            raise
 
 
 __plugin__ = AwsTagsPlugin
