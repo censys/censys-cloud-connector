@@ -388,14 +388,35 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
         add_seed.assert_not_called()
 
     def test_get_resource_tags_handles_multiple_formats(self):
-        expected = {
+        # Test data
+        expected_tags = {
             "test-resource-id-1": ["resource-tag-in-key", "resource-tag-in-value"]
         }
+        expected_tag_set = {
+            "test-resource-id-1": [
+                {
+                    "Key": "resource-tag-in-key",
+                    "ResourceId": "test-resource-id-1",
+                    "ResourceType": "instance",
+                    "Value": "test-value",
+                },
+                {
+                    "Key": "Name",
+                    "ResourceId": "test-resource-id-1",
+                    "ResourceType": "instance",
+                    "Value": "resource-tag-in-value",
+                },
+            ]
+        }
         data = self.data["TEST_RESOURCE_TAGS_MULTIPLE_FORMATS"].copy()
+
+        # Mock
         self.mocker.patch.object(
             self.connector, "get_resource_tags_paginated", return_value=data
         )
-        assert self.connector.get_resource_tags() == expected
+
+        # Actual call
+        assert self.connector.get_resource_tags() == (expected_tags, expected_tag_set)
 
     def test_rds_instances_creates_seeds(self):
         # Test data
