@@ -101,6 +101,7 @@ class GcpRoles(str, Enum):
     ORGANIZATION_VIEWER = "resourcemanager.organizationViewer"
     ASSETS_DISCOVERY_RUNNER = "securitycenter.assetsDiscoveryRunner"
     ASSETS_VIEWER = "securitycenter.assetsViewer"
+    CAI_ASSETS_VIEWER = "cloudasset.viewer"
 
     def __str__(self) -> str:
         """Gets the string representation of the role.
@@ -109,6 +110,25 @@ class GcpRoles(str, Enum):
             str: The string representation of the role.
         """
         return f"roles/{self.value}"
+
+
+class GcpCloudAssetTypes(str, Enum):
+    """GCP Cloud Asset Inventory asset types."""
+
+    COMPUTE_INSTANCE = "compute.googleapis.com/Instance"
+    COMPUTE_ADDRESS = "compute.googleapis.com/Address"
+    CONTAINER_CLUSTER = "container.googleapis.com/Cluster"
+    CLOUD_SQL_INSTANCE = "sqladmin.googleapis.com/Instance"
+    DNS_ZONE = "dns.googleapis.com/ManagedZone"
+    STORAGE_BUCKET = "storage.googleapis.com/Bucket"
+
+    def filter(self) -> str:
+        """Get the filter for the resource type.
+
+        Returns:
+            str: Filter.
+        """
+        return f'assetType: "{self.value}"'
 
 
 class GcpSecurityCenterResourceTypes(str, Enum):

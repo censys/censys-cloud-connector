@@ -3072,6 +3072,82 @@ reauth = ["pyu2f (>=0.1.5)"]
 requests = ["requests (>=2.20.0,<3.0.0dev)"]
 
 [[package]]
+name = "google-cloud-access-context-manager"
+version = "0.1.16"
+description = "Google Cloud Access Context Manager Protobufs"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "google-cloud-access-context-manager-0.1.16.tar.gz", hash = "sha256:f8be51adee8b1e94a573ecb3750a4c2d2bd444b1dde35d9aa437ace73c337607"},
+    {file = "google_cloud_access_context_manager-0.1.16-py2.py3-none-any.whl", hash = "sha256:7bb9ad134da0622a335c8cd82664d39be8b66bff161af64144d212d2b6582db4"},
+]
+
+[package.dependencies]
+google-api-core = {version = ">=1.34.0,<2.0.dev0 || >=2.11.dev0,<3.0.0dev", extras = ["grpc"]}
+protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<5.0.0dev"
+
+[[package]]
+name = "google-cloud-asset"
+version = "3.19.1"
+description = "Google Cloud Asset API client library"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "google-cloud-asset-3.19.1.tar.gz", hash = "sha256:466774d471d539386a4b07e7a08ad368c8f1a8716e19c2808f02a9de10f84b9a"},
+    {file = "google_cloud_asset-3.19.1-py2.py3-none-any.whl", hash = "sha256:0c8eb7f2c736e47bc8b9505ee0d25a8dad9ca678ef47980d64c5bf68d98226e8"},
+]
+
+[package.dependencies]
+google-api-core = {version = ">=1.34.0,<2.0.dev0 || >=2.11.dev0,<3.0.0dev", extras = ["grpc"]}
+google-cloud-access-context-manager = ">=0.1.2,<1.0.0dev"
+google-cloud-org-policy = ">=0.1.2,<2.0.0"
+google-cloud-os-config = ">=1.0.0,<2.0.0dev"
+grpc-google-iam-v1 = ">=0.12.4,<1.0.0dev"
+proto-plus = [
+    {version = ">=1.22.2,<2.0.0dev", markers = "python_version >= \"3.11\""},
+    {version = ">=1.22.0,<2.0.0dev", markers = "python_version < \"3.11\""},
+]
+protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<5.0.0dev"
+
+[[package]]
+name = "google-cloud-org-policy"
+version = "1.8.2"
+description = "Google Cloud Org Policy API client library"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "google-cloud-org-policy-1.8.2.tar.gz", hash = "sha256:489a634bbda478e7fd405d629ac58b6e0312cf10839683b8b6e738bd4cbc6419"},
+    {file = "google_cloud_org_policy-1.8.2-py2.py3-none-any.whl", hash = "sha256:f6b3e8249361d1e5430a0b92fbe73d99cb4117e19e5ee76371c18f819a347e0e"},
+]
+
+[package.dependencies]
+google-api-core = {version = ">=1.34.0,<2.0.dev0 || >=2.11.dev0,<3.0.0dev", extras = ["grpc"]}
+proto-plus = [
+    {version = ">=1.22.2,<2.0.0dev", markers = "python_version >= \"3.11\""},
+    {version = ">=1.22.0,<2.0.0dev", markers = "python_version < \"3.11\""},
+]
+protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<5.0.0dev"
+
+[[package]]
+name = "google-cloud-os-config"
+version = "1.15.2"
+description = "Google Cloud Os Config API client library"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "google-cloud-os-config-1.15.2.tar.gz", hash = "sha256:5a0aeac6756c6c0d29a6f7dcab15be900f2f8e7ef56cc53da80c99adaa98b7c8"},
+    {file = "google_cloud_os_config-1.15.2-py2.py3-none-any.whl", hash = "sha256:dc591e14bbc6759d68dc2bd020d5649de6046a64c3a55afd27795e3238f9e575"},
+]
+
+[package.dependencies]
+google-api-core = {version = ">=1.34.0,<2.0.dev0 || >=2.11.dev0,<3.0.0dev", extras = ["grpc"]}
+proto-plus = [
+    {version = ">=1.22.2,<2.0.0dev", markers = "python_version >= \"3.11\""},
+    {version = ">=1.22.0,<2.0.0dev", markers = "python_version < \"3.11\""},
+]
+protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<5.0.0dev"
+
+[[package]]
 name = "google-cloud-resource-manager"
 version = "1.10.0"
 description = "Google Cloud Resource Manager API client library"
@@ -5531,4 +5607,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "28427b2645c077b00e4cd595883c147d22c8697b9071ad171df2d1d5fdc3ad32"
+content-hash = "7a1ac62b4c19c13a5690193a08b6669ae0b8628cfb0e7f316748688a405ec79b"

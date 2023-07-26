@@ -4,11 +4,11 @@ from pathlib import Path
 from typing import Optional
 
 from google.api_core import exceptions
-from google.cloud import securitycenter_v1
-from google.cloud.securitycenter_v1.services.security_center.pagers import (
-    ListAssetsPager,
+from google.cloud import asset_v1
+from google.cloud.asset_v1.services.asset_service.pagers import (
+    ListAssetsPager as ListAssetsPagerCAI,
 )
-from google.cloud.securitycenter_v1.types import ListAssetsResponse
+from google.cloud.asset_v1.types import Asset, ContentType
 from google.oauth2 import service_account
 
 from censys.cloud_connectors.common.cloud_asset import GcpStorageBucketAsset
@@ -19,7 +19,7 @@ from censys.cloud_connectors.common.healthcheck import Healthcheck
 from censys.cloud_connectors.common.seed import DomainSeed, IpSeed
 from censys.cloud_connectors.common.settings import Settings
 
-from .enums import GcpSecurityCenterResourceTypes
+from .enums import GcpCloudAssetTypes
 from .settings import GcpSpecificSettings
 
 
@@ -30,7 +30,8 @@ class GcpCloudConnector(CloudConnector):
     organization_id: int
     credentials: service_account.Credentials
     provider_settings: GcpSpecificSettings
-    security_center_client: securitycenter_v1.SecurityCenterClient
+    # security_center_client: securitycenter_v1.SecurityCenterClient
+    cloud_asset_client: asset_v1.AssetServiceClient
 
     def __init__(self, settings: Settings):
         """Initialize Gcp Cloud Connector.
@@ -40,14 +41,14 @@ class GcpCloudConnector(CloudConnector):
         """
         super().__init__(settings)
         self.seed_scanners = {
-            GcpSecurityCenterResourceTypes.COMPUTE_INSTANCE: self.get_compute_instances,
-            GcpSecurityCenterResourceTypes.COMPUTE_ADDRESS: self.get_compute_addresses,
-            GcpSecurityCenterResourceTypes.CONTAINER_CLUSTER: self.get_container_clusters,
-            GcpSecurityCenterResourceTypes.CLOUD_SQL_INSTANCE: self.get_cloud_sql_instances,
-            GcpSecurityCenterResourceTypes.DNS_ZONE: self.get_dns_records,
+            GcpCloudAssetTypes.COMPUTE_INSTANCE: self.get_compute_instances,
+            GcpCloudAssetTypes.COMPUTE_ADDRESS: self.get_compute_addresses,
+            GcpCloudAssetTypes.CONTAINER_CLUSTER: self.get_container_clusters,
+            GcpCloudAssetTypes.CLOUD_SQL_INSTANCE: self.get_cloud_sql_instances,
+            GcpCloudAssetTypes.DNS_ZONE: self.get_dns_records,
         }
         self.cloud_asset_scanners = {
-            GcpSecurityCenterResourceTypes.STORAGE_BUCKET: self.get_storage_buckets,
+            GcpCloudAssetTypes.STORAGE_BUCKET: self.get_storage_buckets,
         }
 
     def scan(self):
@@ -83,7 +84,10 @@ class GcpCloudConnector(CloudConnector):
                         f" {key_file_path}: {e}"
                     )
                     raise
-                self.security_center_client = securitycenter_v1.SecurityCenterClient(
+                # self.security_center_client = securitycenter_v1.SecurityCenterClient(
+                #     credentials=self.credentials
+                # )
+                self.cloud_asset_client = asset_v1.AssetServiceClient(
                     credentials=self.credentials
                 )
                 self.logger.info(f"Scanning GCP organization {self.organization_id}")
@@ -104,67 +108,120 @@ class GcpCloudConnector(CloudConnector):
             self.organization_id = provider_setting.organization_id
             self.scan()
 
-    def format_label(self, result: ListAssetsResponse.ListAssetsResult) -> str:
+    # def format_label(self, result: ListAssetsResponse.ListAssetsResult) -> str:
+    #     """Format Gcp label.
+
+    #     Args:
+    #         result (ListAssetsResponse.ListAssetsResult): Gcp asset result.
+
+    #     Returns:
+    #         str: Formatted asset label.
+    #     """
+    #     # TODO: Include location in label
+    #     asset_project_display_name = (
+    #         result.asset.security_center_properties.resource_project_display_name
+    #     )
+    #     return f"{self.label_prefix}{self.organization_id}/{asset_project_display_name}"
+
+    def format_label_cai(self, result: Asset) -> str:
         """Format Gcp label.
 
         Args:
-            result (ListAssetsResponse.ListAssetsResult): Gcp asset result.
+            result (Asset): Gcp asset result.
 
         Returns:
             str: Formatted asset label.
         """
-        # TODO: Include location in label
-        asset_project_display_name = (
-            result.asset.security_center_properties.resource_project_display_name
-        )
+        # TODO fix this
+        asset_name = result.name
+        asset_parts = asset_name.split("/projects/")
+        asset_project_display_name = ""
+        if len(asset_parts) > 1:
+            asset_project_display_name = asset_parts[1].split("/")[0]
+
         return f"{self.label_prefix}{self.organization_id}/{asset_project_display_name}"
 
-    def list_assets(self, filter: Optional[str] = None) -> ListAssetsPager:
+    # def list_assets(self, filter: Optional[str] = None) -> ListAssetsPager:
+    #     """List Gcp assets.
+
+    #     Args:
+    #         filter (Optional[str]): Filter string.
+
+    #     Returns:
+    #         ListAssetsPager: Gcp assets.
+    #     """
+    #     request = {
+    #         "parent": self.provider_settings.parent(),
+    #     }
+    #     if filter:
+    #         request["filter"] = filter
+    #     return self.security_center_client.list_assets(request=request)
+
+    def list_assets_cai(self, filter: Optional[str] = None) -> ListAssetsPagerCAI:
         """List Gcp assets.
 
         Args:
             filter (Optional[str]): Filter string.
 
         Returns:
-            ListAssetsPager: Gcp assets.
+            ListAssetsPagerCAI: Gcp assets.
         """
         request = {
             "parent": self.provider_settings.parent(),
+            "content_type": ContentType.RESOURCE,
         }
+        asset_types: list[str] = []
         if filter:
-            request["filter"] = filter
-        return self.security_center_client.list_assets(request=request)
+            asset_types.append(filter)
+            request["asset_types"] = asset_types
+        return self.cloud_asset_client.list_assets(request=request)
 
-    def get_asset_dict(
-        self, list_assets_result: ListAssetsResponse.ListAssetsResult
-    ) -> dict:
-        """Get Gcp asset dict.
+    # def get_asset_dict(
+    #     self, list_assets_result: ListAssetsResponse.ListAssetsResult
+    # ) -> dict:
+    #     """Get Gcp asset dict.
 
-        Args:
-            list_assets_result (ListAssetsResponse.ListAssetsResult): Gcp asset result.
+    #     Args:
+    #         list_assets_result (ListAssetsResponse.ListAssetsResult): Gcp asset result.
 
-        Returns:
-            dict: Gcp asset dict.
-        """
-        return {
-            "asset": list_assets_result.asset,
-            "label": self.format_label(list_assets_result),
-        }
+    #     Returns:
+    #         dict: Gcp asset dict.
+    #     """
+    #     return {
+    #         "asset": list_assets_result.asset,
+    #         "label": self.format_label(list_assets_result),
+    #     }
+
+    # def get_asset_dict_cai(
+    #     self, list_assets_result: Asset
+    # ) -> dict:
+    #     """Get Gcp asset dict.
+
+    #     Args:
+    #         list_assets_result (Asset): Gcp asset result.
+
+    #     Returns:
+    #         dict: Gcp asset dict.
+    #     """
+    #     return {
+    #         "asset": list_assets_result.asset,
+    #         "label": self.format_label(list_assets_result),
+    #     }
 
     def get_compute_instances(self):
         """Get Gcp compute instances assets."""
-        list_assets_results = self.list_assets(
-            filter=GcpSecurityCenterResourceTypes.COMPUTE_INSTANCE.filter()
+        list_assets_results = self.list_assets_cai(
+            filter=GcpCloudAssetTypes.COMPUTE_INSTANCE
         )
         for list_assets_result in list_assets_results:
-            if network_interfaces := list_assets_result.asset.resource_properties.get(
+            if network_interfaces := list_assets_result.resource.data.get(
                 "networkInterfaces"
             ):
                 try:
                     network_interfaces = json.loads(network_interfaces)
                 except json.JSONDecodeError:
                     self.logger.error(
-                        f"Failed to parse network_interfaces for {list_assets_result.asset.name}"
+                        f"Failed to parse network_interfaces for {list_assets_result.name}"
                     )
                     continue
                 if (
@@ -183,32 +240,31 @@ class GcpCloudConnector(CloudConnector):
                     with SuppressValidationError():
                         ip_seed = IpSeed(
                             value=ip_address,
-                            label=self.format_label(list_assets_result),
+                            label=self.format_label_cai(list_assets_result),
                         )
                         self.add_seed(ip_seed)
 
     def get_compute_addresses(self):
         """Get Gcp ip address assets."""
-        list_assets_results = self.list_assets(
-            filter=GcpSecurityCenterResourceTypes.COMPUTE_ADDRESS.filter()
+        list_assets_results = self.list_assets_cai(
+            filter=GcpCloudAssetTypes.COMPUTE_ADDRESS
         )
         for list_assets_result in list_assets_results:
-            if ip_address := list_assets_result.asset.resource_properties.get(
-                "address"
-            ):
+            if ip_address := list_assets_result.resource.data.get("address"):
                 with SuppressValidationError():
                     ip_seed = IpSeed(
-                        value=ip_address, label=self.format_label(list_assets_result)
+                        value=ip_address,
+                        label=self.format_label_cai(list_assets_result),
                     )
                     self.add_seed(ip_seed)
 
     def get_container_clusters(self):
         """Get Gcp container clusters."""
-        list_assets_results = self.list_assets(
-            filter=GcpSecurityCenterResourceTypes.CONTAINER_CLUSTER.filter()
+        list_assets_results = self.list_assets_cai(
+            filter=GcpCloudAssetTypes.CONTAINER_CLUSTER
         )
         for list_assets_result in list_assets_results:
-            if private_cluster_config := list_assets_result.asset.resource_properties.get(
+            if private_cluster_config := list_assets_result.resource.data.get(
                 "privateClusterConfig"
             ):
                 try:
@@ -222,19 +278,17 @@ class GcpCloudConnector(CloudConnector):
                     with SuppressValidationError():
                         ip_seed = IpSeed(
                             value=ip_address,
-                            label=self.format_label(list_assets_result),
+                            label=self.format_label_cai(list_assets_result),
                         )
                         self.add_seed(ip_seed)
 
     def get_cloud_sql_instances(self):
         """Get Gcp cloud sql instances."""
-        list_assets_results = self.list_assets(
-            filter=GcpSecurityCenterResourceTypes.CLOUD_SQL_INSTANCE.filter()
+        list_assets_results = self.list_assets_cai(
+            filter=GcpCloudAssetTypes.CLOUD_SQL_INSTANCE
         )
         for list_assets_result in list_assets_results:
-            if ip_addresses := list_assets_result.asset.resource_properties.get(
-                "ipAddresses"
-            ):
+            if ip_addresses := list_assets_result.resource.data.get("ipAddresses"):
                 ip_addresses = json.loads(ip_addresses)
                 for ip_address in [
                     address for ip in ip_addresses if (address := ip.get("ipAddress"))
@@ -242,50 +296,46 @@ class GcpCloudConnector(CloudConnector):
                     with SuppressValidationError():
                         ip_seed = IpSeed(
                             value=ip_address,
-                            label=self.format_label(list_assets_result),
+                            label=self.format_label_cai(list_assets_result),
                         )
                         self.add_seed(ip_seed)
 
     def get_dns_records(self):
         """Get Gcp dns records."""
-        list_assets_results = self.list_assets(
-            filter=GcpSecurityCenterResourceTypes.DNS_ZONE.filter()
-        )
+        list_assets_results = self.list_assets_cai(filter=GcpCloudAssetTypes.DNS_ZONE)
         for list_assets_result in list_assets_results:
-            resource_properties = list_assets_result.asset.resource_properties
-            if resource_properties.get("visibility") == "PUBLIC" and (
-                domain := resource_properties.get("dnsName")
-            ):
+            data = list_assets_result.resource.data
+            if data.get("visibility") == "PUBLIC" and (domain := data.get("dnsName")):
                 with SuppressValidationError():
                     domain_seed = DomainSeed(
-                        value=domain, label=self.format_label(list_assets_result)
+                        value=domain, label=self.format_label_cai(list_assets_result)
                     )
                     self.add_seed(domain_seed)
 
     def get_storage_buckets(self):
         """Get Gcp storage buckets."""
-        list_assets_results = self.list_assets(
-            filter=GcpSecurityCenterResourceTypes.STORAGE_BUCKET.filter()
+        list_assets_results = self.list_assets_cai(
+            filter=GcpCloudAssetTypes.STORAGE_BUCKET
         )
         for list_assets_result in list_assets_results:
-            resource_properties = list_assets_result.asset.resource_properties
-            if (bucket_name := resource_properties.get("id")) and (
-                project_number := resource_properties.get("projectNumber")
+            data = list_assets_result.resource.data
+            if (bucket_name := data.get("id")) and (
+                project_number := data.get("projectNumber")
             ):
                 scan_data = {"accountNumber": int(project_number)}
-                if (
-                    project_name := list_assets_result.asset.security_center_properties.resource_project_display_name
-                ):
-                    scan_data["projectName"] = project_name
-                if location := resource_properties.get("location"):
+                # if (
+                #     project_name := list_assets_result.asset.security_center_properties.resource_project_display_name
+                # ):
+                #     scan_data["projectName"] = project_name
+                if location := data.get("location"):
                     scan_data["location"] = location
-                if self_link := resource_properties.get("selfLink"):
+                if self_link := data.get("selfLink"):
                     scan_data["selfLink"] = self_link
                 with SuppressValidationError():
                     bucket_asset = GcpStorageBucketAsset(
                         # TODO: Update when API can accept other urls
                         value=f"https://storage.googleapis.com/{bucket_name}",
-                        uid=self.format_label(list_assets_result),
+                        uid=self.format_label_cai(list_assets_result),
                         # Cast project_number to int from float
                         scan_data=scan_data,
                     )

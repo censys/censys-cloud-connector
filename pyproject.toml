@@ -48,6 +48,7 @@ inquirerpy = "^0.3.3"
 pydantic = {extras = ["dotenv", "email"], version = "^1.9.0"}
 requests = "^2.30.0"
 rich = "^13.3.5"
+google-cloud-asset = "^3.19.1"
 
 [tool.poetry.group.dev.dependencies]
 # Debug
