@@ -1,5 +1,5 @@
 - provider: AWS
-  account_number: 111111111111
+  account_number: '111111111111'
   access_key: test-primary-access-key
   secret_key: test-primary-secret-key
   role_name: test-primary-role-name
@@ -9,5 +9,5 @@
   regions:
   - test-region
   accounts:
-  - account_number: 111111111112
-  - account_number: 111111111113
+  - account_number: '111111111112'
+  - account_number: '111111111113'

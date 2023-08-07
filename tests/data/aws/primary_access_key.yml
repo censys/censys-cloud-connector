@@ -1,5 +1,5 @@
 - provider: AWS
-  account_number: 111111111111
+  account_number: '111111111111'
   access_key: test-primary-access-key
   secret_key: test-primary-secret-key
   regions:

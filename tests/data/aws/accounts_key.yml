@@ -1,10 +1,10 @@
 - provider: AWS
-  account_number: 111111111111
+  account_number: '111111111111'
   access_key: example-access-key-1
   secret_key: example-secret-key-1
   regions:
   - test-region
   accounts:
-  - account_number: 111111111112
+  - account_number: '111111111112'
     access_key: example-access-key-2
     secret_key: example-secret-key-2
