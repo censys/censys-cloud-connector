@@ -95,7 +95,6 @@ class TestAwsSettings(BaseCase, TestCase):
         [
             (123123123123,),
             (123123123,),
-            (012312312312,),
         ]
     )
     def test_invalid_account_id_str(self, test_account_number: int):
