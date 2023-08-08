@@ -1,6 +1,7 @@
 from unittest import TestCase
 
 import pytest
+from parameterized import parameterized
 
 from censys.cloud_connectors.aws_connector.settings import (
     AwsAccount,
@@ -74,6 +75,36 @@ class TestAwsSettings(BaseCase, TestCase):
         settings = self.get_settings_file(file_name)
         setting = settings[0]  # type: ignore
         return list(setting.get_credentials())
+
+    @parameterized.expand(
+        [
+            ("12312312312"),
+            ("1231231231230"),
+        ]
+    )
+    def test_invalid_account_id_len(self, test_account_number: str):
+        with pytest.raises(
+            ValueError, match="AWS Account number must be a 12-digit string surrounded"
+        ):
+            AwsSpecificSettings(
+                account_number=test_account_number,
+                regions=["us-east-1"],
+            )
+
+    @parameterized.expand(
+        [
+            (123123123123,),
+            (123123123,),
+        ]
+    )
+    def test_invalid_account_id_str(self, test_account_number: int):
+        with pytest.raises(
+            ValueError, match="AWS Account number must be a 12-digit string surrounded"
+        ):
+            AwsSpecificSettings(
+                account_number=test_account_number,
+                regions=["us-east-1"],
+            )
 
     def test_missing_role_and_access_key(self):
         with pytest.raises(ValueError, match="Specify either access_key"):

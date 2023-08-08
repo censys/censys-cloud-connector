@@ -46,7 +46,7 @@ backoff = "^2.2.1"
 censys = "^2.2.4"
 inquirerpy = "^0.3.3"
 pydantic = {extras = ["dotenv", "email"], version = "^1.9.0"}
-PyYAML = "^6.0"
+PyYAML = "6.0.1"
 requests = "^2.30.0"
 rich = "^13.3.5"
 

@@ -16,7 +16,7 @@
   service_account_json_file: test_gcp_service_account.json
   service_account_email: test2-service-account@domain.com
 - provider: AWS
-  account_number: 123123123123
+  account_number: '123123123123'
   access_key: xxxxxxxxxxxxxxxxxxxx
   secret_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
   regions:

@@ -2,7 +2,7 @@
 
 from typing import Any, Optional
 
-from pydantic import BaseModel, ConstrainedStr, Field, root_validator
+from pydantic import BaseModel, ConstrainedStr, Field, root_validator, validator
 
 from censys.cloud_connectors.aws_connector.enums import AwsMessages, AwsResourceTypes
 from censys.cloud_connectors.common.enums import ProviderEnum
@@ -45,6 +45,27 @@ class AwsSpecificSettings(ProviderSpecificSettings):
     accounts: Optional[list[AwsAccount]] = None
 
     regions: list[str] = Field(min_items=1)
+
+    @validator("account_number", pre=True)
+    def validate_account_number(cls, value: str) -> str:
+        """Validate.
+
+        Args:
+            value (str): Account number
+
+        Raises:
+            ValueError: Invalid account number.
+
+        Returns:
+            str: Account number
+        """
+        if not isinstance(value, str):
+            raise ValueError(AwsMessages.ACCOUNT_ID_FORMAT_INVALID.value)
+        try:
+            AwsAccountNumber.validate(value)
+        except ValueError:
+            raise ValueError(AwsMessages.ACCOUNT_ID_FORMAT_INVALID.value)
+        return value
 
     @root_validator
     def validate_account_numbers(cls, values: dict[str, Any]) -> dict:

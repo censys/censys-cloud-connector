@@ -76,6 +76,7 @@ class AwsMessages(str, Enum):
     )
     PROVIDER_SETUP_DOC_LINK = "https://censys-cloud-connector.readthedocs.io/en/stable/aws/provider_setup.html"
     TEMPORARY_CREDENTIAL_ERROR = "A temporary credential has been detected which is not supported. Please read our documentation on how to configure AWS IAM."
+    ACCOUNT_ID_FORMAT_INVALID = "AWS Account number must be a 12-digit string surrounded by single quotes. (Ex: '011222333444')"
 
     def __str__(self) -> str:
         """Get the string representation of the message.
