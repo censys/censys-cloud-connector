@@ -74,6 +74,7 @@ mypy = "^0.942"
 types-PyYAML = "^6.0.5"
 types-requests = "^2.27.14"
 # Testing
+cython = "^0.29.24"
 parameterized = "^0.8.1"
 pytest = "^7.1.1"
 pytest-cov = "^3.0.0"
