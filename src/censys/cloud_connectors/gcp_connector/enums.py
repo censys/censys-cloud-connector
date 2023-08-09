@@ -61,7 +61,7 @@ class GcpApiIds(str, Enum):
     """GCP API IDs."""
 
     IAM = "iam"
-    SECURITYCENTER = "securitycenter"
+    CLOUDASSET = "cloudasset"
 
     def __str__(self) -> str:
         """Get the string representation of the enum.
@@ -99,8 +99,6 @@ class GcpRoles(str, Enum):
     SECURITY_REVIEWER = "iam.securityReviewer"
     FOLDER_VIEWER = "resourcemanager.folderViewer"
     ORGANIZATION_VIEWER = "resourcemanager.organizationViewer"
-    ASSETS_DISCOVERY_RUNNER = "securitycenter.assetsDiscoveryRunner"
-    ASSETS_VIEWER = "securitycenter.assetsViewer"
     CAI_ASSETS_VIEWER = "cloudasset.viewer"
 
     def __str__(self) -> str:
@@ -122,32 +120,13 @@ class GcpCloudAssetTypes(str, Enum):
     DNS_ZONE = "dns.googleapis.com/ManagedZone"
     STORAGE_BUCKET = "storage.googleapis.com/Bucket"
 
-    def filter(self) -> str:
-        """Get the filter for the resource type.
+    def __str__(self) -> str:
+        """Get the string representation of the resource type.
 
         Returns:
-            str: Filter.
+            str: The string representation of the resource type.
         """
-        return f'assetType: "{self.value}"'
-
-
-class GcpSecurityCenterResourceTypes(str, Enum):
-    """GCP security center resource types."""
-
-    COMPUTE_INSTANCE = "google.compute.Instance"
-    COMPUTE_ADDRESS = "google.compute.Address"
-    CONTAINER_CLUSTER = "google.container.Cluster"
-    CLOUD_SQL_INSTANCE = "google.cloud.sql.Instance"
-    DNS_ZONE = "google.cloud.dns.ManagedZone"
-    STORAGE_BUCKET = "google.cloud.storage.Bucket"
-
-    def filter(self) -> str:
-        """Get the filter for the resource type.
-
-        Returns:
-            str: Filter.
-        """
-        return f'securityCenterProperties.resource_type : "{self.value}"'
+        return self.value
 
 
 class GcpMessages(str, Enum):

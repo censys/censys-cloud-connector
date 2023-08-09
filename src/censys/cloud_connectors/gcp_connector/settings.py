@@ -7,7 +7,7 @@ from pydantic import EmailStr, Field
 from censys.cloud_connectors.common.enums import ProviderEnum
 from censys.cloud_connectors.common.settings import ProviderSpecificSettings
 
-from .enums import GcpSecurityCenterResourceTypes
+from .enums import GcpCloudAssetTypes
 
 
 class GcpSpecificSettings(ProviderSpecificSettings):
@@ -15,7 +15,7 @@ class GcpSpecificSettings(ProviderSpecificSettings):
 
     provider = ProviderEnum.GCP
 
-    ignore: Optional[list[GcpSecurityCenterResourceTypes]] = None
+    ignore: Optional[list[GcpCloudAssetTypes]] = None
 
     organization_id: int = Field(
         gt=1,

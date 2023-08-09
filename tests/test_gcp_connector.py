@@ -3,20 +3,22 @@ from unittest import TestCase
 from unittest.mock import MagicMock
 
 import pytest
+from google.cloud.asset_v1.services.asset_service.pagers import ListAssetsPager
+
+# from censys.cloud_connectors.common.seed import Seed
+from google.cloud.asset_v1.types import Asset, ContentType, ResourceSearchResult
 from parameterized import parameterized
 
 from censys.cloud_connectors.common.enums import ProviderEnum
-
-# from censys.cloud_connectors.common.seed import Seed
 from censys.cloud_connectors.common.settings import Settings
 from censys.cloud_connectors.gcp_connector.connector import GcpCloudConnector
-from censys.cloud_connectors.gcp_connector.enums import GcpSecurityCenterResourceTypes
+from censys.cloud_connectors.gcp_connector.enums import GcpCloudAssetTypes
 from censys.cloud_connectors.gcp_connector.settings import GcpSpecificSettings
 from tests.base_connector_case import BaseConnectorCase
 
 failed_import = False
 try:
-    from google.cloud.securitycenter_v1.types import ListAssetsResponse
+    from google.cloud.asset_v1.types import ListAssetsResponse
 except ImportError:
     failed_import = True
 
@@ -55,18 +57,27 @@ class TestGcpConnector(BaseConnectorCase, TestCase):
     #     for cloud_asset_key in list(self.connector.cloud_assets.keys()):
     #         del self.connector.cloud_assets[cloud_asset_key]
 
-    def mock_list_assets_result(
-        self, data: dict
-    ) -> ListAssetsResponse.ListAssetsResult:
-        """Populate the ListAssetsResult object.
+    def mock_asset(self, data: dict) -> Asset:
+        """Populate the Asset object.
 
         Args:
             data (dict): The data to mock.
 
         Returns:
-            ListAssetsResponse.ListAssetsResult: The test ListAssetsResult object.
+            Asset: The test Asset object.
         """
-        return ListAssetsResponse.ListAssetsResult.from_json(json.dumps(data))
+        return Asset.from_json(json.dumps(data))
+
+    def mock_asset_bucket(self, data: dict) -> ResourceSearchResult:
+        """Populate the Asset object.
+
+        Args:
+            data (dict): The data to mock.
+
+        Returns:
+            ResourceSearchResult: The test ResourceSearchResult object.
+        """
+        return ResourceSearchResult.from_json(json.dumps(data))
 
     def mock_healthcheck(self) -> MagicMock:
         """Mock the healthcheck.
@@ -78,11 +89,6 @@ class TestGcpConnector(BaseConnectorCase, TestCase):
             "censys.cloud_connectors.gcp_connector.connector.Healthcheck"
         )
 
-    # def assert_seeds_with_values(self, seeds: list[Seed], values: list[str]):
-    #     assert len(seeds) == len(values)
-    #     for seed in seeds:
-    #         assert seed.value in values
-
     def test_init(self):
         assert self.connector.provider == ProviderEnum.GCP
         assert self.connector.label_prefix == "GCP: "
@@ -93,8 +99,8 @@ class TestGcpConnector(BaseConnectorCase, TestCase):
         mock_credentials = self.mocker.patch(
             "censys.cloud_connectors.gcp_connector.connector.service_account.Credentials.from_service_account_file",
         )
-        mock_sc_client = self.mocker.patch(
-            "censys.cloud_connectors.gcp_connector.connector.securitycenter_v1.SecurityCenterClient"
+        mock_cai_client = self.mocker.patch(
+            "censys.cloud_connectors.gcp_connector.connector.asset_v1.AssetServiceClient"
         )
         mock_scan = self.mocker.patch.object(
             self.connector.__class__.__bases__[0], "scan"
@@ -106,7 +112,7 @@ class TestGcpConnector(BaseConnectorCase, TestCase):
 
         # Assertions
         mock_credentials.assert_called_once()
-        mock_sc_client.assert_called_once()
+        mock_cai_client.assert_called_once()
         mock_scan.assert_called_once()
         self.assert_healthcheck_called(mock_healthcheck)
 
@@ -133,8 +139,8 @@ class TestGcpConnector(BaseConnectorCase, TestCase):
 
     def test_scan_all(self):
         # Test data
-        test_creds = self.data["TEST_CREDS"].copy()
-        second_test_creds = test_creds.copy()
+        test_creds = self.data["TEST_CREDS"]
+        second_test_creds = test_creds
         second_test_creds["organization_id"] = 9876543210
         test_gcp_settings = [
             GcpSpecificSettings.from_dict(test_creds),
@@ -160,202 +166,239 @@ class TestGcpConnector(BaseConnectorCase, TestCase):
             ("TEST_CONTAINER_CLUSTER"),
             ("TEST_CLOUD_SQL_INSTANCE"),
             ("TEST_DNS_ZONE"),
-            ("TEST_STORAGE_BUCKET"),
         ]
     )
     def test_format_label(self, data_key: str):
         # Test data
-        test_result = self.mock_list_assets_result(self.data[data_key])
-
+        test_asset = self.mock_asset(self.data[data_key])
         # Actual call
-        label = self.connector.format_label(test_result)
+        label = self.connector.format_label(test_asset.name)
 
         # Assertions
         assert label == f"GCP: {self.connector.organization_id}/censys-cc-test-project"
 
+    @parameterized.expand(
+        [
+            ("TEST_STORAGE_BUCKET"),
+        ]
+    )
+    def test_parse_project_name_buckets(self, data_key: str):
+        # Test data
+        test_asset = self.mock_asset_bucket(self.data[data_key])
+        # Actual call
+        project_name = self.connector.parse_project_name_buckets(
+            test_asset.parent_full_resource_name
+        )["project"]
+
+        # Assertions
+        assert project_name == "censys-cc-test-project"
+
+    @parameterized.expand(
+        [
+            ("TEST_COMPUTE_ADDRESS"),
+            ("TEST_CONTAINER_CLUSTER"),
+            ("TEST_CLOUD_SQL_INSTANCE"),
+            ("TEST_DNS_ZONE"),
+        ]
+    )
+    def test_parse_project_name_seeds(self, data_key: str):
+        # Test data
+        test_asset = self.mock_asset(self.data[data_key])
+        # Actual call
+        project_name = self.connector.parse_project_name_seeds(test_asset.name)[
+            "project"
+        ]
+
+        # Assertions
+        assert project_name == "censys-cc-test-project"
+
     @parameterized.expand([("test-filter")])
     def test_list_assets(self, filter: str):
         # Mock
-        mock_sc_client = self.mocker.patch(
-            "censys.cloud_connectors.gcp_connector.connector.securitycenter_v1.SecurityCenterClient"
+        mock_cai_client = self.mocker.patch(
+            "censys.cloud_connectors.gcp_connector.connector.asset_v1.AssetServiceClient"
         )
-        self.connector.security_center_client = mock_sc_client.return_value
+        self.connector.cloud_asset_client = mock_cai_client.return_value
 
         # Actual call
         self.connector.list_assets(filter)
 
         # Assertions
-        mock_sc_client.return_value.list_assets.assert_called_once_with(
+        mock_cai_client.return_value.list_assets.assert_called_once_with(
             request={
                 "parent": f"organizations/{self.connector.organization_id}",
-                "filter": filter,
+                "content_type": ContentType.RESOURCE,
+                "asset_types": [filter],
             }
         )
 
     def test_get_compute_instances(self):
         self.skipTest("Test data is not available yet")
-        # Test data
-        test_list_assets_results = []
-        test_seed_values = []
-        for i in range(3):
-            test_asset_result = self.data["TEST_COMPUTE_INSTANCE"].copy()
-            # network_instances = test_asset_result["asset"]["resourceProperties"]["networkInterfaces"]
-            # TODO: Implement tests
-            ip_address = test_asset_result["asset"]["resourceProperties"]["address"]
-            ip_address = ip_address[:-1] + str(i)
-            test_asset_result["asset"]["resourceProperties"]["address"] = ip_address
-            test_seed_values.append(ip_address)
-            test_list_assets_results.append(
-                self.mock_list_assets_result(test_asset_result)
-            )
-        test_label = self.connector.format_label(test_list_assets_results[0])
+        # # Test data
+        # test_assets = []
+        # test_seed_values = []
+        # for i in range(3):
+        #     test_asset = self.data["TEST_COMPUTE_INSTANCE"]
+        #     network_interfaces = test_asset["resource"]["data"]["networkInterfaces"]
+        #     access_configs = network_interfaces[0]["accessConfigs"]
+        #     # TODO: Implement tests
+        #     ip_address = test_asset["asset"]["resourceProperties"]["address"]
+        #     ip_address = ip_address[:-1] + str(i)
+        #     test_asset["resource"]["data"]["address"] = ip_address
+        #     test_seed_values.append(ip_address)
+        #     test_assets.append(self.mock_asset(test_asset))
 
-        # Mock
-        mock_list = self.mocker.patch.object(
-            self.connector, "list_assets", return_value=test_list_assets_results
-        )
+        #     private_cluster_config = json.loads(
+        #         test_asset["resource"]["data"]["privateClusterConfig"]
+        #     )
+        #     ip_address = private_cluster_config["publicEndpoint"]
+        #     ip_address = ip_address[:-1] + str(i)
+        #     private_cluster_config["publicEndpoint"] = ip_address
+        #     test_asset["resource"]["data"]["privateClusterConfig"] = json.dumps(
+        #         private_cluster_config
+        #     )
+        # test_label = self.connector.format_label_cai(test_assets[0])
 
-        # Actual call
-        self.connector.get_compute_instances()
+        # # Mock
+        # mock_list = self.mocker.patch.object(
+        #     self.connector, "list_assets_cai", return_value=test_assets
+        # )
 
-        # Assertions
-        mock_list.assert_called_once_with(
-            filter=GcpSecurityCenterResourceTypes.COMPUTE_INSTANCE.filter()
-        )
-        self.assert_seeds_with_values(
-            self.connector.seeds[test_label], test_seed_values
-        )
+        # # Actual call
+        # self.connector.get_compute_instances()
+
+        # # Assertions
+        # mock_list.assert_called_once_with(
+        #     filter=GcpCloudAssetTypes.COMPUTE_INSTANCE.filter()
+        # )
+        # self.assert_seeds_with_values(
+        #     self.connector.seeds[test_label], test_seed_values
+        # )
 
     def test_get_compute_addresses(self):
         # Test data
-        test_list_assets_results = []
+        test_assets = []
         test_seed_values = []
         for i in range(3):
-            test_asset_result = self.data["TEST_COMPUTE_ADDRESS"].copy()
-            ip_address = test_asset_result["asset"]["resourceProperties"]["address"]
+            test_asset = self.data["TEST_COMPUTE_ADDRESS"]
+            ip_address = test_asset["resource"]["data"]["address"]
             ip_address = ip_address[:-1] + str(i)
-            test_asset_result["asset"]["resourceProperties"]["address"] = ip_address
+            test_asset["resource"]["data"]["address"] = ip_address
             test_seed_values.append(ip_address)
-            test_list_assets_results.append(
-                self.mock_list_assets_result(test_asset_result)
-            )
-        test_label = self.connector.format_label(test_list_assets_results[0])
+            test_assets.append(self.mock_asset(test_asset))
+        test_label = self.connector.format_label(test_asset["name"])
 
         # Mock
+        mock_pager = ListAssetsPager(
+            response=ListAssetsResponse(assets=test_assets), request={}, method=None
+        )
         mock_list = self.mocker.patch.object(
-            self.connector, "list_assets", return_value=test_list_assets_results
+            self.connector, "list_assets_cai", return_value=mock_pager
         )
 
         # Actual call
         self.connector.get_compute_addresses()
 
         # Assertions
-        mock_list.assert_called_once_with(
-            filter=GcpSecurityCenterResourceTypes.COMPUTE_ADDRESS.filter()
-        )
+        mock_list.assert_called_once_with(filter=GcpCloudAssetTypes.COMPUTE_ADDRESS)
         self.assert_seeds_with_values(
             self.connector.seeds[test_label], test_seed_values
         )
 
     def test_get_container_clusters(self):
         # Test data
-        test_list_assets_results = []
+        test_assets = []
         test_seed_values = []
         for i in range(3):
-            test_asset_result = self.data["TEST_CONTAINER_CLUSTER"].copy()
-            private_cluster_config = json.loads(
-                test_asset_result["asset"]["resourceProperties"]["privateClusterConfig"]
-            )
+            test_asset = self.data["TEST_CONTAINER_CLUSTER"]
+            private_cluster_config = test_asset["resource"]["data"][
+                "privateClusterConfig"
+            ]
             ip_address = private_cluster_config["publicEndpoint"]
             ip_address = ip_address[:-1] + str(i)
             private_cluster_config["publicEndpoint"] = ip_address
-            test_asset_result["asset"]["resourceProperties"][
+            test_asset["resource"]["data"][
                 "privateClusterConfig"
-            ] = json.dumps(private_cluster_config)
+            ] = private_cluster_config
             test_seed_values.append(ip_address)
-            test_list_assets_results.append(
-                self.mock_list_assets_result(test_asset_result)
-            )
-        test_label = self.connector.format_label(test_list_assets_results[0])
+            test_assets.append(self.mock_asset(test_asset))
+        test_label = self.connector.format_label(test_asset["name"])
 
         # Mock
+        mock_pager = ListAssetsPager(
+            response=ListAssetsResponse(assets=test_assets), request={}, method=None
+        )
         mock_list = self.mocker.patch.object(
-            self.connector, "list_assets", return_value=test_list_assets_results
+            self.connector, "list_assets_cai", return_value=mock_pager
         )
 
         # Actual call
         self.connector.get_container_clusters()
 
         # Assertions
-        mock_list.assert_called_once_with(
-            filter=GcpSecurityCenterResourceTypes.CONTAINER_CLUSTER.filter()
-        )
+        mock_list.assert_called_once_with(filter=GcpCloudAssetTypes.CONTAINER_CLUSTER)
         self.assert_seeds_with_values(
             self.connector.seeds[test_label], test_seed_values
         )
 
     def test_get_cloud_sql_instances(self):
         # Test data
-        test_list_assets_results = []
+        test_assets = []
         test_seed_values = []
         for i in range(1, 4):
-            test_asset_result = self.data["TEST_CLOUD_SQL_INSTANCE"].copy()
+            test_asset = self.data["TEST_CLOUD_SQL_INSTANCE"]
             ip_addresses = []
             # populate ip_addresses.ipAddress with i number of ips
             for j in range(i):
                 ip_address = f"195.111.{i}.{j}"
                 ip_addresses.append({"ipAddress": ip_address})
                 test_seed_values.append(ip_address)
-            test_asset_result["asset"]["resourceProperties"][
-                "ipAddresses"
-            ] = json.dumps(ip_addresses)
-            test_list_assets_results.append(
-                self.mock_list_assets_result(test_asset_result)
-            )
-        test_label = self.connector.format_label(test_list_assets_results[0])
+            test_asset["resource"]["data"]["ipAddresses"] = ip_addresses
+            test_assets.append(self.mock_asset(test_asset))
+        test_label = self.connector.format_label(test_asset["name"])
 
         # Mock
+        mock_pager = ListAssetsPager(
+            response=ListAssetsResponse(assets=test_assets), request={}, method=None
+        )
         mock_list = self.mocker.patch.object(
-            self.connector, "list_assets", return_value=test_list_assets_results
+            self.connector, "list_assets_cai", return_value=mock_pager
         )
 
         # Actual call
         self.connector.get_cloud_sql_instances()
 
         # Assertions
-        mock_list.assert_called_once_with(
-            filter=GcpSecurityCenterResourceTypes.CLOUD_SQL_INSTANCE.filter()
-        )
+        mock_list.assert_called_once_with(filter=GcpCloudAssetTypes.CLOUD_SQL_INSTANCE)
         self.assert_seeds_with_values(
             self.connector.seeds[test_label], test_seed_values
         )
 
     def test_get_dns_records(self):
         # Test data
-        test_list_assets_results = []
+        test_assets = []
         test_seed_values = []
         for i in range(3):
-            test_asset_result = self.data["TEST_DNS_ZONE"].copy()
+            test_asset = self.data["TEST_DNS_ZONE"]
             domain = str(i) + "." + "censys.io"
-            test_asset_result["asset"]["resourceProperties"]["dnsName"] = domain + "."
+            test_asset["resource"]["data"]["dnsName"] = domain + "."
             test_seed_values.append(domain)
-            test_list_assets_results.append(
-                self.mock_list_assets_result(test_asset_result)
-            )
-        test_label = self.connector.format_label(test_list_assets_results[0])
+            test_assets.append(self.mock_asset(test_asset))
+        test_label = self.connector.format_label(test_asset["name"])
 
         # Mock
+        mock_pager = ListAssetsPager(
+            response=ListAssetsResponse(assets=test_assets), request={}, method=None
+        )
         mock_list = self.mocker.patch.object(
-            self.connector, "list_assets", return_value=test_list_assets_results
+            self.connector, "list_assets_cai", return_value=mock_pager
         )
 
         # Actual call
         self.connector.get_dns_records()
 
         # Assertions
-        mock_list.assert_called_once_with(
-            filter=GcpSecurityCenterResourceTypes.DNS_ZONE.filter()
-        )
+        mock_list.assert_called_once_with(filter=GcpCloudAssetTypes.DNS_ZONE)
         self.assert_seeds_with_values(
             self.connector.seeds[test_label], test_seed_values
         )
@@ -367,11 +410,11 @@ class TestGcpConnector(BaseConnectorCase, TestCase):
         )
 
         seed_scanners = {
-            GcpSecurityCenterResourceTypes.COMPUTE_INSTANCE: self.mocker.Mock(),
-            GcpSecurityCenterResourceTypes.COMPUTE_ADDRESS: self.mocker.Mock(),
-            GcpSecurityCenterResourceTypes.CONTAINER_CLUSTER: self.mocker.Mock(),
-            GcpSecurityCenterResourceTypes.CLOUD_SQL_INSTANCE: self.mocker.Mock(),
-            GcpSecurityCenterResourceTypes.DNS_ZONE: self.mocker.Mock(),
+            GcpCloudAssetTypes.COMPUTE_INSTANCE: self.mocker.Mock(),
+            GcpCloudAssetTypes.COMPUTE_ADDRESS: self.mocker.Mock(),
+            GcpCloudAssetTypes.CONTAINER_CLUSTER: self.mocker.Mock(),
+            GcpCloudAssetTypes.CLOUD_SQL_INSTANCE: self.mocker.Mock(),
+            GcpCloudAssetTypes.DNS_ZONE: self.mocker.Mock(),
         }
 
         # Mock
@@ -395,11 +438,11 @@ class TestGcpConnector(BaseConnectorCase, TestCase):
         )
 
         seed_scanners = {
-            GcpSecurityCenterResourceTypes.COMPUTE_INSTANCE: self.mocker.Mock(),
-            GcpSecurityCenterResourceTypes.COMPUTE_ADDRESS: self.mocker.Mock(),
-            GcpSecurityCenterResourceTypes.CONTAINER_CLUSTER: self.mocker.Mock(),
-            GcpSecurityCenterResourceTypes.CLOUD_SQL_INSTANCE: self.mocker.Mock(),
-            GcpSecurityCenterResourceTypes.DNS_ZONE: self.mocker.Mock(),
+            GcpCloudAssetTypes.COMPUTE_INSTANCE: self.mocker.Mock(),
+            GcpCloudAssetTypes.COMPUTE_ADDRESS: self.mocker.Mock(),
+            GcpCloudAssetTypes.CONTAINER_CLUSTER: self.mocker.Mock(),
+            GcpCloudAssetTypes.CLOUD_SQL_INSTANCE: self.mocker.Mock(),
+            GcpCloudAssetTypes.DNS_ZONE: self.mocker.Mock(),
         }
 
         # Mock
@@ -421,32 +464,32 @@ class TestGcpConnector(BaseConnectorCase, TestCase):
 
     def test_get_storage_buckets(self):
         # Test data
-        test_list_assets_results = []
+        test_assets = []
         test_buckets = []
         for i in range(3):
-            test_asset_result = self.data["TEST_STORAGE_BUCKET"].copy()
+            test_asset = self.data["TEST_STORAGE_BUCKET"]
             bucket_name = "bucket" + str(i)
-            test_asset_result["asset"]["resourceProperties"]["id"] = bucket_name
+            test_asset["versionedResources"][0]["resource"]["id"] = bucket_name
             test_buckets.append(bucket_name)
-            test_list_assets_results.append(
-                self.mock_list_assets_result(test_asset_result)
+            test_assets.append(self.mock_asset_bucket(test_asset))
+            test_uid = self.connector.format_uid(
+                self.connector.parse_project_name_buckets(
+                    test_asset["parentFullResourceName"]
+                )["project"]
             )
-        test_label = self.connector.format_label(test_list_assets_results[0])
 
         # Mock
-        mock_list = self.mocker.patch.object(
-            self.connector, "list_assets", return_value=test_list_assets_results
+        mock_search = self.mocker.patch.object(
+            self.connector, "search_all_resources", return_value=test_assets
         )
 
         # Actual call
         self.connector.get_storage_buckets()
 
         # Assertions
-        mock_list.assert_called_once_with(
-            filter=GcpSecurityCenterResourceTypes.STORAGE_BUCKET.filter()
-        )
-        assert len(self.connector.cloud_assets[test_label]) == len(test_buckets)
-        for bucket in self.connector.cloud_assets[test_label]:
+        mock_search.assert_called_once_with(filter=GcpCloudAssetTypes.STORAGE_BUCKET)
+        assert len(self.connector.cloud_assets[test_uid]) == len(test_buckets)
+        for bucket in self.connector.cloud_assets[test_uid]:
             assert "https://storage.googleapis.com/" in bucket.value
             assert (
                 bucket.value.removeprefix("https://storage.googleapis.com/")
@@ -460,7 +503,7 @@ class TestGcpConnector(BaseConnectorCase, TestCase):
             self.data["TEST_CREDS"]
         )
         cloud_asset_scanners = {
-            GcpSecurityCenterResourceTypes.STORAGE_BUCKET: self.mocker.Mock(),
+            GcpCloudAssetTypes.STORAGE_BUCKET: self.mocker.Mock(),
         }
 
         # Mock

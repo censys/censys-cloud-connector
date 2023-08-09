@@ -644,7 +644,7 @@ class TestGcpProviderSetup(BaseCase, TestCase):
             "censys.cloud_connectors.gcp_connector.connector.service_account.Credentials.from_service_account_file"
         )
         mock_list_assets = self.mocker.patch(
-            "censys.cloud_connectors.gcp_connector.connector.securitycenter_v1.SecurityCenterClient.list_assets"
+            "censys.cloud_connectors.gcp_connector.connector.asset_v1.AssetServiceClient.list_assets"
         )
         self.setup_cli.verify_service_account_permissions(test_settings)
 
