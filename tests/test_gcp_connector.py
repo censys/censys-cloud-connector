@@ -293,7 +293,7 @@ class TestGcpConnector(BaseConnectorCase, TestCase):
             response=ListAssetsResponse(assets=test_assets), request={}, method=None
         )
         mock_list = self.mocker.patch.object(
-            self.connector, "list_assets_cai", return_value=mock_pager
+            self.connector, "list_assets", return_value=mock_pager
         )
 
         # Actual call
@@ -329,7 +329,7 @@ class TestGcpConnector(BaseConnectorCase, TestCase):
             response=ListAssetsResponse(assets=test_assets), request={}, method=None
         )
         mock_list = self.mocker.patch.object(
-            self.connector, "list_assets_cai", return_value=mock_pager
+            self.connector, "list_assets", return_value=mock_pager
         )
 
         # Actual call
@@ -362,7 +362,7 @@ class TestGcpConnector(BaseConnectorCase, TestCase):
             response=ListAssetsResponse(assets=test_assets), request={}, method=None
         )
         mock_list = self.mocker.patch.object(
-            self.connector, "list_assets_cai", return_value=mock_pager
+            self.connector, "list_assets", return_value=mock_pager
         )
 
         # Actual call
@@ -391,7 +391,7 @@ class TestGcpConnector(BaseConnectorCase, TestCase):
             response=ListAssetsResponse(assets=test_assets), request={}, method=None
         )
         mock_list = self.mocker.patch.object(
-            self.connector, "list_assets_cai", return_value=mock_pager
+            self.connector, "list_assets", return_value=mock_pager
         )
 
         # Actual call
