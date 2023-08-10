@@ -1,6 +1,7 @@
 """AWS Cloud Connector."""
 import contextlib
 from collections.abc import Generator, Sequence
+from multiprocessing import Pool
 from typing import Any, Optional, TypeVar, Union
 
 import boto3
@@ -43,6 +44,7 @@ T = TypeVar("T", bound="botocore.client.BaseClient")
 
 VALID_RECORD_TYPES = ["A", "CNAME"]
 IGNORED_TAGS = ["censys-cloud-connector-ignore"]
+MAX_PROC = 4  # TODO: .env settings
 
 
 class AwsCloudConnector(CloudConnector):
@@ -92,12 +94,14 @@ class AwsCloudConnector(CloudConnector):
         self.ignored_tags = []
         self.global_ignored_tags: set[str] = set(IGNORED_TAGS)
 
-    def scan(self):
+    def scan(self, **kwargs):
         """Scan AWS."""
+        credential = kwargs.get("credential")
+        region = kwargs.get("region")
         self.logger.info(
-            f"Scanning AWS account {self.account_number} in region {self.region}"
+            f"Scanning AWS account {credential['account_number']} in region {region}"
         )
-        super().scan()
+        return super().scan(**kwargs)
 
     def scan_all(self):
         """Scan all configured AWS provider accounts."""
@@ -105,13 +109,17 @@ class AwsCloudConnector(CloudConnector):
             tuple, AwsSpecificSettings
         ] = self.settings.providers.get(self.provider, {})
 
+        pool = Pool(processes=MAX_PROC)
+
         for provider_setting in provider_settings.values():
             self.provider_settings = provider_setting
 
             for credential in self.provider_settings.get_credentials():
-                self.credential = credential
-                self.account_number = credential["account_number"]
-                self.ignored_tags = self.get_ignored_tags(credential["ignore_tags"])
+                # self.credential = credential
+                # self.account_number = credential["account_number"]
+                self.ignored_tags = self.get_ignored_tags(
+                    credential["ignore_tags"]
+                )  # TODO: this wont work if using a pool (no self!)
 
                 for region in self.provider_settings.regions:
                     self.temp_sts_cred = None
@@ -122,18 +130,42 @@ class AwsCloudConnector(CloudConnector):
                             provider_setting,
                             provider={
                                 "region": region,
-                                "account_number": self.account_number,
+                                "account_number": credential[
+                                    "account_number"
+                                ],  # self.account_number,
                             },
                         ):
-                            self.scan()
+                            self.logger.info(
+                                "starting pool account:%s region:%s",
+                                credential["account_number"],
+                                region,
+                            )
+                            # currently doesn't work because `self.` references clobber each other
+                            # example: region gets unset after first iteration and program crashes
+                            pool.apply_async(
+                                self.scan,
+                                kwds={
+                                    "credential": credential,
+                                    "region": region,
+                                },
+                            )
+                            # self.scan(**kwargs)
                     except Exception as e:
                         self.logger.error(
-                            f"Unable to scan account {self.account_number} in region {self.region}. Error: {e}"
+                            f"Unable to scan account {credential['account_number']} in region {region}. Error: {e}"
                         )
                         self.dispatch_event(EventTypeEnum.SCAN_FAILED, exception=e)
                     self.region = None
 
-    def format_label(self, service: AwsServices, region: Optional[str] = None) -> str:
+        pool.close()
+        pool.join()
+
+    def format_label(
+        self,
+        service: AwsServices,
+        region: Optional[str] = None,
+        account_number: Optional[str] = None,
+    ) -> str:
         """Format AWS label.
 
         Args:
@@ -143,9 +175,11 @@ class AwsCloudConnector(CloudConnector):
         Returns:
             str: Formatted label.
         """
+        # TODO: s/self.account_number/account_number <- use param
+        account = account_number or self.account_number
         region = region or self.region
         region_label = f"/{region}" if region != "" else ""
-        return f"AWS: {service} - {self.account_number}{region_label}"
+        return f"AWS: {service} - {account}{region_label}"
 
     def credentials(self) -> dict:
         """Generate required credentials for AWS.
@@ -188,6 +222,9 @@ class AwsCloudConnector(CloudConnector):
         """
         try:
             credentials = credentials or self.credentials()
+            credentials[
+                "endpoint_url"
+            ] = "http://localhost.localstack.cloud:4566"  # TODO: env settings
             if credentials.get("aws_access_key_id"):
                 self.logger.debug(f"AWS Service {service} using access key credentials")
                 return boto3.client(service, **credentials)  # type: ignore
@@ -300,6 +337,7 @@ class AwsCloudConnector(CloudConnector):
         role_session = (
             self.credential["role_session_name"] or AwsDefaults.ROLE_SESSION_NAME.value
         )
+        # TODO: s/self.account_number/cred[account_number] <- pass in account number
         role: dict[str, Any] = {
             "RoleArn": f"arn:aws:iam::{self.account_number}:role/{role_name}",
             "RoleSessionName": role_session,
@@ -393,7 +431,12 @@ class AwsCloudConnector(CloudConnector):
         label = self.format_label(SeedLabel.NETWORK_INTERFACE)
 
         interfaces = self.describe_network_interfaces()
-        instance_tags, instance_tag_sets = self.get_resource_tags()
+        (
+            instance_tags,
+            instance_tag_sets,
+        ) = (
+            self.get_resource_tags()
+        )  # <- this looks like a bug not passing in a resource type
 
         for ip_address, record in interfaces.items():
             instance_id = record["InstanceId"]
@@ -565,10 +608,25 @@ class AwsCloudConnector(CloudConnector):
             .build_full_result()
         )
 
-    def get_route53_zones(self):
+    def get_route53_zones(self, **kwargs):
         """Retrieve Route 53 Zones and emit seeds."""
-        client: Route53Client = self.get_aws_client(service=AwsServices.ROUTE53_ZONES)
-        label = self.format_label(SeedLabel.ROUTE53_ZONES)
+        # TODO: how to pass in cred,region?
+        credential = kwargs["credential"]
+        region = kwargs["region"]
+
+        botocred = self.boto_cred(
+            region_name=region,
+            access_key=credential["access_key"],
+            secret_key=credential["secret_key"],
+        )
+        client: Route53Client = self.get_aws_client(
+            service=AwsServices.ROUTE53_ZONES, credentials=botocred
+        )
+        label = self.format_label(
+            SeedLabel.ROUTE53_ZONES,
+            region=region,
+            account_number=credential["account_number"],
+        )
 
         try:
             zones = self._get_route53_zone_hosts(client)
@@ -585,8 +643,9 @@ class AwsCloudConnector(CloudConnector):
                 id = zone.get("Id")
                 resource_sets = self._get_route53_zone_resources(client, id)
                 for resource_set in resource_sets.get("ResourceRecordSets", []):
-                    if resource_set.get("Type") not in VALID_RECORD_TYPES:
-                        continue
+                    # Note: localstack creates 2 entries per hosted zone. (remember this if stats are "off")
+                    # if resource_set.get("Type") not in VALID_RECORD_TYPES:
+                    # continue  # turned off so localstack things show up
 
                     domain_name = resource_set.get("Name").rstrip(".")
                     with SuppressValidationError():
@@ -648,26 +707,42 @@ class AwsCloudConnector(CloudConnector):
         location = client.get_bucket_location(Bucket=bucket)["LocationConstraint"]
         return location or "us-east-1"
 
-    def get_s3_instances(self):
+    def get_s3_instances(self, **kwargs):
         """Retrieve Simple Storage Service data and emit seeds."""
-        client: S3Client = self.get_aws_client(service=AwsServices.STORAGE_BUCKET)
+        # TODO: how to pass in cred,region?
+        credential = kwargs["credential"]
+        region = kwargs["region"]
+
+        botocred = self.boto_cred(
+            region_name=region,
+            access_key=credential["access_key"],
+            secret_key=credential["secret_key"],
+        )
+        client: S3Client = self.get_aws_client(
+            service=AwsServices.STORAGE_BUCKET, credentials=botocred
+        )
 
         try:
             data = client.list_buckets().get("Buckets", [])
+
             for bucket in data:
                 bucket_name = bucket.get("Name")
                 if not bucket_name:
                     continue
 
-                region = self.get_s3_region(client, bucket_name)
-                label = self.format_label(SeedLabel.STORAGE_BUCKET, region)
+                lookup_region = self.get_s3_region(client, bucket_name)
+                label = self.format_label(
+                    SeedLabel.STORAGE_BUCKET,
+                    region=region,
+                    account_number=credential["account_number"],
+                )
 
                 with SuppressValidationError():
                     bucket_asset = AwsStorageBucketAsset(
-                        value=AwsStorageBucketAsset.url(bucket_name, region),
+                        value=AwsStorageBucketAsset.url(bucket_name, lookup_region),
                         uid=label,
                         scan_data={
-                            "accountNumber": self.account_number,
+                            "accountNumber": credential["account_number"],
                         },
                     )
                     self.add_cloud_asset(

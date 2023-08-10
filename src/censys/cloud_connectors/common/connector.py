@@ -1,4 +1,5 @@
 """Base class for all cloud connectors."""
+import time
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from enum import Enum
@@ -67,7 +68,8 @@ class CloudConnector(ABC):
         self.cloud_assets = defaultdict(set)
         self.current_service = None
 
-    def get_seeds(self) -> None:
+    # TODO: how to pass in cred,region? (each scanner will have diff things to pass in)
+    def get_seeds(self, **kwargs) -> None:
         """Gather seeds."""
         for seed_type, seed_scanner in self.seed_scanners.items():
             self.current_service = seed_type
@@ -78,10 +80,11 @@ class CloudConnector(ABC):
                 self.logger.debug(f"Skipping {seed_type}")
                 continue
             self.logger.debug(f"Scanning {seed_type}")
-            seed_scanner()
+            seed_scanner(**kwargs)
         self.current_service = None
 
-    def get_cloud_assets(self) -> None:
+    # TODO: how to pass in cred,region? (each scanner will have diff things to pass in)
+    def get_cloud_assets(self, **kwargs) -> None:
         """Gather cloud assets."""
         for cloud_asset_type, cloud_asset_scanner in self.cloud_asset_scanners.items():
             self.current_service = cloud_asset_type
@@ -92,7 +95,7 @@ class CloudConnector(ABC):
                 self.logger.debug(f"Skipping {cloud_asset_type}")
                 continue
             self.logger.debug(f"Scanning {cloud_asset_type}")
-            cloud_asset_scanner()
+            cloud_asset_scanner(**kwargs)
         self.current_service = None
 
     def get_event_context(
@@ -113,6 +116,7 @@ class CloudConnector(ABC):
             "event_type": event_type,
             "connector": self,
             "provider": self.provider,
+            # service=None, this uses the self.current_service for the value
             "service": service or self.current_service,
         }
 
@@ -205,12 +209,13 @@ class CloudConnector(ABC):
             self.submit_cloud_assets()
         self.clear()
 
-    def scan(self):
+    # TODO: how to pass in cred,region? (each scanner will have diff things to pass in)
+    def scan(self, **kwargs):
         """Scan the seeds and cloud assets."""
         self.logger.info("Gathering seeds and assets...")
         self.dispatch_event(EventTypeEnum.SCAN_STARTED)
-        self.get_seeds()
-        self.get_cloud_assets()
+        self.get_seeds(**kwargs)
+        self.get_cloud_assets(**kwargs)
         self.submit()
         self.dispatch_event(EventTypeEnum.SCAN_FINISHED)
 
