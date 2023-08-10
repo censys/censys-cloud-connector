@@ -44,7 +44,6 @@ T = TypeVar("T", bound="botocore.client.BaseClient")
 
 VALID_RECORD_TYPES = ["A", "CNAME"]
 IGNORED_TAGS = ["censys-cloud-connector-ignore"]
-MAX_PROC = 4  # TODO: .env settings
 
 
 class AwsCloudConnector(CloudConnector):
@@ -71,6 +70,7 @@ class AwsCloudConnector(CloudConnector):
     # Current set of ignored tags (combined set of user settings + overall settings)
     ignored_tags: list[str]
     global_ignored_tags: set[str]
+    pool: Pool
 
     def __init__(self, settings: Settings):
         """Initialize AWS Cloud Connectors.
@@ -93,6 +93,7 @@ class AwsCloudConnector(CloudConnector):
 
         self.ignored_tags = []
         self.global_ignored_tags: set[str] = set(IGNORED_TAGS)
+        self.pool = Pool(processes=settings.scan_concurrency)
 
     def scan_seeds(self, **kwargs):
         """Scan AWS for seeds."""
@@ -114,7 +115,9 @@ class AwsCloudConnector(CloudConnector):
             tuple, AwsSpecificSettings
         ] = self.settings.providers.get(self.provider, {})
 
-        pool = Pool(processes=MAX_PROC)
+        self.logger.debug(
+            f"scanning AWS using {self.settings.scan_concurrency} processes"
+        )
 
         for provider_setting in provider_settings.values():
             self.provider_settings = provider_setting
@@ -140,7 +143,7 @@ class AwsCloudConnector(CloudConnector):
                                 ],  # self.account_number,
                             },
                         ):
-                            self.logger.info(
+                            self.logger.debug(
                                 "starting pool account:%s region:%s",
                                 credential["account_number"],
                                 region,
@@ -251,9 +254,10 @@ class AwsCloudConnector(CloudConnector):
         """
         try:
             credentials = credentials or self.credentials()
-            credentials[
-                "endpoint_url"
-            ] = "http://localhost.localstack.cloud:4566"  # TODO: env settings
+
+            if self.settings.aws_endpoint_url:
+                credentials["endpoint_url"] = self.settings.aws_endpoint_url
+
             if credentials.get("aws_access_key_id"):
                 self.logger.debug(f"AWS Service {service} using access key credentials")
                 return boto3.client(service, **credentials)  # type: ignore

@@ -189,6 +189,16 @@ class Settings(BaseSettings):
         env="AZURE_REFRESH_ALL_REGIONS",
         description="Scan all available Azure regions",
     )
+    aws_endpoint_url: str = Field(
+        default="",
+        env="AWS_ENDPOINT_URL",
+        description="AWS endpoint url override (for testing)",
+    )
+    scan_concurrency: int = Field(
+        default=1,
+        env="SCAN_CONCURRENCY",
+        description="Maximum number of concurrent scans",
+    )
 
     # Verification timeout
     validation_timeout: int = Field(
