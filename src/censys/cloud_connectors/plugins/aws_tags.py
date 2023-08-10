@@ -134,6 +134,7 @@ class AwsTagsPlugin(CloudConnectorPlugin):
             AwsResourceTypes.STORAGE_BUCKET: self._get_storage_bucket_tags,
         }
         service: Optional[AwsResourceTypes] = context.get("service")  # type: ignore
+        # service = none, context.get('service') value ins't set
         if service in tag_retrieval_handlers:
             try:
                 tag_retrieval_handlers[service](context, cloud_asset, **kwargs)
@@ -434,10 +435,12 @@ class AwsTagsPlugin(CloudConnectorPlugin):
         bucket_name = kwargs.get("bucket_name")
         client: S3Client = kwargs.get("aws_client")  # type: ignore
         if not bucket_name or not client:
+            print(f"tags bucket: {bucket_name} len:0")
             return
 
         try:
             tag_set = client.get_bucket_tagging(Bucket=bucket_name).get("TagSet", [])
+            print(f"tags bucket: {bucket_name} len:{len(tag_set)}")
             if not tag_set:
                 return
 
@@ -450,6 +453,7 @@ class AwsTagsPlugin(CloudConnectorPlugin):
 
             self.add_cloud_asset_tags(context, cloud_asset, filtered_tags)  # type: ignore
         except ClientError as e:
+            print(f"tags bucket: {bucket_name} len:0")
             # If there are no tag sets, it will raise a ClientError with the code "NoSuchTagSet"
             if e.response.get("Error", {}).get("Code") == "NoSuchTagSet":
                 return
