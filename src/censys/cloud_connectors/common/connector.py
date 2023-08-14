@@ -249,11 +249,11 @@ class CloudConnector(ABC):
         self.submit_seeds_wrapper()
         self.dispatch_event(EventTypeEnum.SCAN_FINISHED)
 
-    def scan_cloud_assets(self):
+    def scan_cloud_assets(self, **kwargs):
         """Scan the cloud assets."""
         self.logger.info("Gathering cloud assets...")
         self.dispatch_event(EventTypeEnum.SCAN_STARTED)
-        self.get_cloud_assets()
+        self.get_cloud_assets(**kwargs)
         self.submit_cloud_assets_wrapper()
         self.dispatch_event(EventTypeEnum.SCAN_FINISHED)
 

@@ -2,6 +2,7 @@
 import contextlib
 from collections.abc import Generator, Sequence
 from dataclasses import dataclass
+from logging import Logger
 from multiprocessing import Pool
 from typing import Any, Optional, TypeVar, Union
 
@@ -38,6 +39,7 @@ from censys.cloud_connectors.common.connector import CloudConnector
 from censys.cloud_connectors.common.context import SuppressValidationError
 from censys.cloud_connectors.common.enums import EventTypeEnum, ProviderEnum
 from censys.cloud_connectors.common.healthcheck import Healthcheck
+from censys.cloud_connectors.common.logger import get_logger
 from censys.cloud_connectors.common.seed import DomainSeed, IpSeed
 from censys.cloud_connectors.common.settings import Settings
 
@@ -53,18 +55,23 @@ IGNORED_TAGS = ["censys-cloud-connector-ignore"]
 # make a dictionary of provider-setting-key (which is account + region)
 # then inside scan use self.scan_contexts[provider-setting-key] = {...}
 
+# TODO: logging changes:
+# add account + region, current resource-type
+
 
 @dataclass
 class AwsScanContext:
     """Required configuration context for scan()."""
 
     provider_settings: AwsSpecificSettings
-    temp_sts_cred: Optional[dict]
-    botocred: dict
+    # temp_sts_cred: Optional[dict]
     credential: dict
     account_number: str
     region: str
+
+    # ignored tags on for the current credential (aws account)
     ignored_tags: list[str]
+    logger: Logger
 
 
 class AwsCloudConnector(CloudConnector):
@@ -76,10 +83,6 @@ class AwsCloudConnector(CloudConnector):
     """
 
     provider = ProviderEnum.AWS
-
-    # During a run this will be set to the current account being scanned
-    # It is common to have multiple top level accounts in providers.yml
-    provider_settings: AwsSpecificSettings
 
     # workaround for storing multiple configurations during a scan() call
     # multiprocessing dictates that each worker runs scan in a different process
@@ -95,19 +98,19 @@ class AwsCloudConnector(CloudConnector):
 
     # Temporary STS credentials created with Assume Role will be stored here during
     # a connector scan.
-    # TODO: fix self.temp_sts_cred
-    temp_sts_cred: Optional[dict] = None
-
-    # When scanning, the current loaded credential will be set here.
-    credential: dict = {}
-
-    account_number: str
-    region: Optional[str]
-
-    # Current set of ignored tags (combined set of user settings + overall settings)
-    ignored_tags: list[str]
-    global_ignored_tags: set[str]
+    # temp_sts_cred: Optional[dict] = None
+    # During a run this will be set to the current account being scanned
+    # It is common to have multiple top level accounts in providers.yml
+    # provider_settings: AwsSpecificSettings
+    # credential: dict = {}
+    # account_number: str
+    # region: Optional[str]
+    # ignored_tags: list[str]
     # pool: Pool
+
+    global_ignored_tags: set[
+        str
+    ]  # this can remain self. as it is global across all accounts
 
     def __init__(self, settings: Settings):
         """Initialize AWS Cloud Connectors.
@@ -127,36 +130,40 @@ class AwsCloudConnector(CloudConnector):
         self.cloud_asset_scanners = {
             AwsResourceTypes.STORAGE_BUCKET: self.get_s3_instances,
         }
-
-        # TODO: fix self.ignored_tags
-        self.ignored_tags = []
         self.global_ignored_tags: set[str] = set(IGNORED_TAGS)
+        # self.ignored_tags = []
         # self.pool = Pool(processes=settings.scan_concurrency)
 
     def scan_seeds(self, **kwargs):
         """Scan AWS."""
-        # credential = kwargs.get("credential")
-        # x region = kwargs.get("region")
-        # self.logger.info(
-        #     f"Scanning AWS account {credential['account_number']} in region {region}"
-        # )
+        # when scan() is called, it has been forked into a separate process (from scan_all)
 
         scan_context_key = kwargs["scan_context_key"]
-        scan_context = kwargs["scan_context"]
-        # this is here because setting it outside of scan was causing a race condition where it didn't exist when accessed
-        # must be something to do with pool & async add
-        self.scan_contexts[scan_context_key] = scan_context
-        self.logger.info(
-            f"Scanning AWS account {scan_context['account_number']} in region {scan_context['region']}"
+        scan_context: AwsScanContext = kwargs["scan_context"]
+        # scan_context must be set within scan(), otherwise race conditions happen where it doesn't exist when accessed
+
+        # multiprocessing requires separate logger instances per process
+        # TODO: there is still something odd going on here, notice logger isnt being set to self.logger, but by even calling get_logger it "fixes" the sub-process log level from being WARNING to .env's DEBUG
+        logger = get_logger(
+            log_name=f"{self.provider.lower()}_cloud_connector",
+            level=self.settings.logging_level,
         )
+        scan_context.logger = logger
+
+        self.logger.info(
+            f"Scanning AWS - account:{scan_context.account_number} region:{scan_context.region}"
+        )
+
+        self.scan_contexts[scan_context_key] = scan_context
         super().scan_seeds(**kwargs)
 
     def scan_cloud_assets(self, **kwargs):
         """Scan AWS for cloud assets."""
+        # TODO: pull scan_seeds changes in after rebase
         scan_context_key = kwargs["scan_context_key"]
         scan_context = kwargs["scan_context"]
         self.scan_contexts[scan_context_key] = scan_context
-        self.logger.info(f"Scanning AWS account {scan_context['account_number']}")
+        self.logger.info(f"Scanning AWS account {scan_context.account_number}")
         super().scan_cloud_assets(**kwargs)
 
     def scan_all(self):
@@ -172,97 +179,90 @@ class AwsCloudConnector(CloudConnector):
         pool = Pool(processes=self.settings.scan_concurrency)
 
         for provider_setting in provider_settings.values():
-            # `provider_setting` is a specific top-level AwsAccount entry in providers.yml
-            # TODO: provider_settings should really be passed into scan :/
+            # `provider_setting` represents a specific top-level AwsAccount entry in providers.yml
+            #
+            # DO NOT use provider_settings anywhere in this class!
+            # provider_settings exists for the parent CloudConnector
             self.provider_settings = provider_setting
             self.scan_contexts = {}
 
-            for credential in self.provider_settings.get_credentials():
-                # TODO: fix self.credential
+            # for credential in self.provider_settings.get_credentials():
+            for credential in provider_settings.get_credentials():
                 # self.credential = credential
-                # TODO: fix self.account_number
                 # self.account_number = credential["account_number"]
-
-                # TODO: fix self.ignored_tags
+                account_number = credential["account_number"]
                 ignored_tags = self.get_ignored_tags(credential["ignore_tags"])
-                # TODO: this wont work if using a pool (no self!)
-                self.ignored_tags = ignored_tags
+                # self.ignored_tags = ignored_tags
+
                 # for each account + region combination, run each seed scanner
-                for region in self.provider_settings.regions:
-                    # TODO: fix self.temp_sts_cred
-                    self.temp_sts_cred = None
-                    # TODO: fix self.region
-                    self.region = region
+                for region in provider_settings.regions:
+                    # self.temp_sts_cred = None
+                    # self.region = region
                     try:
                         with Healthcheck(
                             self.settings,
-                            provider_setting,
+                            provider_settings,
                             provider={
                                 "region": region,
-                                "account_number": credential[
-                                    "account_number"
-                                ],  # self.account_number,
+                                "account_number": account_number,
+                                # self.account_number,
                             },
                         ):
                             self.logger.debug(
                                 "starting pool account:%s region:%s",
-                                credential["account_number"],
+                                account_number,
                                 region,
                             )
 
-                            # TODO: this might not work (how does timeout/renewal of creds work?)
-                            # i really don't like this, put it in the scan_contexts[provider-setting-key] = {...}
-                            botocred = self.boto_cred(
-                                region_name=region,
-                                access_key=credential["access_key"],
-                                secret_key=credential["secret_key"],
-                                # TODO: what is session_token again?
-                                # session_token=provider_setting.session_token,
-                            )
-
-                            scan_context_key = credential["account_number"] + region
+                            # Credentials aren't exactly obvious how they work
+                            # Assume role flow:
+                            # - use the "primary account" access + secret key to "connect"
+                            # - call STS assume role to get "temporary credentials"
+                            # - temporary credentials can be used for all resource types in an account + region
+                            # - note: creds expire after N time (hours?)
+                            scan_context_key = f"{account_number}_{region}"
                             scan_context = AwsScanContext(
-                                provider_settings=provider_setting,
-                                temp_sts_cred=None,
+                                provider_settings=provider_settings,
                                 credential=credential,
-                                botocred=botocred,
-                                account_number=credential["account_number"],
+                                account_number=account_number,
                                 region=region,
                                 ignored_tags=ignored_tags,
+                                logger=None,
+                                # temp_sts_cred=None,
                             )
 
-                            # self.pool.apply_async(
+                            # scan workflow:
+                            # - get seeds + cloud-assets + tags-plugin
+                            # - submit seeds + cloud-assets
+                            print(f"scan_all logging level {self.logger.level}")
                             pool.apply_async(
                                 self.scan_seeds,
                                 kwds={
                                     # TODO remove all of this except `scan_context_key`
                                     # "provider_setting": provider_setting,
-                                    # "botocred": botocred,
                                     # "credential": credential,
                                     # "region": region,
                                     "scan_context_key": scan_context_key,
                                     "scan_context": scan_context,
                                 },
                             )
-                            # self.logger.info(f"asyn res {x}")
                             # self.scan(**kwargs)
                     except Exception as e:
                         self.logger.error(
                             f"Unable to scan account {credential['account_number']} in region {region}. Error: {e}"
                         )
                         self.dispatch_event(EventTypeEnum.SCAN_FAILED, exception=e)
-                    self.region = None
+                    # self.region = None
 
                 # for each account, run each cloud asset scanner
                 try:
-                    self.temp_sts_cred = None
-                    self.region = None
+                    # self.temp_sts_cred = None
+                    # self.region = None
                     with Healthcheck(
                         self.settings,
                         provider_setting,
                         provider={"account_number": self.account_number},
                     ):
-                        # self.scan_cloud_assets()
                         pool.apply_async(
                             self.scan_cloud_assets,
                             kwds={
@@ -282,8 +282,8 @@ class AwsCloudConnector(CloudConnector):
     def format_label(
         self,
         service: AwsServices,
+        account_number: str,
         region: Optional[str] = None,
-        account_number: Optional[str] = None,
     ) -> str:
         """Format AWS label.
 
@@ -295,14 +295,10 @@ class AwsCloudConnector(CloudConnector):
         Returns:
             str: Formatted label.
         """
-        # TODO: s/self.account_number/account_number <- use param
-        account = account_number or self.account_number
-        # TODO: fix self.region
-        region = region or self.region
         region_label = f"/{region}" if region != "" else ""
-        return f"AWS: {service} - {account}{region_label}"
+        return f"AWS: {service} - {account_number}{region_label}"
 
-    def credentials(self) -> dict:
+    def credentials(self, ctx: AwsScanContext) -> dict:
         """Generate required credentials for AWS.
 
         This method will attempt to use any active STS sessions before falling
@@ -311,25 +307,31 @@ class AwsCloudConnector(CloudConnector):
         Returns:
             dict: Boto Credential format.
         """
+        # Note: original design of credentials() was to lazily-load a connection if one
+        # didn't exist using a previous STS temporary credential.
+
         # Role name is the credential field which causes STS to activate.
         # Once activated the temporary STS creds will be used by all
         # subsequent AWS service client calls.
+
         # TODO: fix self.credential
-        if role_name := self.credential.get("role_name"):
+        if role_name := ctx.credential.get("role_name"):
             self.logger.debug(f"Using STS for role {role_name}")
-            return self.get_assume_role_credentials(role_name)
+            return self.get_assume_role_credentials(ctx)  # (account_number, role_name)
 
         self.logger.debug("Using provider settings credentials")
         return self.boto_cred(
-            # TODO: fix self.region
-            self.region,
-            self.provider_settings.access_key,
-            self.provider_settings.secret_key,
-            self.provider_settings.session_token,
+            ctx.region,
+            ctx.provider_settings.access_key,
+            ctx.provider_settings.secret_key,
+            ctx.provider_settings.session_token,
         )
 
     def get_aws_client(
-        self, service: AwsServices, credentials: Optional[dict] = None
+        self,
+        service: AwsServices,
+        ctx: AwsScanContext,
+        credentials: Optional[dict] = None,
     ) -> T:
         """Creates an AWS client for the provided service.
 
@@ -344,7 +346,7 @@ class AwsCloudConnector(CloudConnector):
             T: An AWS boto3 client.
         """
         try:
-            credentials = credentials or self.credentials()
+            credentials = credentials or self.credentials(ctx)
 
             if self.settings.aws_endpoint_url:
                 credentials["endpoint_url"] = self.settings.aws_endpoint_url
@@ -365,7 +367,13 @@ class AwsCloudConnector(CloudConnector):
             )
             raise
 
-    def get_assume_role_credentials(self, role_name: Optional[str] = None) -> dict:
+    def get_assume_role_credentials(
+        self,
+        ctx: AwsScanContext,
+        # account_number: Optional[str] = None,  # TODO: pass this in
+        # role_name: Optional[str] = None,
+        # role_session_name: Optional[str] = None,
+    ) -> dict:
         """Acquire temporary STS credentials and cache them for the duration of the scan.
 
         Args:
@@ -377,29 +385,35 @@ class AwsCloudConnector(CloudConnector):
         Raises:
             Exception: If the credentials could not be created.
         """
-        # TODO: fix self.temp_sts_cred
-        if self.temp_sts_cred:
-            self.logger.debug("Using cached temporary STS credentials")
-        else:
-            try:
-                temp_creds = self.assume_role(role_name)
-                # TODO: fix self.temp_sts_cred
-                self.temp_sts_cred = self.boto_cred(
-                    # TODO: fix self.region
-                    self.region,
-                    temp_creds["AccessKeyId"],
-                    temp_creds["SecretAccessKey"],
-                    temp_creds["SessionToken"],
-                )
-                self.logger.debug(
-                    f"Created temporary STS credentials for role {role_name}"
-                )
-            except Exception as e:
-                self.logger.error(f"Failed to assume role: {e}")
-                raise
+        role_name = ctx.credential["role_name"]
+        role_session_name = ctx.credential["role_session_name"]
 
+        # TODO: temp_sts_cred is removed, make sure this works (and doesnt "assume role" per seed - should only be on the resource type level)
         # TODO: fix self.temp_sts_cred
-        return self.temp_sts_cred
+        # if self.temp_sts_cred:
+        #     self.logger.debug("Using cached temporary STS credentials")
+        # else:
+        try:
+            temp_creds = self.assume_role(
+                # account_number, region, role_name, role_session_name
+                ctx,
+                role_name=role_name,
+                role_session_name=role_session_name,
+            )
+            # TODO: fix self.temp_sts_cred
+            # self.temp_sts_cred = self.boto_cred(
+            self.logger.debug(f"Created temporary STS credentials for role {role_name}")
+            return self.boto_cred(
+                ctx.region,
+                temp_creds["AccessKeyId"],
+                temp_creds["SecretAccessKey"],
+                temp_creds["SessionToken"],
+            )
+        except Exception as e:
+            self.logger.error(f"Failed to assume role: {e}")
+            raise
+        # TODO: fix self.temp_sts_cred
+        # return self.temp_sts_cred
 
     def boto_cred(
         self,
@@ -436,7 +450,12 @@ class AwsCloudConnector(CloudConnector):
         return cred
 
     def assume_role(
-        self, role_name: Optional[str] = AwsDefaults.ROLE_NAME.value
+        self,
+        ctx: AwsScanContext,
+        # account_number: str,
+        # region: str,
+        role_name: Optional[str] = AwsDefaults.ROLE_NAME.value,
+        role_session_name: Optional[str] = AwsDefaults.ROLE_SESSION_NAME.value,
     ) -> CredentialsTypeDef:
         """Acquire temporary credentials generated by Secure Token Service (STS).
 
@@ -444,18 +463,19 @@ class AwsCloudConnector(CloudConnector):
         the STS service.
 
         Args:
+            account_number(str): AWS account number.
             role_name (str, optional): Role name to assume. Defaults to "CensysCloudConnectorRole".
+            role_session_name (str, optional): Role session name. Defaults to "CensysCloudConnectorSession".
 
         Returns:
             CredentialsTypeDef: Temporary credentials.
         """
         # TODO: verify this works with worker pool change- Always use the primary account credentials to query STS
         credentials = self.boto_cred(
-            # TODO: fix self.region
-            self.region,
-            self.provider_settings.access_key,
-            self.provider_settings.secret_key,
-            self.provider_settings.session_token,
+            ctx.region,
+            ctx.provider_settings.access_key,
+            ctx.provider_settings.secret_key,
+            ctx.provider_settings.session_token,
         )
 
         # pass in explicit boto creds to force a new STS session
@@ -464,15 +484,9 @@ class AwsCloudConnector(CloudConnector):
             credentials=credentials,
         )
 
-        role_session = (
-            # FIX self.credential
-            self.credential["role_session_name"]
-            or AwsDefaults.ROLE_SESSION_NAME.value
-        )
-        # TODO: s/self.account_number/cred[account_number] <- pass in account number
         role: dict[str, Any] = {
-            "RoleArn": f"arn:aws:iam::{self.account_number}:role/{role_name}",
-            "RoleSessionName": role_session,
+            "RoleArn": f"arn:aws:iam::{ctx.account_number}:role/{role_name}",
+            "RoleSessionName": role_session_name,
         }
 
         temp_creds = client.assume_role(**role)
@@ -487,16 +501,13 @@ class AwsCloudConnector(CloudConnector):
         key = kwargs["scan_context_key"]
         ctx: AwsScanContext = self.scan_contexts[key]
 
-        client: APIGatewayClient = self.get_aws_client(
-            service=AwsServices.API_GATEWAY, credentials=ctx.botocred
-        )
-        label = self.format_label(SeedLabel.API_GATEWAY)
+        client: APIGatewayClient = self.get_aws_client(service=AwsServices.API_GATEWAY, ctx)
+        label = self.format_label(SeedLabel.API_GATEWAY, ctx.account_number, ctx.region)
+
         try:
             apis = client.get_rest_apis()
             for domain in apis.get("items", []):
-                # TODO: fix self.region
-                domain_name = f"{domain['id']}.execute-api.{self.region}.amazonaws.com"
-                # TODO: emit log when a seeds is dropped due to validation error
+                domain_name = f"{domain['id']}.execute-api.{ctx.region}.amazonaws.com"
                 with SuppressValidationError():
                     domain_seed = DomainSeed(value=domain_name, label=label)
                     self.add_seed(domain_seed, api_gateway_res=domain)
@@ -509,9 +520,10 @@ class AwsCloudConnector(CloudConnector):
         ctx: AwsScanContext = self.scan_contexts[key]
 
         client: ApiGatewayV2Client = self.get_aws_client(
-            service=AwsServices.API_GATEWAY_V2, credentials=ctx.botocred
+            AwsServices.API_GATEWAY_V2, ctx
         )
-        label = self.format_label(SeedLabel.API_GATEWAY)
+        label = self.format_label(SeedLabel.API_GATEWAY, ctx.account_number, ctx.region)
+
         try:
             apis = client.get_apis()
             for domain in apis.get("Items", []):
@@ -536,10 +548,10 @@ class AwsCloudConnector(CloudConnector):
         ctx: AwsScanContext = self.scan_contexts[key]
 
         client: ElasticLoadBalancingClient = self.get_aws_client(
-            service=AwsServices.LOAD_BALANCER,
-            credentials=ctx.botocred,
+            service=AwsServices.LOAD_BALANCER, ctx
         )
-        label = self.format_label(SeedLabel.LOAD_BALANCER)
+        label = self.format_label(SeedLabel.LOAD_BALANCER, ctx.account_number, ctx.region)
+
         try:
             data = client.describe_load_balancers()
             for elb in data.get("LoadBalancerDescriptions", []):
@@ -556,9 +568,10 @@ class AwsCloudConnector(CloudConnector):
         ctx: AwsScanContext = self.scan_contexts[key]
 
         client: ElasticLoadBalancingv2Client = self.get_aws_client(
-            service=AwsServices.LOAD_BALANCER_V2, credentials=ctx.botocred
+            AwsServices.LOAD_BALANCER_V2, ctx
         )
-        label = self.format_label(SeedLabel.LOAD_BALANCER)
+        label = self.format_label(SeedLabel.LOAD_BALANCER, ctx.account_number, ctx.region)
+
         try:
             data = client.describe_load_balancers()
             for elb in data.get("LoadBalancers", []):
@@ -582,25 +595,14 @@ class AwsCloudConnector(CloudConnector):
         key = kwargs["scan_context_key"]
         ctx: AwsScanContext = self.scan_contexts[key]
 
-        try:
-            interfaces = self.describe_network_interfaces(ctx.botocred)
-        except ClientError as e:
-            self.logger.error(f"Could not connect to ENI Service. Error: {e}")
-            return
-        label = self.format_label(SeedLabel.NETWORK_INTERFACE)
-        has_added_seeds = False
-
-        interfaces = self.describe_network_interfaces()
-        # this looks like a bug not passing in a resource type
-        (
-            instance_tags,
-            instance_tag_sets,
-        ) = self.get_resource_tags(ctx.botocred)
+        label = self.format_label(SeedLabel.NETWORK_INTERFACE, ctx.account_number, ctx.region)
+        interfaces = self.describe_network_interfaces(ctx)
+        instance_tags, instance_tag_sets = self.get_resource_tags(ctx)
 
         for ip_address, record in interfaces.items():
             instance_id = record["InstanceId"]
             tags = instance_tags.get(instance_id)
-            if tags and self.has_ignored_tag(tags):
+            if tags and self.has_ignored_tag(ctx.ignored_tags, tags):
                 self.logger.debug(
                     f"Skipping ignored tag for network instance {ip_address}"
                 )
@@ -613,7 +615,7 @@ class AwsCloudConnector(CloudConnector):
         if not has_added_seeds:
             self.delete_seeds_by_label(label)
 
-    def describe_network_interfaces(self, botocred: dict) -> dict:
+    def describe_network_interfaces(self, ctx: AwsScanContext) -> dict:
         """Retrieve EC2 Elastic Network Interfaces (ENI) data.
 
         Raises:
@@ -622,8 +624,7 @@ class AwsCloudConnector(CloudConnector):
         Returns:
             dict: Network Interfaces.
         """
-        # TODO pass in scan_contexts
-        ec2: EC2Client = self.get_aws_client(AwsServices.EC2, credentials=botocred)
+        ec2: EC2Client = self.get_aws_client(AwsServices.EC2, ctx)
         interfaces: dict[str, dict[str, Union[None, str, list]]] = {}
 
         # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html#EC2.Client.describe_network_interfaces
@@ -637,7 +638,7 @@ class AwsCloudConnector(CloudConnector):
                 network_interface_id = network.get("NetworkInterfaceId")
                 instance_id = network.get("Attachment", {}).get("InstanceId")
 
-                if self.network_interfaces_ignored_tags(network):
+                if self.network_interfaces_ignored_tags(ctx.ignored_tags, network):
                     self.logger.debug(
                         f"Skipping ignored tag for network interface {network_interface_id}"
                     )
@@ -656,7 +657,9 @@ class AwsCloudConnector(CloudConnector):
         return interfaces
 
     def get_resource_tags_paginated(
-        self, botocred: dict, resource_types: Optional[list[str]] = None
+        self,
+        ctx: AwsScanContext,
+        resource_types: Optional[list[str]] = None,
     ) -> Generator[TagDescriptionTypeDef, None, None]:
         """Retrieve EC2 resource tags paginated.
 
@@ -666,11 +669,8 @@ class AwsCloudConnector(CloudConnector):
         Yields:
             Generator[TagDescriptionTypeDef]: Tags.
         """
-        # TODO pass in ctx
-        ec2: EC2Client = self.get_aws_client(AwsServices.EC2, credentials=botocred)
-        paginator = ec2.get_paginator(
-            "describe_tags",
-        )
+        ec2: EC2Client = self.get_aws_client(AwsServices.EC2, ctx)
+        paginator = ec2.get_paginator("describe_tags")
 
         for page in paginator.paginate(
             Filters=[
@@ -681,7 +681,9 @@ class AwsCloudConnector(CloudConnector):
             yield from tags
 
     def get_resource_tags(
-        self, botocred: dict, resource_types: Optional[list[str]] = None
+        self,
+        ctx: AwsScanContext,
+        resource_types: Optional[list[str]] = None,
     ) -> tuple[dict, dict]:
         """Get EC2 resource tags based on resource types.
 
@@ -694,7 +696,7 @@ class AwsCloudConnector(CloudConnector):
         resource_tags: dict = {}
         resource_tag_sets: dict = {}
 
-        for tag in self.get_resource_tags_paginated(resource_types, botocred):
+        for tag in self.get_resource_tags_paginated(resource_types, ctx):
             # Tags come in two formats:
             # 1. Tag = { Key = "Name", Value = "actual-tag-name" }
             # 2. Tag = { Key = "actual-key-name", Value = "tag-value-that-is-unused-here"}
@@ -713,7 +715,9 @@ class AwsCloudConnector(CloudConnector):
 
         return resource_tags, resource_tag_sets
 
-    def network_interfaces_ignored_tags(self, data: NetworkInterfaceTypeDef) -> bool:
+    def network_interfaces_ignored_tags(
+        self, ignored_tags: list[str], data: NetworkInterfaceTypeDef
+    ) -> bool:
         """Check if network interface has ignored tags.
 
         Args:
@@ -724,17 +728,15 @@ class AwsCloudConnector(CloudConnector):
         """
         tag_set = data.get("TagSet", [])
         tags = self.extract_tags_from_tagset(tag_set)
-        return self.has_ignored_tag(tags)
+        return self.has_ignored_tag(ignored_tags, tags)
 
     def get_rds_instances(self, **kwargs):
         """Retrieve Relational Database Services (RDS) data and emit seeds."""
         key = kwargs["scan_context_key"]
         ctx: AwsScanContext = self.scan_contexts[key]
-        client: RDSClient = self.get_aws_client(
-            service=AwsServices.RDS, credentials=ctx.botocred
-        )
-        label = self.format_label(SeedLabel.RDS)
-        has_added_seeds = False
+
+        client: RDSClient = self.get_aws_client(service=AwsServices.RDS, ctx)
+        label = self.format_label(SeedLabel.RDS, ctx.account_number, ctx.region)
 
         try:
             data = client.describe_db_instances()
@@ -786,17 +788,12 @@ class AwsCloudConnector(CloudConnector):
 
     def get_route53_zones(self, **kwargs):
         """Retrieve Route 53 Zones and emit seeds."""
-        # TODO: how to pass in cred,region?
         key = kwargs["scan_context_key"]
         ctx: AwsScanContext = self.scan_contexts[key]
 
-        client: Route53Client = self.get_aws_client(
-            service=AwsServices.ROUTE53_ZONES, credentials=ctx.botocred
-        )
+        client: Route53Client = self.get_aws_client(AwsServices.ROUTE53_ZONES, ctx)
         label = self.format_label(
-            SeedLabel.ROUTE53_ZONES,
-            region=ctx.region,
-            account_number=ctx.credential["account_number"],
+            SeedLabel.ROUTE53_ZONES, ctx.account_number, ctx.region
         )
 
         has_added_seeds = False
@@ -837,10 +834,9 @@ class AwsCloudConnector(CloudConnector):
         key = kwargs["scan_context_key"]
         ctx: AwsScanContext = self.scan_contexts[key]
 
-        ecs: ECSClient = self.get_aws_client(AwsServices.ECS, credentials=ctx.botocred)
-        ec2: EC2Client = self.get_aws_client(AwsServices.EC2, credentials=ctx.botocred)
-        label = self.format_label(SeedLabel.ECS)
-        has_added_seeds = False
+        ecs: ECSClient = self.get_aws_client(AwsServices.ECS, ctx)
+        ec2: EC2Client = self.get_aws_client(AwsServices.EC2, ctx)
+        label = self.format_label(SeedLabel.ECS, ctx.account_number, ctx.region)
 
         try:
             clusters = ecs.list_clusters()
@@ -896,9 +892,7 @@ class AwsCloudConnector(CloudConnector):
         key = kwargs["scan_context_key"]
         ctx: AwsScanContext = self.scan_contexts[key]
 
-        client: S3Client = self.get_aws_client(
-            service=AwsServices.STORAGE_BUCKET, credentials=ctx.botocred
-        )
+        client: S3Client = self.get_aws_client(AwsServices.STORAGE_BUCKET, ctx)
 
         try:
             data = client.list_buckets().get("Buckets", [])
@@ -911,8 +905,8 @@ class AwsCloudConnector(CloudConnector):
                 lookup_region = self.get_s3_region(client, bucket_name)
                 label = self.format_label(
                     SeedLabel.STORAGE_BUCKET,
-                    region=ctx.region,
-                    account_number=ctx.account_number,
+                    ctx.account_number,
+                    ctx.region,
                 )
 
                 with SuppressValidationError():
@@ -946,17 +940,17 @@ class AwsCloudConnector(CloudConnector):
 
         return list(ignored)
 
-    def has_ignored_tag(self, tags: list[str]) -> bool:
+    def has_ignored_tag(self, ignored_tags: list[str], tags: list[str]) -> bool:
         """Check if a list of tags contains an ignored tag.
 
         Args:
-            tags (list[str]): Tags on the current resource.
+            ignored_tags (list[str]): Ignored tags for the current AwsScanContext
+            tags (list[str]): Tags on the current AWS resource.
 
         Returns:
             bool: If the list contains an ignored tag.
         """
-        # TODO: fix self.ignored_tags
-        return any(tag in self.ignored_tags for tag in tags)
+        return any(tag in ignored_tags for tag in tags)
 
     def extract_tags_from_tagset(self, tag_set: list[TagTypeDef]) -> list[str]:
         """Extract tags from tagset.

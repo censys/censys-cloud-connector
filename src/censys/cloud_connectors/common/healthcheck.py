@@ -19,6 +19,7 @@ class Healthcheck:
     def __init__(
         self,
         settings: Settings,
+        # TODO: make sure this still works (should use AwsScanContext)
         provider_specific_settings: ProviderSpecificSettings,
         provider: Optional[dict] = None,
         exception_map: Optional[dict[Exception, ErrorCodes]] = None,
