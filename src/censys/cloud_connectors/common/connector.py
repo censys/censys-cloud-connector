@@ -6,8 +6,12 @@ from enum import Enum
 from logging import Logger
 from typing import Callable, Optional, Union
 
+from cloudevents.http import CloudEvent
+
 from censys.asm import Beta, Seeds
 from censys.common.exceptions import CensysAsmException
+
+from censys.cloud_connectors.common.aurora import Aurora
 
 from .cloud_asset import CloudAsset
 from .enums import EventTypeEnum, ProviderEnum
@@ -27,6 +31,7 @@ class CloudConnector(ABC):
     logger: Logger
     seeds_api: Seeds
     beta_api: Beta
+    aurora_api: Aurora
     seeds: dict[str, set[Seed]]
     cloud_assets: dict[str, set[CloudAsset]]
     seed_scanners: dict[str, Callable[[], None]]
@@ -63,12 +68,17 @@ class CloudConnector(ABC):
             user_agent=settings.censys_user_agent,
             cookies=settings.censys_cookies,
         )
+        self.aurora_api = Aurora(
+            settings.censys_api_key,
+            url=settings.censys_asm_api_base_url,
+            user_agent=settings.censys_user_agent,
+            cookies=settings.censys_cookies,
+        )
 
         self.seeds = defaultdict(set)
         self.cloud_assets = defaultdict(set)
         self.current_service = None
 
-    # TODO: how to pass in cred,region? (each scanner will have diff things to pass in)
     def delete_seeds_by_label(self, label: str):
         """Replace seeds for [label] with an empty list.
 
@@ -94,10 +104,15 @@ class CloudConnector(ABC):
                 self.logger.debug(f"Skipping {seed_type}")
                 continue
             self.logger.debug(f"Scanning {seed_type}")
+
+            start = time.time()
             seed_scanner(**kwargs)
+            duration = time.time() - start
+            self.logger.debug(
+                f"Scan seed-type:{seed_type} count:{len(self.seeds)} duration:{duration:.2f}"
+            )
         self.current_service = None
 
-    # TODO: how to pass in cred,region? (each scanner will have diff things to pass in)
     def get_cloud_assets(self, **kwargs) -> None:
         """Gather cloud assets."""
         for cloud_asset_type, cloud_asset_scanner in self.cloud_asset_scanners.items():
@@ -109,7 +124,13 @@ class CloudConnector(ABC):
                 self.logger.debug(f"Skipping {cloud_asset_type}")
                 continue
             self.logger.debug(f"Scanning {cloud_asset_type}")
+
+            start = time.time()
             cloud_asset_scanner(**kwargs)
+            duration = time.time() - start
+            self.logger.debug(
+                f"Scan cloud-asset-type:{cloud_asset_type} count:{len(self.seeds)} duration:{duration:.2f}"
+            )
         self.current_service = None
 
     def get_event_context(
@@ -149,6 +170,60 @@ class CloudConnector(ABC):
         """
         context = self.get_event_context(event_type, service)
         CloudConnectorPluginRegistry.dispatch_event(context=context, **kwargs)
+
+    def emit(self, payload: dict):
+        """Send a payload to Aurora
+
+        Args:
+            payload (dict): Payload.
+        """
+        self.logger.debug(f"Sending payload: {payload}")
+
+        # TODO: emit in batches!!!!
+        self.aurora_api.emit(payload)
+
+    def emit_seed(self, ctx, seed: Seed, **kwargs):
+        """Emit a seed payload.
+
+        Args:
+            seed (Seed): The seed to emit.
+            **kwargs: Additional data for event dispatching.
+        """
+        # self.logger.debug(f"Found Seed: {seed.to_dict()}")
+        self.dispatch_event(EventTypeEnum.SEED_FOUND, seed=seed, **kwargs)
+
+        attributes = {
+            "type": "com.censys.cloud-connector.seed",
+            "source": "cc-user-agent",
+        }
+        data = {
+            "seed": seed.to_dict(),
+        }
+        payload = CloudEvent(attributes, data)
+        self.emit(payload)
+
+    def emit_cloud_asset(self, ctx, cloud_asset: CloudAsset, **kwargs):
+        """Emit a cloud asset payload.
+
+        Args:
+            cloud_asset (CloudAsset): The cloud asset to emit.
+            **kwargs: Additional data for event dispatching.
+        """
+        # self.logger.debug(f"Found Cloud Asset: {cloud_asset.to_dict()}")
+        self.dispatch_event(
+            EventTypeEnum.CLOUD_ASSET_FOUND, cloud_asset=cloud_asset, **kwargs
+        )
+
+        attributes = {
+            "type": "com.censys.cloud-connector.cloud-asset",
+            "source": "cc-user-agent",
+        }
+        data = {
+            "asset": cloud_asset.to_dict(),
+        }
+        payload = CloudEvent(attributes, data)
+
+        self.emit(payload)
 
     def add_seed(self, seed: Seed, **kwargs):
         """Add a seed.
@@ -210,17 +285,25 @@ class CloudConnector(ABC):
 
     def clear(self):
         """Clear the seeds and cloud assets."""
+        # TODO: it's possible this clobbers seeds & cloudassets from other process' account + regions
+
+        # hm.. do seeds and cloud-assets even work in multiprocessing?
+        # should they be contained in scanner context?
+        self.logger.debug(f"Clearing {len(self.seeds)} seeds")
         self.seeds.clear()
+
+        self.logger.debug(f"Clearing {len(self.cloud_assets)} cloud assets")
         self.cloud_assets.clear()
 
-    def submit(self):  # pragma: no cover
+    def submit(self, **kwargs):  # pragma: no cover
         """Submit the seeds and cloud assets to Censys ASM."""
         if self.settings.dry_run:
             self.logger.info("Dry run enabled. Skipping submission.")
         else:
             self.logger.info("Submitting seeds and cloud assets...")
-            self.submit_seeds()
-            self.submit_cloud_assets()
+            self.submit_seeds(**kwargs)
+            self.submit_cloud_assets(**kwargs)
+
         self.clear()
 
     def submit_seeds_wrapper(self):  # pragma: no cover
