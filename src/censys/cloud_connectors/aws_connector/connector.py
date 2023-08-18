@@ -147,7 +147,7 @@ class AwsCloudConnector(CloudConnector):
         logger = get_logger(
             log_name=f"{self.provider.lower()}_cloud_connector",
             level=self.settings.logging_level,
-            # TODO: extra - add account + region to log lines
+            provider=f"{self.provider}_{scan_context.account_number}_{scan_context.region}",
         )
         scan_context.logger = logger
 
@@ -300,6 +300,7 @@ class AwsCloudConnector(CloudConnector):
         """
         region_label = f"/{region}" if region != "" else ""
         return f"AWS: {service} - {account_number}{region_label}"
+        # technically this should use self.provider.label() instead of hardcoding "AWS"
 
     def credentials(self, ctx: AwsScanContext) -> dict:
         """Generate required credentials for AWS.
@@ -513,13 +514,21 @@ class AwsCloudConnector(CloudConnector):
         label = self.format_label(SeedLabel.API_GATEWAY, ctx.account_number, ctx.region)
 
         try:
+            seeds = []
             apis = client.get_rest_apis()
             for domain in apis.get("items", []):
                 domain_name = f"{domain['id']}.execute-api.{ctx.region}.amazonaws.com"
                 with SuppressValidationError():
-                    domain_seed = DomainSeed(value=domain_name, label=label)
+                    # domain_seed = DomainSeed(value=domain_name, label=label)
                     # self.add_seed(domain_seed, api_gateway_res=domain)
-                    self.emit_seed(ctx, domain_seed, api_gateway_res=domain)
+                    # self.emit_seed(ctx, domain_seed, api_gateway_res=domain)
+                    seed = self.process_seed(
+                        DomainSeed(
+                            value=domain_name, label=label, api_gateway_res=domain
+                        )
+                    )
+                    seeds.append(seed)
+            self.submit_seed_payload(label, seeds)
         except ClientError as e:
             self.logger.error(f"Could not connect to API Gateway V1. Error: {e}")
 
@@ -534,13 +543,21 @@ class AwsCloudConnector(CloudConnector):
         label = self.format_label(SeedLabel.API_GATEWAY, ctx.account_number, ctx.region)
 
         try:
+            seeds = []
             apis = client.get_apis()
             for domain in apis.get("Items", []):
                 domain_name = domain["ApiEndpoint"].split("//")[1]
                 with SuppressValidationError():
-                    domain_seed = DomainSeed(value=domain_name, label=label)
+                    # domain_seed = DomainSeed(value=domain_name, label=label)
                     # self.add_seed(domain_seed, api_gateway_res=domain)
-                    self.emit_seed(ctx, domain_seed, api_gateway_res=domain)
+                    # self.emit_seed(ctx, domain_seed, api_gateway_res=domain)
+                    seed = self.process_seed(
+                        DomainSeed(
+                            value=domain_name, label=label, api_gateway_res=domain
+                        )
+                    )
+                    seeds.append(seed)
+            self.submit_seed_payload(label, seeds)
         except ClientError as e:
             self.logger.error(f"Could not connect to API Gateway V2. Error: {e}")
 
@@ -563,13 +580,21 @@ class AwsCloudConnector(CloudConnector):
         label = self.format_label(SeedLabel.LOAD_BALANCER, ctx.account_number, ctx.region)
 
         try:
+            seeds = []
             data = client.describe_load_balancers()
             for elb in data.get("LoadBalancerDescriptions", []):
                 if value := elb.get("DNSName"):
                     with SuppressValidationError():
-                        domain_seed = DomainSeed(value=value, label=label)
+                        # domain_seed = DomainSeed(value=value, label=label)
                         # self.add_seed(domain_seed, elb_res=elb, aws_client=client)
-                        self.emit_seed(ctx, domain_seed, elb_res=elb, aws_client=client)
+                        # self.emit_seed(ctx, domain_seed, elb_res=elb, aws_client=client)
+                        seed = self.process_seed(
+                            DomainSeed(value=value, label=label),
+                            elb_res=elb,
+                            aws_client=client,
+                        )
+                        seeds.append(seed)
+            self.submit_seed_payload(label, seeds)
         except ClientError as e:
             self.logger.error(f"Could not connect to ELB V1. Error: {e}")
 
@@ -584,13 +609,21 @@ class AwsCloudConnector(CloudConnector):
         label = self.format_label(SeedLabel.LOAD_BALANCER, ctx.account_number, ctx.region)
 
         try:
+            seeds = []
             data = client.describe_load_balancers()
             for elb in data.get("LoadBalancers", []):
                 if value := elb.get("DNSName"):
                     with SuppressValidationError():
-                        domain_seed = DomainSeed(value=value, label=label)
+                        # domain_seed = DomainSeed(value=value, label=label)
                         # self.add_seed(domain_seed, elb_res=elb, aws_client=client)
-                        self.emit_seed(ctx, domain_seed, elb_res=elb, aws_client=client)
+                        # self.emit_seed(ctx, domain_seed, elb_res=elb, aws_client=client)
+                        seed = self.process_seed(
+                            DomainSeed(value=value, label=label),
+                            elb_res=elb,
+                            aws_client=client,
+                        )
+                        seeds.append(seed)
+            self.submit_seed_payload(label, seeds)
         except ClientError as e:
             self.logger.error(f"Could not connect to ELB V2. Error: {e}")
 
@@ -611,6 +644,7 @@ class AwsCloudConnector(CloudConnector):
         interfaces = self.describe_network_interfaces(ctx)
         instance_tags, instance_tag_sets = self.get_resource_tags(ctx)
 
+        seeds = []
         for ip_address, record in interfaces.items():
             instance_id = record["InstanceId"]
             tags = instance_tags.get(instance_id)
@@ -621,9 +655,16 @@ class AwsCloudConnector(CloudConnector):
                 continue
 
             with SuppressValidationError():
-                ip_seed = IpSeed(value=ip_address, label=label)
+                # ip_seed = IpSeed(value=ip_address, label=label)
                 # self.add_seed(ip_seed, tags=instance_tag_sets.get(instance_id))
-                self.emit_seed(ctx, ip_seed, tags=instance_tag_sets.get(instance_id))
+                # self.emit_seed(ctx, ip_seed, tags=instance_tag_sets.get(instance_id))
+                seed = self.process_seed(
+                    IpSeed(value=ip_address, label=label),
+                    tags=instance_tag_sets.get(instance_id),
+                )
+                seeds.append(seed)
+
+        self.submit_seed_payload(label, seeds)
 
     def describe_network_interfaces(self, ctx: AwsScanContext) -> dict:
         """Retrieve EC2 Elastic Network Interfaces (ENI) data.
@@ -750,6 +791,7 @@ class AwsCloudConnector(CloudConnector):
         has_added_seeds = False
 
         try:
+            seeds = []
             data = client.describe_db_instances()
             for instance in data.get("DBInstances", []):
                 if not instance.get("PubliclyAccessible"):
@@ -757,10 +799,16 @@ class AwsCloudConnector(CloudConnector):
 
                 if domain_name := instance.get("Endpoint", {}).get("Address"):
                     with SuppressValidationError():
-                        domain_seed = DomainSeed(value=domain_name, label=label)
+                        # domain_seed = DomainSeed(value=domain_name, label=label)
                         # self.add_seed(domain_seed, rds_res=instance)
+                        # self.emit_seed(ctx, domain_seed, rds_res=instance)
                         has_added_seeds = True
-                        self.emit_seed(ctx, domain_seed, rds_res=instance)
+                        seed = self.process_seed(
+                            DomainSeed(value=domain_name, label=label), rds_res=instance
+                        )
+                        seeds.append(seed)
+
+            self.submit_seed_payload(label, seeds)
             if not has_added_seeds:
                 self.delete_seeds_by_label(label)
         except ClientError as e:
@@ -809,7 +857,15 @@ class AwsCloudConnector(CloudConnector):
         )
 
         has_added_seeds = False
+        # TODO: potentially send seeds with empty values to remove "stale" seeds
+
+        # Notice add_seed has extra keyword arguments - these were piped into add_seed for dispatch_event
+        # - add_seed cannot use self.seeds anymore because concurrency
+        # - add_seed dispatched_event PER seed, but seeds were later submitted in submit_seeds
+        # - for now i split dispatch_event, add_seed, and submit_seed_payloads into separate calls
+
         try:
+            seeds = []
             zones = self._get_route53_zone_hosts(client)
             for zone in zones.get("HostedZones", []):
                 if zone.get("Config", {}).get("PrivateZone"):
@@ -818,10 +874,22 @@ class AwsCloudConnector(CloudConnector):
                 # Add the zone itself as a seed
                 domain_name = zone.get("Name").rstrip(".")
                 with SuppressValidationError():
-                    domain_seed = DomainSeed(value=domain_name, label=label)
+                    # domain_seed = DomainSeed(value=domain_name, label=label)
                     has_added_seeds = True
-                    # self.add_seed(domain_seed, route53_zone_res=zone, aws_client=client)
-                    self.emit_seed(ctx, domain_seed, route53_zone_res=zone)
+                    seed = self.process_seed(
+                        DomainSeed(value=domain_name, label=label),
+                        route53_zone_res=zone,
+                        aws_client=client,
+                    )
+                    seeds.append(seed)
+                    # self.emit_seed(ctx, domain_seed, route53_zone_res=zone)
+                    # self.dispatch_event(
+                    #     EventTypeEnum.SEED_FOUND,
+                    #     seed=domain_seed,
+                    #     route53_zone_res=zone,
+                    #     aws_client=client,
+                    # )
+                    # seeds.append(domain_seed)
 
                 id = zone.get("Id")
                 resource_sets = self._get_route53_zone_resources(client, id)
@@ -832,11 +900,33 @@ class AwsCloudConnector(CloudConnector):
 
                     domain_name = resource_set.get("Name").rstrip(".")
                     with SuppressValidationError():
-                        domain_seed = DomainSeed(value=domain_name, label=label)
-                        self.add_seed(
-                            domain_seed, route53_zone_res=zone, aws_client=client
+                        # domain_seed = DomainSeed(value=domain_name, label=label)
+                        #
+                        # TODO: label is for this entire loop, emitting per item will make more requests than necessary!
+                        # seeds[seed.label].push(seed)
+                        # self.add_seed(domain_seed, route53_zone_res=zone, aws_client=client)
+                        # TODO: add_seed quadratic time - loops here, then loops to submit seed
+                        # self.emit_seed(
+                        #     ctx, domain_seed, route53_zone_res=zone, aws_client=client
+                        # )
+                        #
+                        # self.dispatch_event(
+                        #     EventTypeEnum.SEED_FOUND,
+                        #     seed=domain_seed,
+                        #     route53_zone_res=zone,
+                        #     aws_client=client,
+                        # )
+                        # seeds.append(domain_seed)
+
+                        seed = self.process_seed(
+                            DomainSeed(value=domain_name, label=label),
+                            route53_zone_res=zone,
+                            aws_client=client,
                         )
+                        seeds.append(seed)
                         has_added_seeds = True
+
+            self.submit_seed_payload(label, seeds)
             if not has_added_seeds:
                 self.delete_seeds_by_label(label)
         except ClientError as e:
@@ -853,6 +943,7 @@ class AwsCloudConnector(CloudConnector):
 
         has_added_seeds = False
         try:
+            seeds = []
             clusters = ecs.list_clusters()
             for cluster in clusters.get("clusterArns", []):
                 cluster_instances = ecs.list_container_instances(cluster=cluster)
@@ -879,10 +970,22 @@ class AwsCloudConnector(CloudConnector):
                             continue
 
                         with SuppressValidationError():
-                            ip_seed = IpSeed(value=ip_address, label=label)
+                            # ip_seed = IpSeed(value=ip_address, label=label)
+                            # TODO: don't use add_seed
+                            # instead, emit Payload
+                            # modifying add seed would require managing account+region or use AwsScanContext which requires more time than available
                             # self.add_seed(ip_seed, ecs_res=instance)
+                            # self.emit_seed(ctx, ip_seed, ecs_res=instance)
+                            # or maybe self.enqueue(seed)
+                            # would be best to async queue these
+                            # but we are in a pool already...
+                            seed = self.process_seed(
+                                IpSeed(value=ip_address, label=label), ecs_res=instance
+                            )
+                            seeds.append(seed)
                             has_added_seeds = True
-                            self.emit_seed(ctx, ip_seed, ecs_res=instance)
+
+            self.submit_seed_payload(label, seeds)
             if not has_added_seeds:
                 self.delete_seeds_by_label(label)
         except ClientError as e:
@@ -903,7 +1006,6 @@ class AwsCloudConnector(CloudConnector):
 
     def get_s3_instances(self, **kwargs):
         """Retrieve Simple Storage Service data and emit seeds."""
-        # TODO: how to pass in cred,region?
         key = kwargs["scan_context_key"]
         ctx: AwsScanContext = self.scan_contexts[key]
 
@@ -912,30 +1014,57 @@ class AwsCloudConnector(CloudConnector):
         try:
             data = client.list_buckets().get("Buckets", [])
 
+            # TODO: this should actually be a set of buckets, not a list (no dupes)
+            # findings = { 'uid1=AWS: 123456789012/us-east-1': [asset,...], 'uid2=AWS: 123456789012/us-west-1': [asset,...]}
+            findings: dict[str, list[AwsStorageBucketAsset]] = {}
+
             for bucket in data:
                 bucket_name = bucket.get("Name")
                 if not bucket_name:
                     continue
 
+                # TODO: figure out correct value for region
+                # if we use lookup_region, then the submit_cloud_asset_payload call will need to be adjusted
+                # it shouldn't be submitting a payload PER bucket; it should be payload per account + region
                 lookup_region = self.get_s3_region(client, bucket_name)
                 label = self.format_label(
                     SeedLabel.STORAGE_BUCKET,
                     ctx.account_number,
-                    ctx.region,
+                    # oh this is interesting.... lookup_region OR ctx.region.. which one?
+                    # pretty sure it's lookup_region, otherwise whats the point of looking up the bucket's region?
+                    lookup_region,
+                    # ctx.region,
                 )
 
+                # TODO: this isnt right
+                # assets = []
+
                 with SuppressValidationError():
-                    bucket_asset = AwsStorageBucketAsset(
+                    asset = AwsStorageBucketAsset(
                         value=AwsStorageBucketAsset.url(bucket_name, lookup_region),
                         uid=label,
                         scan_data={
                             "accountNumber": ctx.account_number,
                         },
                     )
-                    # self.add_cloud_asset(bucket_asset, bucket_name=bucket_name, aws_client=client)
-                    self.emit_cloud_asset(
-                        ctx, bucket_asset, bucket_name=bucket_name, aws_client=client
+                    # self.add_cloud_asset(asset, bucket_name=bucket_name, aws_client=client)
+                    # self.emit_cloud_asset(
+                    #     ctx, asset, bucket_name=bucket_name, aws_client=client
+                    # )
+                    asset = self.process_cloud_asset(
+                        asset, bucket_name=bucket_name, aws_client=client
                     )
+                    # assets.append(asset)
+                    if label not in findings:
+                        findings[label] = []
+                    findings[label].append(asset)
+
+                # TODO convert this to findings below
+                # self.submit_cloud_asset_payload(label, assets)
+
+            # TODO: submit findings map here
+            for label, assets in findings.items():
+                self.submit_cloud_asset_payload(label, assets)
         except ClientError as e:
             self.logger.error(f"Could not connect to S3. Error: {e}")
 
