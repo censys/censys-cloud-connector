@@ -171,60 +171,6 @@ class CloudConnector(ABC):
         context = self.get_event_context(event_type, service)
         CloudConnectorPluginRegistry.dispatch_event(context=context, **kwargs)
 
-    def emit(self, payload: dict):
-        """Send a payload to Aurora
-
-        Args:
-            payload (dict): Payload.
-        """
-        self.logger.debug(f"Sending payload: {payload}")
-
-        # TODO: emit in batches!!!!
-        self.aurora_api.emit(payload)
-
-    def emit_seed(self, ctx, seed: Seed, **kwargs):
-        """Emit a seed payload.
-
-        Args:
-            seed (Seed): The seed to emit.
-            **kwargs: Additional data for event dispatching.
-        """
-        # self.logger.debug(f"Found Seed: {seed.to_dict()}")
-        self.dispatch_event(EventTypeEnum.SEED_FOUND, seed=seed, **kwargs)
-
-        attributes = {
-            "type": "com.censys.cloud-connector.seed",
-            "source": "cc-user-agent",
-        }
-        data = {
-            "seed": seed.to_dict(),
-        }
-        payload = CloudEvent(attributes, data)
-        self.emit(payload)
-
-    def emit_cloud_asset(self, ctx, cloud_asset: CloudAsset, **kwargs):
-        """Emit a cloud asset payload.
-
-        Args:
-            cloud_asset (CloudAsset): The cloud asset to emit.
-            **kwargs: Additional data for event dispatching.
-        """
-        # self.logger.debug(f"Found Cloud Asset: {cloud_asset.to_dict()}")
-        self.dispatch_event(
-            EventTypeEnum.CLOUD_ASSET_FOUND, cloud_asset=cloud_asset, **kwargs
-        )
-
-        attributes = {
-            "type": "com.censys.cloud-connector.cloud-asset",
-            "source": "cc-user-agent",
-        }
-        data = {
-            "asset": cloud_asset.to_dict(),
-        }
-        payload = CloudEvent(attributes, data)
-
-        self.emit(payload)
-
     def add_seed(self, seed: Seed, **kwargs):
         """Add a seed.
 
@@ -232,6 +178,7 @@ class CloudConnector(ABC):
             seed (Seed): The seed to add.
             **kwargs: Additional data for event dispatching.
         """
+        # TODO: not compatible with multiprocessing
         if not seed.label.startswith(self.label_prefix):
             seed.label = self.label_prefix + seed.label
         self.seeds[seed.label].add(seed)
@@ -245,6 +192,7 @@ class CloudConnector(ABC):
             cloud_asset (CloudAsset): The cloud asset to add.
             **kwargs: Additional data for event dispatching.
         """
+        # TODO: not compatible with multiprocessing
         if not cloud_asset.uid.startswith(self.label_prefix):
             cloud_asset.uid = self.label_prefix + cloud_asset.uid
         self.cloud_assets[cloud_asset.uid].add(cloud_asset)
@@ -255,6 +203,7 @@ class CloudConnector(ABC):
 
     def submit_seeds(self):
         """Submit the seeds to Censys ASM."""
+        # TODO: not compatible with multiprocessing
         submitted_seeds = 0
         for label, seeds in self.seeds.items():
             try:
@@ -269,6 +218,7 @@ class CloudConnector(ABC):
 
     def submit_cloud_assets(self):
         """Submit the cloud assets to Censys ASM."""
+        # TODO: not compatible with multiprocessing
         submitted_assets = 0
         for uid, cloud_assets in self.cloud_assets.items():
             try:
@@ -283,12 +233,87 @@ class CloudConnector(ABC):
             EventTypeEnum.CLOUD_ASSETS_SUBMITTED, count=submitted_assets
         )
 
+    def process_seed(self, seed: Seed, **kwargs) -> Seed:
+        """Prepare a seed for submission. Also dispatch events.
+
+        Args:
+            seed (Seed): Seed.
+
+        Returns:
+            Seed: Processed seed.
+        """
+        if not seed.label.startswith(self.label_prefix):
+            seed.label = self.label_prefix + seed.label
+
+        self.logger.debug(f"Found Seed: {seed.to_dict()}")
+        self.dispatch_event(EventTypeEnum.SEED_FOUND, seed=seed, **kwargs)
+        return seed
+
+    def process_cloud_asset(self, cloud_asset: CloudAsset, **kwargs) -> CloudAsset:
+        """Prepare a cloud asset for submission.
+
+        Args:
+            cloud_asset (CloudAsset): The cloud asset to add.
+            **kwargs: Additional data for event dispatching.
+        """
+        if not cloud_asset.uid.startswith(self.label_prefix):
+            cloud_asset.uid = self.label_prefix + cloud_asset.uid
+
+        self.logger.debug(f"Found Cloud Asset: {cloud_asset.to_dict()}")
+        self.dispatch_event(
+            EventTypeEnum.CLOUD_ASSET_FOUND, cloud_asset=cloud_asset, **kwargs
+        )
+        return cloud_asset
+
+    def submit_seed_payload(self, label: str, seeds: list[Seeds]):
+        """Submit a seed payload.
+
+        Args:
+            label (str): Label for the seeds.
+            seeds (list[Seeds]): List of seeds.
+        """
+        # seed = DomainSeed(type='DOMAIN_NAME', value='example-2.com', label='AWS: Route53/Zones - 001111111112/us-west-1')
+
+        # TODO: constants for attributes
+        attributes = {
+            "type": "com.censys.cloud-connector.seed",
+            "source": "cc-user-agent",
+        }
+        data = {
+            "label": label,
+            "seeds": [seed.to_dict() for seed in seeds],
+        }
+        payload = CloudEvent(attributes, data)
+        result = self.aurora_api.enqueue_payload(payload)
+        self.logger.debug(f"submit seed payload {payload}")
+        # TODO handle result
+        print(f"result {result}")
+
+    def submit_cloud_asset_payload(self, uid: str, cloud_assets: list[CloudAsset]):
+        """Submit a cloud asset payload.
+
+        Args:
+            uid (str): Unique identifier for the cloud asset.
+            cloud_assets (list[CloudAsset]): List of cloud assets.
+        """
+        # TODO: constants for attributes
+        attributes = {
+            "type": "com.censys.cloud-connector.cloud-asset",
+            "source": "cc-user-agent",
+        }
+        data = {
+            "uid": uid,
+            "assets": [asset.to_dict() for asset in cloud_assets],
+        }
+        payload = CloudEvent(attributes, data)
+        result = self.aurora_api.enqueue_payload(payload)
+        self.logger.debug(f"submit asset payload {payload}")
+        # TODO handle result
+        print(f"result {result}")
+
     def clear(self):
         """Clear the seeds and cloud assets."""
-        # TODO: it's possible this clobbers seeds & cloudassets from other process' account + regions
-
-        # hm.. do seeds and cloud-assets even work in multiprocessing?
-        # should they be contained in scanner context?
+        # TODO: not compatible with multiprocessing
         self.logger.debug(f"Clearing {len(self.seeds)} seeds")
         self.seeds.clear()
 

@@ -4,7 +4,10 @@ from typing import Optional
 
 
 def get_logger(
-    log_name: Optional[str] = "cloud_connector", level: str = "INFO", **kwargs
+    log_name: Optional[str] = "cloud_connector",
+    level: str = "INFO",
+    provider: str = "",
+    **kwargs,
 ) -> logging.Logger:
     """Returns a custom logger.
 
@@ -20,24 +23,23 @@ def get_logger(
     if not logger.hasHandlers():
 
         formatter = logging.Formatter(
-            fmt="%(asctime)s:%(levelname)s:%(name)s: %(message)s"
-            # fmt="%(asctime)s:%(levelname)s:%(name)s:%(provider)s: %(message)s"
+            # fmt="%(asctime)s:%(levelname)s:%(name)s: %(message)s"
+            fmt="%(asctime)s:%(levelname)s:%(name)s:%(provider)s: %(message)s"
         )
         handler = logging.StreamHandler()
         handler.setFormatter(formatter)
         logger.addHandler(handler)
 
-        # TODO - add provider (AWS=account+region, GCP=org+project, AZURE=subid) to log record
-        #
-        # https://stackoverflow.com/a/57820456/19351735
-        # old_factory = logging.getLogRecordFactory()
-        # def record_factory(*args, **kwargs):
-        #     record = old_factory(*args, **kwargs)
-        #     provider = kwargs.get("provider", "")
-        #     record.provider = provider
-        #     return record
-
-        # logging.setLogRecordFactory(record_factory)
+        logging.setLogRecordFactory(
+            lambda *args, **kwargs: CustomLogRecord(*args, provider=provider, **kwargs)
+        )
     logger.setLevel(level)
 
     return logger
+
+
+# TODO: see if there is an easier way to do this (dont like the provider arg)
+class CustomLogRecord(logging.LogRecord):
+    def __init__(self, *args, provider: str = "", **kwargs):
+        super().__init__(*args, **kwargs)
+        self.provider = provider

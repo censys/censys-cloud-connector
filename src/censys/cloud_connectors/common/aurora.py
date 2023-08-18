@@ -1,53 +1,41 @@
-"""Interact with Aurora API."""
+"""Aurora API client."""
 from cloudevents.conversion import to_structured
+from cloudevents.http import CloudEvent
 
 from censys.asm import Seeds
 
 
 class Aurora(Seeds):
-    """Aurora API class."""
+    """Aurora API client."""
 
-    # TODO base_path = "/api/v1/payload/enqueue"
-    base_path = "/api/payload/enqueue"
+    base_path = "/api"
 
-    def emit(self, payload: dict) -> None:
-        """Emit a payload to ASM.
+    # TODO @backoff_wrapper
+    def enqueue_payload(self, payload: CloudEvent) -> None:
+        """Enqueue a payload for later processing.
 
         Args:
-            payload (dict): Payload to emit.
+            payload (CloudEvent): Payload.
         """
 
-        # TODO: contact aurora
-        # https://github.com/cloudevents/sdk-python#structured-http-cloudevent
         headers, body = to_structured(payload)
-        # requests.post("<some-url>", data=body, headers=headers)
-
-        # data = {"payload": payload}
-        # censys python is forcing json encoding, whereas we want to send a binary cloud event
-        # data_workaround = {"body": payload}
-        # return self._post(
-        #     self.base_path, data=body, headers=headers
-        # )  # , **data_workaround)
-
         request_kwargs = {"timeout": self.timeout, "data": body, "headers": headers}
 
-        # TODO @backoff_wrapper
-        url = f"{self._api_url}{self.base_path}"
+        # url = f"{self._api_url}{self.base_path}"
+        url = f"{self._api_url}{self.base_path}/payload/enqueue"
         resp = self._call_method(self._session.post, url, request_kwargs)
+
         # TODO: handle response
-        print(f"resp: {resp}")
+        # TODO: read enqueue response `event ID` (for status tracking)
+        print(f"TODO resp: {resp}")
 
-    def emit_batch(self, payloads) -> None:
-        """Emit a payload to ASM.
+        if resp.ok:
+            try:
+                json_data = resp.json()
+                # if "error" not in json_data:
+                #     return json_data
+                return json_data
+            except ValueError:
+                return {"code": resp.status_code, "status": resp.reason}
 
-        Args:
-            payload (dict): Payload to emit.
-        """
-
-        # TODO: contact aurora
-        # https://github.com/cloudevents/sdk-python#structured-http-cloudevent
-        # headers, body = to_structured(event)
-        # requests.post("<some-url>", data=body, headers=headers)
-
-        data = {"payloads": payloads}
-        return self._post(self.base_path, data=data)
+        return {}
