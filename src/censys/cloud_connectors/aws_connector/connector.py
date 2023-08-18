@@ -316,16 +316,19 @@ class AwsCloudConnector(CloudConnector):
         """Retrieve all API Gateway V1 domains and emit seeds."""
         client: APIGatewayClient = self.get_aws_client(service=AwsServices.API_GATEWAY)
         label = self.format_label(SeedLabel.API_GATEWAY)
-
+        has_added_seeds = False
         try:
             apis = client.get_rest_apis()
             for domain in apis.get("items", []):
                 domain_name = f"{domain['id']}.execute-api.{self.region}.amazonaws.com"
                 with SuppressValidationError():
                     domain_seed = DomainSeed(value=domain_name, label=label)
+                    has_added_seeds = True
                     self.add_seed(domain_seed, api_gateway_res=domain)
         except ClientError as e:
             self.logger.error(f"Could not connect to API Gateway V1. Error: {e}")
+        if not has_added_seeds:
+            self.delete_seeds_by_label(label)
 
     def get_api_gateway_domains_v2(self):
         """Retrieve API Gateway V2 domains and emit seeds."""
@@ -333,16 +336,19 @@ class AwsCloudConnector(CloudConnector):
             service=AwsServices.API_GATEWAY_V2
         )
         label = self.format_label(SeedLabel.API_GATEWAY)
-
+        has_added_seeds = False
         try:
             apis = client.get_apis()
             for domain in apis.get("Items", []):
                 domain_name = domain["ApiEndpoint"].split("//")[1]
                 with SuppressValidationError():
                     domain_seed = DomainSeed(value=domain_name, label=label)
+                    has_added_seeds = True
                     self.add_seed(domain_seed, api_gateway_res=domain)
         except ClientError as e:
             self.logger.error(f"Could not connect to API Gateway V2. Error: {e}")
+        if not has_added_seeds:
+            self.delete_seeds_by_label(label)
 
     def get_api_gateway_domains(self):
         """Retrieve all versions of Api Gateway data and emit seeds."""
@@ -355,16 +361,19 @@ class AwsCloudConnector(CloudConnector):
             service=AwsServices.LOAD_BALANCER
         )
         label = self.format_label(SeedLabel.LOAD_BALANCER)
-
+        has_added_seeds = False
         try:
             data = client.describe_load_balancers()
             for elb in data.get("LoadBalancerDescriptions", []):
                 if value := elb.get("DNSName"):
                     with SuppressValidationError():
                         domain_seed = DomainSeed(value=value, label=label)
+                        has_added_seeds = True
                         self.add_seed(domain_seed, elb_res=elb, aws_client=client)
         except ClientError as e:
             self.logger.error(f"Could not connect to ELB V1. Error: {e}")
+        if not has_added_seeds:
+            self.delete_seeds_by_label(label)
 
     def get_load_balancers_v2(self):
         """Retrieve Elastic Load Balancers (ELB) V2 data and emit seeds."""
@@ -372,16 +381,19 @@ class AwsCloudConnector(CloudConnector):
             service=AwsServices.LOAD_BALANCER_V2
         )
         label = self.format_label(SeedLabel.LOAD_BALANCER)
-
+        has_added_seeds = False
         try:
             data = client.describe_load_balancers()
             for elb in data.get("LoadBalancers", []):
                 if value := elb.get("DNSName"):
                     with SuppressValidationError():
                         domain_seed = DomainSeed(value=value, label=label)
+                        has_added_seeds = True
                         self.add_seed(domain_seed, elb_res=elb, aws_client=client)
         except ClientError as e:
             self.logger.error(f"Could not connect to ELB V2. Error: {e}")
+        if not has_added_seeds:
+            self.delete_seeds_by_label(label)
 
     def get_load_balancers(self):
         """Retrieve Elastic Load Balancers (ELB) data and emit seeds."""
@@ -391,7 +403,7 @@ class AwsCloudConnector(CloudConnector):
     def get_network_interfaces(self):
         """Retrieve EC2 Elastic Network Interfaces (ENI) data and emit seeds."""
         label = self.format_label(SeedLabel.NETWORK_INTERFACE)
-
+        has_added_seeds = False
         interfaces = self.describe_network_interfaces()
         instance_tags, instance_tag_sets = self.get_resource_tags()
 
@@ -406,7 +418,10 @@ class AwsCloudConnector(CloudConnector):
 
             with SuppressValidationError():
                 ip_seed = IpSeed(value=ip_address, label=label)
+                has_added_seeds = True
                 self.add_seed(ip_seed, tags=instance_tag_sets.get(instance_id))
+        if not has_added_seeds:
+            self.delete_seeds_by_label(label)
 
     def describe_network_interfaces(self) -> dict:
         """Retrieve EC2 Elastic Network Interfaces (ENI) data.
@@ -519,7 +534,7 @@ class AwsCloudConnector(CloudConnector):
         """Retrieve Relational Database Services (RDS) data and emit seeds."""
         client: RDSClient = self.get_aws_client(service=AwsServices.RDS)
         label = self.format_label(SeedLabel.RDS)
-
+        has_added_seeds = False
         try:
             data = client.describe_db_instances()
             for instance in data.get("DBInstances", []):
@@ -529,9 +544,12 @@ class AwsCloudConnector(CloudConnector):
                 if domain_name := instance.get("Endpoint", {}).get("Address"):
                     with SuppressValidationError():
                         domain_seed = DomainSeed(value=domain_name, label=label)
+                        has_added_seeds = True
                         self.add_seed(domain_seed, rds_res=instance)
         except ClientError as e:
             self.logger.error(f"Could not connect to RDS Service. Error: {e}")
+        if not has_added_seeds:
+            self.delete_seeds_by_label(label)
 
     def _get_route53_zone_hosts(self, client: botocore.client.BaseClient) -> dict:
         """Retrieve Route 53 Zone hosts.
@@ -569,7 +587,7 @@ class AwsCloudConnector(CloudConnector):
         """Retrieve Route 53 Zones and emit seeds."""
         client: Route53Client = self.get_aws_client(service=AwsServices.ROUTE53_ZONES)
         label = self.format_label(SeedLabel.ROUTE53_ZONES)
-
+        has_added_seeds = False
         try:
             zones = self._get_route53_zone_hosts(client)
             for zone in zones.get("HostedZones", []):
@@ -580,6 +598,7 @@ class AwsCloudConnector(CloudConnector):
                 domain_name = zone.get("Name").rstrip(".")
                 with SuppressValidationError():
                     domain_seed = DomainSeed(value=domain_name, label=label)
+                    has_added_seeds = True
                     self.add_seed(domain_seed, route53_zone_res=zone, aws_client=client)
 
                 id = zone.get("Id")
@@ -591,18 +610,21 @@ class AwsCloudConnector(CloudConnector):
                     domain_name = resource_set.get("Name").rstrip(".")
                     with SuppressValidationError():
                         domain_seed = DomainSeed(value=domain_name, label=label)
+                        has_added_seeds = True
                         self.add_seed(
                             domain_seed, route53_zone_res=zone, aws_client=client
                         )
         except ClientError as e:
             self.logger.error(f"Could not connect to Route 53 Zones. Error: {e}")
+        if not has_added_seeds:
+            self.delete_seeds_by_label(label)
 
     def get_ecs_instances(self):
         """Retrieve Elastic Container Service data and emit seeds."""
         ecs: ECSClient = self.get_aws_client(AwsServices.ECS)
         ec2: EC2Client = self.get_aws_client(AwsServices.EC2)
         label = self.format_label(SeedLabel.ECS)
-
+        has_added_seeds = False
         try:
             clusters = ecs.list_clusters()
             for cluster in clusters.get("clusterArns", []):
@@ -631,9 +653,12 @@ class AwsCloudConnector(CloudConnector):
 
                         with SuppressValidationError():
                             ip_seed = IpSeed(value=ip_address, label=label)
+                            has_added_seeds = True
                             self.add_seed(ip_seed, ecs_res=instance)
         except ClientError as e:
             self.logger.error(f"Could not connect to ECS. Error: {e}")
+        if not has_added_seeds:
+            self.delete_seeds_by_label(label)
 
     def get_s3_region(self, client: S3Client, bucket: str) -> str:
         """Lookup S3 bucket location.

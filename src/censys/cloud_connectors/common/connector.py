@@ -67,6 +67,20 @@ class CloudConnector(ABC):
         self.cloud_assets = defaultdict(set)
         self.current_service = None
 
+    def delete_seeds_by_label(self, label: str):
+        """Replace seeds for [label] with an empty list.
+
+        Args:
+            label: Label for seeds to be deleted.
+        """
+        try:
+            self.logger.debug(f"Deleting seeds for label {label}.")
+            self.seeds_api.replace_seeds_by_label(label, [], True)
+        except CensysAsmException as e:
+            self.logger.error(f"Error deleting seeds for label {label}: {e}")
+        self.logger.info(f"Deleted seeds for label {label}.")
+        self.dispatch_event(EventTypeEnum.SEEDS_DELETED, label=label)
+
     def get_seeds(self) -> None:
         """Gather seeds."""
         for seed_type, seed_scanner in self.seed_scanners.items():
