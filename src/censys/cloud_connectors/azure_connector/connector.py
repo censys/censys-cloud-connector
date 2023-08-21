@@ -110,29 +110,19 @@ class AzureCloudConnector(CloudConnector):
     def get_ip_addresses(self):
         """Get Azure IP addresses."""
         network_client = NetworkManagementClient(self.credentials, self.subscription_id)
-        labels = []
         for asset in network_client.public_ip_addresses.list_all():
-            label = self.format_label(asset)
-            labels.append(label)
             asset_dict = asset.as_dict()
             if ip_address := asset_dict.get("ip_address"):
                 with SuppressValidationError():
-                    while label in labels:
-                        labels.remove(label)
-                    ip_seed = IpSeed(value=ip_address, label=label)
+                    ip_seed = IpSeed(value=ip_address, label=self.format_label(asset))
                     self.add_seed(ip_seed)
-        for label in labels:
-            self.delete_seeds_by_label(label)
 
     def get_clusters(self):
         """Get Azure clusters."""
         container_client = ContainerInstanceManagementClient(
             self.credentials, self.subscription_id
         )
-        labels = []
         for asset in container_client.container_groups.list():
-            label = self.format_label(asset)
-            labels.append(label)
             asset_dict = asset.as_dict()
             if (
                 (ip_address_dict := asset_dict.get("ip_address"))
@@ -140,37 +130,29 @@ class AzureCloudConnector(CloudConnector):
                 and (ip_address := ip_address_dict.get("ip"))
             ):
                 with SuppressValidationError():
-                    while label in labels:
-                        labels.remove(label)
-                    ip_seed = IpSeed(value=ip_address, label=label)
+                    ip_seed = IpSeed(value=ip_address, label=self.format_label(asset))
                     self.add_seed(ip_seed)
                 if domain := ip_address_dict.get("fqdn"):
                     with SuppressValidationError():
-                        while label in labels:
-                            labels.remove(label)
-                        domain_seed = DomainSeed(value=domain, label=label)
+                        domain_seed = DomainSeed(
+                            value=domain, label=self.format_label(asset)
+                        )
                         self.add_seed(domain_seed)
-        for label in labels:
-            self.delete_seeds_by_label(label)
 
     def get_sql_servers(self):
         """Get Azure SQL servers."""
         sql_client = SqlManagementClient(self.credentials, self.subscription_id)
-        labels = []
+
         for asset in sql_client.servers.list():
-            label = self.format_label(asset)
-            labels.append(label)
             asset_dict = asset.as_dict()
             if (
                 domain := asset_dict.get("fully_qualified_domain_name")
             ) and asset_dict.get("public_network_access") == "Enabled":
                 with SuppressValidationError():
-                    while label in labels:
-                        labels.remove(label)
-                    domain_seed = DomainSeed(value=domain, label=label)
+                    domain_seed = DomainSeed(
+                        value=domain, label=self.format_label(asset)
+                    )
                     self.add_seed(domain_seed)
-        for label in labels:
-            self.delete_seeds_by_label(label)
 
     def get_dns_records(self):
         """Get Azure DNS records."""
@@ -185,11 +167,7 @@ class AzureCloudConnector(CloudConnector):
             )
             return
 
-        labels = []
-
         for zone in zones:
-            label = self.format_label(zone)
-            labels.append(label)
             zone_dict = zone.as_dict()
             # TODO: Do we need to check if zone is public? (ie. do we care?)
             if zone_dict.get("zone_type") != "Public":  # pragma: no cover
@@ -201,15 +179,15 @@ class AzureCloudConnector(CloudConnector):
                 asset_dict = asset.as_dict()
                 if domain_name := asset_dict.get("fqdn"):
                     with SuppressValidationError():
-                        while label in labels:
-                            labels.remove(label)
-                        domain_seed = DomainSeed(value=domain_name, label=label)
+                        domain_seed = DomainSeed(
+                            value=domain_name, label=self.format_label(zone)
+                        )
                         self.add_seed(domain_seed)
                 if cname := asset_dict.get("cname_record", {}).get("cname"):
                     with SuppressValidationError():
-                        while label in labels:
-                            labels.remove(label)
-                        domain_seed = DomainSeed(value=cname, label=label)
+                        domain_seed = DomainSeed(
+                            value=cname, label=self.format_label(zone)
+                        )
                         self.add_seed(domain_seed)
                 for a_record in asset_dict.get("a_records", []):
                     ip_address = a_record.get("ipv4_address")
@@ -217,12 +195,10 @@ class AzureCloudConnector(CloudConnector):
                         continue
 
                     with SuppressValidationError():
-                        while label in labels:
-                            labels.remove(label)
-                        ip_seed = IpSeed(value=ip_address, label=label)
+                        ip_seed = IpSeed(
+                            value=ip_address, label=self.format_label(zone)
+                        )
                         self.add_seed(ip_seed)
-        for label in labels:
-            self.delete_seeds_by_label(label)
 
     def _list_containers(
         self, bucket_client: BlobServiceClient, account: StorageAccount
@@ -247,11 +223,8 @@ class AzureCloudConnector(CloudConnector):
     def get_storage_containers(self):
         """Get Azure containers."""
         storage_client = StorageManagementClient(self.credentials, self.subscription_id)
-        labels = []
 
         for account in storage_client.storage_accounts.list():
-            label = self.format_label(account)
-            labels.append(label)
             bucket_client = BlobServiceClient(
                 f"https://{account.name}.blob.core.windows.net/", self.credentials
             )
@@ -260,9 +233,9 @@ class AzureCloudConnector(CloudConnector):
                 domain := custom_domain.get("name")
             ):
                 with SuppressValidationError():
-                    while label in labels:
-                        labels.remove(label)
-                    domain_seed = DomainSeed(value=domain, label=label)
+                    domain_seed = DomainSeed(
+                        value=domain, label=self.format_label(account)
+                    )
                     self.add_seed(domain_seed)
             uid = f"{self.subscription_id}/{self.credentials._tenant_id}/{account.name}"
 
@@ -285,5 +258,3 @@ class AzureCloudConnector(CloudConnector):
                     self.logger.error(
                         f"Failed to get Azure container {container} for {account.name}: {error.message}"
                     )
-        for label in labels:
-            self.delete_seeds_by_label(label)

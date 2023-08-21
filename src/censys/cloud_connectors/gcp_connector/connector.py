@@ -156,10 +156,7 @@ class GcpCloudConnector(CloudConnector):
         list_assets_results = self.list_assets(
             filter=GcpSecurityCenterResourceTypes.COMPUTE_INSTANCE.filter()
         )
-        labels = []
         for list_assets_result in list_assets_results:
-            label = self.format_label(list_assets_result)
-            labels.append(label)
             if network_interfaces := list_assets_result.asset.resource_properties.get(
                 "networkInterfaces"
             ):
@@ -184,45 +181,33 @@ class GcpCloudConnector(CloudConnector):
                 ]
                 for ip_address in external_ip_addresses:
                     with SuppressValidationError():
-                        while label in labels:
-                            labels.remove(label)
                         ip_seed = IpSeed(
                             value=ip_address,
-                            label=label,
+                            label=self.format_label(list_assets_result),
                         )
                         self.add_seed(ip_seed)
-        for label in labels:
-            self.delete_seeds_by_label(label)
 
     def get_compute_addresses(self):
         """Get Gcp ip address assets."""
         list_assets_results = self.list_assets(
             filter=GcpSecurityCenterResourceTypes.COMPUTE_ADDRESS.filter()
         )
-        labels = []
         for list_assets_result in list_assets_results:
-            label = self.format_label(list_assets_result)
-            labels.append(label)
             if ip_address := list_assets_result.asset.resource_properties.get(
                 "address"
             ):
                 with SuppressValidationError():
-                    while label in labels:
-                        labels.remove(label)
-                    ip_seed = IpSeed(value=ip_address, label=label)
+                    ip_seed = IpSeed(
+                        value=ip_address, label=self.format_label(list_assets_result)
+                    )
                     self.add_seed(ip_seed)
-        for label in labels:
-            self.delete_seeds_by_label(label)
 
     def get_container_clusters(self):
         """Get Gcp container clusters."""
         list_assets_results = self.list_assets(
             filter=GcpSecurityCenterResourceTypes.CONTAINER_CLUSTER.filter()
         )
-        labels = []
         for list_assets_result in list_assets_results:
-            label = self.format_label(list_assets_result)
-            labels.append(label)
             if private_cluster_config := list_assets_result.asset.resource_properties.get(
                 "privateClusterConfig"
             ):
@@ -235,25 +220,18 @@ class GcpCloudConnector(CloudConnector):
                     continue
                 if ip_address := private_cluster_config.get("publicEndpoint"):
                     with SuppressValidationError():
-                        while label in labels:
-                            labels.remove(label)
                         ip_seed = IpSeed(
                             value=ip_address,
-                            label=label,
+                            label=self.format_label(list_assets_result),
                         )
                         self.add_seed(ip_seed)
-        for label in labels:
-            self.delete_seeds_by_label(label)
 
     def get_cloud_sql_instances(self):
         """Get Gcp cloud sql instances."""
         list_assets_results = self.list_assets(
             filter=GcpSecurityCenterResourceTypes.CLOUD_SQL_INSTANCE.filter()
         )
-        labels = []
         for list_assets_result in list_assets_results:
-            label = self.format_label(list_assets_result)
-            labels.append(label)
             if ip_addresses := list_assets_result.asset.resource_properties.get(
                 "ipAddresses"
             ):
@@ -262,38 +240,27 @@ class GcpCloudConnector(CloudConnector):
                     address for ip in ip_addresses if (address := ip.get("ipAddress"))
                 ]:
                     with SuppressValidationError():
-                        while label in labels:
-                            labels.remove(label)
                         ip_seed = IpSeed(
                             value=ip_address,
-                            label=label,
+                            label=self.format_label(list_assets_result),
                         )
                         self.add_seed(ip_seed)
-        for label in labels:
-            self.delete_seeds_by_label(label)
 
     def get_dns_records(self):
         """Get Gcp dns records."""
         list_assets_results = self.list_assets(
             filter=GcpSecurityCenterResourceTypes.DNS_ZONE.filter()
         )
-        labels = []
         for list_assets_result in list_assets_results:
-            label = self.format_label(list_assets_result)
-            labels.append(label)
             resource_properties = list_assets_result.asset.resource_properties
             if resource_properties.get("visibility") == "PUBLIC" and (
                 domain := resource_properties.get("dnsName")
             ):
                 with SuppressValidationError():
-                    while label in labels:
-                        labels.remove(label)
                     domain_seed = DomainSeed(
                         value=domain, label=self.format_label(list_assets_result)
                     )
                     self.add_seed(domain_seed)
-        for label in labels:
-            self.delete_seeds_by_label(label)
 
     def get_storage_buckets(self):
         """Get Gcp storage buckets."""
