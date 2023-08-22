@@ -464,7 +464,6 @@ class AwsCloudConnector(CloudConnector):
         self,
         ctx: AwsScanContext,
         # account_number: str,
-        # region: str,
         role_name: Optional[str] = None,
         role_session_name: Optional[str] = None,
     ) -> CredentialsTypeDef:

@@ -157,6 +157,11 @@ class Settings(BaseSettings):
     censys_cookies: dict = Field(
         default={}, env="CENSYS_COOKIES", description="Censys Cookies"
     )
+    cloud_connector_version: str = Field(
+        default=censys_cloud_connectors_version,
+        env="CLOUD_CONNECTOR_VERSION",
+        description="Cloud Connector Version",
+    )
 
     # Optional
     providers_config_file: str = Field(
