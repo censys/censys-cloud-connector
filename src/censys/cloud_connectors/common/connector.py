@@ -14,7 +14,7 @@ from censys.common.exceptions import CensysAsmException
 from censys.cloud_connectors.common.aurora import Aurora
 
 from .cloud_asset import CloudAsset
-from .enums import EventTypeEnum, ProviderEnum
+from .enums import EventTypeEnum, PayloadTypes, ProviderEnum
 from .logger import get_logger
 from .plugins import CloudConnectorPluginRegistry, EventContext
 from .seed import Seed
@@ -265,29 +265,62 @@ class CloudConnector(ABC):
         )
         return cloud_asset
 
-    def submit_seed_payload(self, label: str, seeds: list[Seeds]):
+    def get_payload_source(self):
+        """Generate the CloudEvent source value.
+
+        Returns:
+            str: The CloudEvent source value.
+        """
+        # see: https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#source-1
+        return f"https://github.com/censys/censys-cloud-connector/releases/tag/v{self.settings.cloud_connector_version}"
+
+    def payload(self, payload_type: PayloadTypes, data: dict) -> CloudEvent:
+        """Generate a CloudEvent payload.
+
+        Args:
+            type (PayloadTypes): The CloudEvent type.
+            data (dict): Payload data.
+
+        Returns:
+            CloudEvent: The CloudEvent payload.
+        """
+        attributes = {
+            "type": payload_type.value,
+            "source": self.get_payload_source(),
+        }
+        return CloudEvent(attributes, data)
+
+    def enqueue_payload(self, payload: CloudEvent) -> str:
+        """Enqueue a CloudEvent payload.
+
+        Args:
+            payload (CloudEvent): The CloudEvent payload.
+
+        Returns:
+            str: Event ID.
+        """
+        result = self.aurora_api.enqueue_payload(payload)
+        event_id = result.get("eventId", "ERROR")
+        return event_id
+
+    def submit_seed_payload(self, label: str, seeds: list[Seeds]) -> str:
         """Submit a seed payload.
 
         Args:
             label (str): Label for the seeds.
             seeds (list[Seeds]): List of seeds.
-        """
-        # seed = DomainSeed(type='DOMAIN_NAME', value='example-2.com', label='AWS: Route53/Zones - 001111111112/us-west-1')
 
-        # TODO: constants for attributes
-        attributes = {
-            "type": "com.censys.cloud-connector.seed",
-            "source": "cc-user-agent",
-        }
+        Returns:
+            str: Event ID.
+        """
         data = {
             "label": label,
             "seeds": [seed.to_dict() for seed in seeds],
         }
-        payload = CloudEvent(attributes, data)
-        result = self.aurora_api.enqueue_payload(payload)
-        self.logger.debug(f"submit seed payload {payload}")
-        # TODO handle result
-        print(f"result {result}")
+        payload = self.payload(PayloadTypes.PAYLOAD_SEED, data)
+        event_id = self.enqueue_payload(payload)
+        self.logger.debug(f"seed payload {payload} event_id:{event_id}")
+        return event_id
 
     def submit_cloud_asset_payload(self, uid: str, cloud_assets: list[CloudAsset]):
         """Submit a cloud asset payload.
@@ -296,20 +329,14 @@ class CloudConnector(ABC):
             uid (str): Unique identifier for the cloud asset.
             cloud_assets (list[CloudAsset]): List of cloud assets.
         """
-        # TODO: constants for attributes
-        attributes = {
-            "type": "com.censys.cloud-connector.cloud-asset",
-            "source": "cc-user-agent",
-        }
         data = {
             "uid": uid,
             "assets": [asset.to_dict() for asset in cloud_assets],
         }
-        payload = CloudEvent(attributes, data)
-        result = self.aurora_api.enqueue_payload(payload)
-        self.logger.debug(f"submit asset payload {payload}")
-        # TODO handle result
-        print(f"result {result}")
+        payload = self.payload(PayloadTypes.PAYLOAD_CLOUD_ASSET, data)
+        event_id = self.enqueue_payload(payload)
+        self.logger.debug(f"cloud asset payload {payload} event_id:{event_id}")
+        return event_id
 
     def clear(self):
         """Clear the seeds and cloud assets."""
