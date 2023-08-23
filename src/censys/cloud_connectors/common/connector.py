@@ -74,11 +74,11 @@ class CloudConnector(ABC):
             label: Label for seeds to be deleted.
         """
         try:
-            self.logger.debug(f"Deleting seeds for label {label}.")
+            self.logger.debug(f"Deleting any seeds matching label {label}.")
             self.seeds_api.replace_seeds_by_label(label, [], True)
         except CensysAsmException as e:
             self.logger.error(f"Error deleting seeds for label {label}: {e}")
-        self.logger.info(f"Deleted seeds for label {label}.")
+        self.logger.info(f"Deleted any seeds for label {label}.")
         self.dispatch_event(EventTypeEnum.SEEDS_DELETED, label=label)
 
     def get_seeds(self) -> None:
