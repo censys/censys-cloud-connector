@@ -143,6 +143,7 @@ class AwsCloudConnector(CloudConnector):
         Returns:
             str: Formatted label.
         """
+        # TODO: rename this function to make it obvious that region is included in a label
         region = region or self.region
         region_label = f"/{region}" if region != "" else ""
         return f"AWS: {service} - {self.account_number}{region_label}"
@@ -321,6 +322,7 @@ class AwsCloudConnector(CloudConnector):
             apis = client.get_rest_apis()
             for domain in apis.get("items", []):
                 domain_name = f"{domain['id']}.execute-api.{self.region}.amazonaws.com"
+                # TODO: emit log when a seeds is dropped due to validation error
                 with SuppressValidationError():
                     domain_seed = DomainSeed(value=domain_name, label=label)
                     self.add_seed(domain_seed, api_gateway_res=domain)
