@@ -37,6 +37,7 @@ class AzureCloudConnector(CloudConnector):
     subscription_id: str
     credentials: ClientSecretCredential
     provider_settings: AzureSpecificSettings
+    possible_labels: set[str]
 
     def __init__(self, settings: Settings):
         """Initialize Azure Cloud Connector.
@@ -54,6 +55,22 @@ class AzureCloudConnector(CloudConnector):
         self.cloud_asset_scanners = {
             AzureResourceTypes.STORAGE_ACCOUNTS: self.get_storage_containers,
         }
+        self.possible_labels = set()
+
+    def get_all_labels(self):
+        """Get Azure labels."""
+        subscription_client = SubscriptionClient(self.credentials)
+
+        locations = subscription_client.subscriptions.list_locations(
+            self.subscription_id
+        )
+
+        self.possible_labels.clear()
+
+        for location in locations:
+            self.possible_labels.add(
+                f"{self.label_prefix}{self.subscription_id}/{location.name}"
+            )
 
     def scan(self):
         """Scan Azure Subscription."""
@@ -82,30 +99,17 @@ class AzureCloudConnector(CloudConnector):
             for subscription_id in self.provider_settings.subscription_id:
                 self.logger.info(f"Scanning Azure Subscription {subscription_id}")
                 self.subscription_id = subscription_id
+                self.get_all_labels()
                 try:
                     self.scan()
+                    for label_not_found in self.possible_labels:
+                        self.delete_seeds_by_label(label_not_found)
                 except Exception as e:
                     self.logger.error(
                         f"Unable to scan Azure Subscription {subscription_id}. Error: {e}"
                     )
                     self.dispatch_event(EventTypeEnum.SCAN_FAILED, exception=e)
                 self.subscription_id = None
-
-    def get_all_labels(self) -> set[str]:
-        """Get Azure labels.
-
-        Returns:
-            set[str]: Azure labels.
-        """
-        subscription_client = SubscriptionClient(self.credentials, self.subscription_id)
-
-        locations = subscription_client.subscriptions.list_locations()
-        labels = set()
-
-        for location in locations:
-            labels.add(f"{self.label_prefix}{self.subscription_id}/{location.name}")
-
-        return labels
 
     def format_label(self, asset: AzureModel) -> str:
         """Format Azure asset label.
@@ -127,7 +131,7 @@ class AzureCloudConnector(CloudConnector):
     def get_ip_addresses(self):
         """Get Azure IP addresses."""
         network_client = NetworkManagementClient(self.credentials, self.subscription_id)
-        labels_not_found = set(self.get_all_labels())
+        labels_not_found = set(self.possible_labels)
         for asset in network_client.public_ip_addresses.list_all():
             asset_dict = asset.as_dict()
             if ip_address := asset_dict.get("ip_address"):
@@ -136,15 +140,12 @@ class AzureCloudConnector(CloudConnector):
                     ip_seed = IpSeed(value=ip_address, label=label)
                     self.add_seed(ip_seed)
                     labels_not_found.discard(label)
-        for label_not_found in labels_not_found:
-            self.delete_seeds_by_label(label_not_found)
 
     def get_clusters(self):
         """Get Azure clusters."""
         container_client = ContainerInstanceManagementClient(
             self.credentials, self.subscription_id
         )
-        labels_not_found = set(self.get_all_labels())
         for asset in container_client.container_groups.list():
             asset_dict = asset.as_dict()
             if (
@@ -156,19 +157,16 @@ class AzureCloudConnector(CloudConnector):
                 with SuppressValidationError():
                     ip_seed = IpSeed(value=ip_address, label=label)
                     self.add_seed(ip_seed)
-                    labels_not_found.discard(label)
+                    self.possible_labels.discard(label)
                 if domain := ip_address_dict.get("fqdn"):
                     with SuppressValidationError():
                         domain_seed = DomainSeed(value=domain, label=label)
                         self.add_seed(domain_seed)
-                        labels_not_found.discard(label)
-        for label_not_found in labels_not_found:
-            self.delete_seeds_by_label(label_not_found)
+                        self.possible_labels.discard(label)
 
     def get_sql_servers(self):
         """Get Azure SQL servers."""
         sql_client = SqlManagementClient(self.credentials, self.subscription_id)
-        labels_not_found = set(self.get_all_labels())
         for asset in sql_client.servers.list():
             asset_dict = asset.as_dict()
             if (
@@ -178,14 +176,11 @@ class AzureCloudConnector(CloudConnector):
                     label = self.format_label(asset)
                     domain_seed = DomainSeed(value=domain, label=label)
                     self.add_seed(domain_seed)
-                    labels_not_found.discard(label)
-        for label_not_found in labels_not_found:
-            self.delete_seeds_by_label(label_not_found)
+                    self.possible_labels.discard(label)
 
     def get_dns_records(self):
         """Get Azure DNS records."""
         dns_client = DnsManagementClient(self.credentials, self.subscription_id)
-        labels_not_found = set(self.get_all_labels())
         try:
             zones = list(dns_client.zones.list())
         except HttpResponseError as error:
@@ -210,12 +205,12 @@ class AzureCloudConnector(CloudConnector):
                     with SuppressValidationError():
                         domain_seed = DomainSeed(value=domain_name, label=label)
                         self.add_seed(domain_seed)
-                        labels_not_found.discard(label)
+                        self.possible_labels.discard(label)
                 if cname := asset_dict.get("cname_record", {}).get("cname"):
                     with SuppressValidationError():
                         domain_seed = DomainSeed(value=cname, label=label)
                         self.add_seed(domain_seed)
-                        labels_not_found.discard(label)
+                        self.possible_labels.discard(label)
                 for a_record in asset_dict.get("a_records", []):
                     ip_address = a_record.get("ipv4_address")
                     if not ip_address:
@@ -224,9 +219,7 @@ class AzureCloudConnector(CloudConnector):
                     with SuppressValidationError():
                         ip_seed = IpSeed(value=ip_address, label=label)
                         self.add_seed(ip_seed)
-                        labels_not_found.discard(label)
-        for label_not_found in labels_not_found:
-            self.delete_seeds_by_label(label_not_found)
+                        self.possible_labels.discard(label)
 
     def _list_containers(
         self, bucket_client: BlobServiceClient, account: StorageAccount
@@ -251,7 +244,6 @@ class AzureCloudConnector(CloudConnector):
     def get_storage_containers(self):
         """Get Azure containers."""
         storage_client = StorageManagementClient(self.credentials, self.subscription_id)
-        labels_not_found = set(self.get_all_labels())
 
         for account in storage_client.storage_accounts.list():
             bucket_client = BlobServiceClient(
@@ -265,7 +257,7 @@ class AzureCloudConnector(CloudConnector):
                 with SuppressValidationError():
                     domain_seed = DomainSeed(value=domain, label=label)
                     self.add_seed(domain_seed)
-                    labels_not_found.discard(label)
+                    self.possible_labels.discard(label)
             uid = f"{self.subscription_id}/{self.credentials._tenant_id}/{account.name}"
 
             for container in self._list_containers(bucket_client, account):
@@ -287,5 +279,3 @@ class AzureCloudConnector(CloudConnector):
                     self.logger.error(
                         f"Failed to get Azure container {container} for {account.name}: {error.message}"
                     )
-        for label_not_found in labels_not_found:
-            self.delete_seeds_by_label(label_not_found)
