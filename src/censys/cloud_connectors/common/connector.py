@@ -175,7 +175,7 @@ class CloudConnector(ABC):
         )
 
     def submit_seeds(self):
-        """Submit the seeds to the Censys ASM."""
+        """Submit the seeds to Censys ASM."""
         submitted_seeds = 0
         for label, seeds in self.seeds.items():
             try:
@@ -189,7 +189,7 @@ class CloudConnector(ABC):
         self.dispatch_event(EventTypeEnum.SEEDS_SUBMITTED, count=submitted_seeds)
 
     def submit_cloud_assets(self):
-        """Submit the cloud assets to the Censys ASM."""
+        """Submit the cloud assets to Censys ASM."""
         submitted_assets = 0
         for uid, cloud_assets in self.cloud_assets.items():
             try:
@@ -210,18 +210,52 @@ class CloudConnector(ABC):
         self.cloud_assets.clear()
 
     def submit(self):  # pragma: no cover
-        """Submit the seeds and cloud assets to the Censys ASM."""
+        """Submit the seeds and cloud assets to Censys ASM."""
         if self.settings.dry_run:
             self.logger.info("Dry run enabled. Skipping submission.")
         else:
-            self.logger.info("Submitting seeds and assets...")
+            self.logger.info("Submitting seeds and cloud assets...")
             self.submit_seeds()
             self.submit_cloud_assets()
         self.clear()
 
+    def submit_seeds_wrapper(self):  # pragma: no cover
+        """Submit the seeds to Censys ASM."""
+        if self.settings.dry_run:
+            self.logger.info("Dry run enabled. Skipping submission.")
+        else:
+            self.logger.info("Submitting seeds...")
+            self.submit_seeds()
+        self.clear()
+
+    def submit_cloud_assets_wrapper(self):  # pragma: no cover
+        """Submit the cloud assets to Censys ASM."""
+        if self.settings.dry_run:
+            self.logger.info("Dry run enabled. Skipping submission.")
+        else:
+            self.logger.info("Submitting cloud assets...")
+            self.submit_cloud_assets()
+        self.clear()
+
+    def scan_seeds(self):
+        """Scan the seeds."""
+        self.logger.info("Gathering seeds...")
+        self.dispatch_event(EventTypeEnum.SCAN_STARTED)
+        self.get_seeds()
+        self.submit_seeds_wrapper()
+        self.dispatch_event(EventTypeEnum.SCAN_FINISHED)
+
+    def scan_cloud_assets(self):
+        """Scan the cloud assets."""
+        self.logger.info("Gathering cloud assets...")
+        self.dispatch_event(EventTypeEnum.SCAN_STARTED)
+        self.get_cloud_assets()
+        self.submit_cloud_assets_wrapper()
+        self.dispatch_event(EventTypeEnum.SCAN_FINISHED)
+
     def scan(self):
         """Scan the seeds and cloud assets."""
-        self.logger.info("Gathering seeds and assets...")
+        self.logger.info("Gathering seeds and cloud assets...")
         self.dispatch_event(EventTypeEnum.SCAN_STARTED)
         self.get_seeds()
         self.get_cloud_assets()

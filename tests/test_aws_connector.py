@@ -179,7 +179,10 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
         self.connector.settings.providers[self.connector.provider] = provider_settings
 
         # Mock scan
-        mock_scan = self.mocker.patch.object(self.connector, "scan")
+        mock_scan_seeds = self.mocker.patch.object(self.connector, "scan_seeds")
+        mock_scan_cloud_assets = self.mocker.patch.object(
+            self.connector, "scan_cloud_assets"
+        )
         mock_healthcheck = self.mock_healthcheck()
 
         # Actual call
@@ -187,8 +190,10 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
 
         # Assertions
         expected_calls = 3
-        assert mock_scan.call_count == expected_calls
-        self.assert_healthcheck_called(mock_healthcheck, expected_calls)
+        expected_healthcheck_calls = 6
+        assert mock_scan_seeds.call_count == expected_calls
+        assert mock_scan_cloud_assets.call_count == expected_calls
+        self.assert_healthcheck_called(mock_healthcheck, expected_healthcheck_calls)
 
     # TODO test multiple account_numbers with multiple regions
     # TODO test single account_number with multiple regions

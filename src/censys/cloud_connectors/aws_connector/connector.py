@@ -92,12 +92,17 @@ class AwsCloudConnector(CloudConnector):
         self.ignored_tags = []
         self.global_ignored_tags: set[str] = set(IGNORED_TAGS)
 
-    def scan(self):
-        """Scan AWS."""
+    def scan_seeds(self):
+        """Scan AWS for seeds."""
         self.logger.info(
             f"Scanning AWS account {self.account_number} in region {self.region}"
         )
-        super().scan()
+        super().scan_seeds()
+
+    def scan_cloud_assets(self):
+        """Scan AWS for cloud assets."""
+        self.logger.info(f"Scanning AWS account {self.account_number}")
+        super().scan_cloud_assets()
 
     def scan_all(self):
         """Scan all configured AWS provider accounts."""
@@ -113,6 +118,7 @@ class AwsCloudConnector(CloudConnector):
                 self.account_number = credential["account_number"]
                 self.ignored_tags = self.get_ignored_tags(credential["ignore_tags"])
 
+                # for each account + region combination, run each seed scanner
                 for region in self.provider_settings.regions:
                     self.temp_sts_cred = None
                     self.region = region
@@ -125,13 +131,27 @@ class AwsCloudConnector(CloudConnector):
                                 "account_number": self.account_number,
                             },
                         ):
-                            self.scan()
+                            self.scan_seeds()
                     except Exception as e:
                         self.logger.error(
                             f"Unable to scan account {self.account_number} in region {self.region}. Error: {e}"
                         )
                         self.dispatch_event(EventTypeEnum.SCAN_FAILED, exception=e)
                     self.region = None
+
+                # for each account, run each cloud asset scanner
+                try:
+                    with Healthcheck(
+                        self.settings,
+                        provider_setting,
+                        provider={"account_number": self.account_number},
+                    ):
+                        self.scan_cloud_assets()
+                except Exception as e:
+                    self.logger.error(
+                        f"Unable to scan account {self.account_number}. Error: {e}"
+                    )
+                    self.dispatch_event(EventTypeEnum.SCAN_FAILED, exception=e)
 
     def format_label(self, service: AwsServices, region: Optional[str] = None) -> str:
         """Format AWS label.
