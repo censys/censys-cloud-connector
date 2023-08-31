@@ -118,6 +118,7 @@ class AwsCloudConnector(CloudConnector):
                 self.account_number = credential["account_number"]
                 self.ignored_tags = self.get_ignored_tags(credential["ignore_tags"])
 
+                # for each account + region combination, run each seed scanner
                 for region in self.provider_settings.regions:
                     self.temp_sts_cred = None
                     self.region = region
@@ -137,6 +138,8 @@ class AwsCloudConnector(CloudConnector):
                         )
                         self.dispatch_event(EventTypeEnum.SCAN_FAILED, exception=e)
                     self.region = None
+
+                # for each account, run each cloud asset scanner
                 try:
                     with Healthcheck(
                         self.settings,
