@@ -184,6 +184,11 @@ class Settings(BaseSettings):
         env="HEALTHCHECK_ENABLED",
         description="Enable healthcheck",
     )
+    azure_refresh_all_regions: bool = Field(
+        default=False,
+        env="AZURE_REFRESH_ALL_REGIONS",
+        description="Scan all available Azure regions",
+    )
 
     # Verification timeout
     validation_timeout: int = Field(

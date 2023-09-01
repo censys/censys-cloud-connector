@@ -38,6 +38,7 @@ class AzureCloudConnector(CloudConnector):
     credentials: ClientSecretCredential
     provider_settings: AzureSpecificSettings
     possible_labels: set[str]
+    scan_all_regions: bool
 
     def __init__(self, settings: Settings):
         """Initialize Azure Cloud Connector.
@@ -56,6 +57,7 @@ class AzureCloudConnector(CloudConnector):
             AzureResourceTypes.STORAGE_ACCOUNTS: self.get_storage_containers,
         }
         self.possible_labels = set()
+        self.scan_all_regions = settings.azure_refresh_all_regions
 
     def get_all_labels(self):
         """Get Azure labels."""
@@ -102,8 +104,9 @@ class AzureCloudConnector(CloudConnector):
                 self.get_all_labels()
                 try:
                     self.scan()
-                    for label_not_found in self.possible_labels:
-                        self.delete_seeds_by_label(label_not_found)
+                    if self.scan_all_regions:
+                        for label_not_found in self.possible_labels:
+                            self.delete_seeds_by_label(label_not_found)
                 except Exception as e:
                     self.logger.error(
                         f"Unable to scan Azure Subscription {subscription_id}. Error: {e}"
@@ -131,7 +134,6 @@ class AzureCloudConnector(CloudConnector):
     def get_ip_addresses(self):
         """Get Azure IP addresses."""
         network_client = NetworkManagementClient(self.credentials, self.subscription_id)
-        labels_not_found = set(self.possible_labels)
         for asset in network_client.public_ip_addresses.list_all():
             asset_dict = asset.as_dict()
             if ip_address := asset_dict.get("ip_address"):
@@ -139,7 +141,7 @@ class AzureCloudConnector(CloudConnector):
                     label = self.format_label(asset)
                     ip_seed = IpSeed(value=ip_address, label=label)
                     self.add_seed(ip_seed)
-                    labels_not_found.discard(label)
+                    self.possible_labels.discard(label)
 
     def get_clusters(self):
         """Get Azure clusters."""
