@@ -33,6 +33,7 @@ class GcpCloudConnector(CloudConnector):
     credentials: service_account.Credentials
     provider_settings: GcpSpecificSettings
     cloud_asset_client: asset_v1.AssetServiceClient
+    projects: dict[str, dict]
 
     def __init__(self, settings: Settings):
         """Initialize Gcp Cloud Connector.
@@ -89,6 +90,7 @@ class GcpCloudConnector(CloudConnector):
                     credentials=self.credentials
                 )
                 self.logger.info(f"Scanning GCP organization {self.organization_id}")
+                self.projects = self.list_projects()
                 super().scan()
         except Exception as e:
             self.logger.error(
@@ -105,6 +107,35 @@ class GcpCloudConnector(CloudConnector):
             self.provider_settings = provider_setting
             self.organization_id = provider_setting.organization_id
             self.scan()
+
+    def list_projects(self) -> dict[str, dict]:
+        """List Gcp projects.
+
+        Returns:
+            dict[str, dict]: Gcp projects.
+        """
+        results = self.list_assets(filter=GcpCloudAssetTypes.PROJECT)
+        projects: dict[str, dict] = {}
+        for result in results:
+            try:
+                project = Asset.to_dict(result)
+            except json.decoder.JSONDecodeError:  # pragma: no cover
+                self.logger.debug(f"Failed to parse project: {project}")
+                continue
+            try:
+                project_data = project.get("resource", {}).get("data", {})
+                project_id = project_data.get("projectId")
+                project_number = project_data.get("projectNumber")
+                name = project_data.get("name")
+                if not project_data or not project_id or not project_number or not name:
+                    self.logger.debug(f"Failed to parse project: {project}")
+                projects[project_number] = {"project_id": project_id, "name": name}
+            except json.decoder.JSONDecodeError:  # pragma: no cover
+                self.logger.debug(f"Failed to parse project: {project}")
+                continue
+
+        self.logger.debug(f"Found {len(projects)} projects.")
+        return projects
 
     def parse_project_name_seeds(self, path: str) -> dict[str, str]:
         """Parses an asset name to extract the project display name.

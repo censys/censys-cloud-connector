@@ -100,6 +100,7 @@ class GcpRoles(str, Enum):
     FOLDER_VIEWER = "resourcemanager.folderViewer"
     ORGANIZATION_VIEWER = "resourcemanager.organizationViewer"
     CAI_ASSETS_VIEWER = "cloudasset.viewer"
+    BROWSER = "browser"
 
     def __str__(self) -> str:
         """Gets the string representation of the role.
@@ -119,6 +120,7 @@ class GcpCloudAssetTypes(str, Enum):
     CLOUD_SQL_INSTANCE = "sqladmin.googleapis.com/Instance"
     DNS_ZONE = "dns.googleapis.com/ManagedZone"
     STORAGE_BUCKET = "storage.googleapis.com/Bucket"
+    PROJECT = "cloudresourcemanager.googleapis.com/Project"
 
     def __str__(self) -> str:
         """Get the string representation of the resource type.
