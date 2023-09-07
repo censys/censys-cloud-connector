@@ -177,41 +177,6 @@ class TestGcpConnector(BaseConnectorCase, TestCase):
         # Assertions
         assert label == f"GCP: {self.connector.organization_id}/censys-cc-test-project"
 
-    @parameterized.expand(
-        [
-            ("TEST_STORAGE_BUCKET"),
-        ]
-    )
-    def test_parse_project_name_buckets(self, data_key: str):
-        # Test data
-        test_asset = self.mock_asset_bucket(self.data[data_key])
-        # Actual call
-        project_name = self.connector.parse_project_name_buckets(
-            test_asset.parent_full_resource_name
-        )["project"]
-
-        # Assertions
-        assert project_name == "censys-cc-test-project"
-
-    @parameterized.expand(
-        [
-            ("TEST_COMPUTE_ADDRESS"),
-            ("TEST_CONTAINER_CLUSTER"),
-            ("TEST_CLOUD_SQL_INSTANCE"),
-            ("TEST_DNS_ZONE"),
-        ]
-    )
-    def test_parse_project_name_seeds(self, data_key: str):
-        # Test data
-        test_asset = self.mock_asset(self.data[data_key])
-        # Actual call
-        project_name = self.connector.parse_project_name_seeds(test_asset.name)[
-            "project"
-        ]
-
-        # Assertions
-        assert project_name == "censys-cc-test-project"
-
     @parameterized.expand([("test-filter")])
     def test_list_assets(self, filter: str):
         # Mock
