@@ -6,8 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 from google.api_core import exceptions
-from google.cloud import asset_v1
-from google.cloud.asset_v1.types import ContentType
+from google.cloud.asset_v1.services.asset_service.client import AssetServiceClient
 from google.oauth2 import service_account
 from InquirerPy.separator import Separator
 from pydantic import validate_arguments
@@ -19,7 +18,13 @@ from censys.cloud_connectors.common.cli.provider_setup import (
 )
 from censys.cloud_connectors.common.enums import ProviderEnum
 
-from .enums import GcloudCommands, GcpApiIds, GcpCloudAssetTypes, GcpMessages, GcpRoles
+from .enums import (
+    GcloudCommands,
+    GcpApiIds,
+    GcpCloudAssetInventoryTypes,
+    GcpMessages,
+    GcpRoles,
+)
 from .settings import GcpSpecificSettings
 
 
@@ -588,20 +593,11 @@ class GcpSetupCli(ProviderSetupCli):
             / provider_settings.service_account_json_file
         )
         cred = service_account.Credentials.from_service_account_file(str(key_file_path))
-        cloud_asset_client = asset_v1.AssetServiceClient(credentials=cred)
-        request_list = {
-            "parent": provider_settings.parent(),
-            "page_size": 1,
-            "content_type": ContentType.RESOURCE,
-            "asset_types": GcpCloudAssetTypes.COMPUTE_ADDRESS,
-        }
-
-        res_list = cloud_asset_client.list_assets(request=request_list)
-        next(res_list.pages)
+        cloud_asset_client = AssetServiceClient(credentials=cred)
         request_search = {
             "scope": provider_settings.parent(),
             "page_size": 1,
-            "asset_types": GcpCloudAssetTypes.STORAGE_BUCKET,
+            "asset_types": GcpCloudAssetInventoryTypes.STORAGE_BUCKET,
         }
         res_search = cloud_asset_client.search_all_resources(request=request_search)
         next(res_search.pages)

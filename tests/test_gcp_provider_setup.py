@@ -643,16 +643,12 @@ class TestGcpProviderSetup(BaseCase, TestCase):
         mock_credentials = self.mocker.patch(
             "censys.cloud_connectors.gcp_connector.connector.service_account.Credentials.from_service_account_file"
         )
-        mock_list_assets = self.mocker.patch(
-            "censys.cloud_connectors.gcp_connector.connector.asset_v1.AssetServiceClient.list_assets"
-        )
         mock_search_resources = self.mocker.patch(
-            "censys.cloud_connectors.gcp_connector.connector.asset_v1.AssetServiceClient.search_all_resources"
+            "censys.cloud_connectors.gcp_connector.connector.AssetServiceClient.search_all_resources"
         )
         self.setup_cli.verify_service_account_permissions(test_settings)
 
         mock_credentials.assert_called_once()
-        mock_list_assets.assert_called_once()
         mock_search_resources.assert_called_once()
 
     def test_verify_service_account_permissions_fail(

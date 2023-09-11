@@ -111,7 +111,7 @@ class GcpRoles(str, Enum):
         return f"roles/{self.value}"
 
 
-class GcpCloudAssetTypes(str, Enum):
+class GcpCloudAssetInventoryTypes(str, Enum):
     """GCP Cloud Asset Inventory asset types."""
 
     COMPUTE_INSTANCE = "compute.googleapis.com/Instance"

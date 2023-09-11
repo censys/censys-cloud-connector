@@ -6,7 +6,7 @@ from parameterized import parameterized
 from censys.cloud_connectors.gcp_connector.enums import (
     GcloudCommands,
     GcpApiIds,
-    GcpCloudAssetTypes,
+    GcpCloudAssetInventoryTypes,
     GcpRoles,
 )
 
@@ -221,34 +221,34 @@ class TestEnums(TestCase):
     @parameterized.expand(
         [
             (
-                GcpCloudAssetTypes.COMPUTE_INSTANCE,
+                GcpCloudAssetInventoryTypes.COMPUTE_INSTANCE,
                 "compute.googleapis.com/Instance",
             ),
             (
-                GcpCloudAssetTypes.COMPUTE_ADDRESS,
+                GcpCloudAssetInventoryTypes.COMPUTE_ADDRESS,
                 "compute.googleapis.com/Address",
             ),
             (
-                GcpCloudAssetTypes.CONTAINER_CLUSTER,
+                GcpCloudAssetInventoryTypes.CONTAINER_CLUSTER,
                 "container.googleapis.com/Cluster",
             ),
             (
-                GcpCloudAssetTypes.CLOUD_SQL_INSTANCE,
+                GcpCloudAssetInventoryTypes.CLOUD_SQL_INSTANCE,
                 "sqladmin.googleapis.com/Instance",
             ),
             (
-                GcpCloudAssetTypes.DNS_ZONE,
+                GcpCloudAssetInventoryTypes.DNS_ZONE,
                 "dns.googleapis.com/ManagedZone",
             ),
             (
-                GcpCloudAssetTypes.STORAGE_BUCKET,
+                GcpCloudAssetInventoryTypes.STORAGE_BUCKET,
                 "storage.googleapis.com/Bucket",
             ),
         ]
     )
     def test_gcp_security_center_resource_types(
         self,
-        enum_resource_type: GcpCloudAssetTypes,
+        enum_resource_type: GcpCloudAssetInventoryTypes,
         expected_filter: str,
     ):
         # Actual call
