@@ -17,3 +17,4 @@ jobs:
   release:
     uses: ./.github/workflows/reusable-release-pypi.yaml
     secrets: inherit
+    needs: build
