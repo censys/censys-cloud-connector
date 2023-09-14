@@ -228,47 +228,56 @@ class TestGcpConnector(BaseConnectorCase, TestCase):
             assert project["name"] == test_project_map[project_number]["name"]
 
     def test_get_compute_instances(self):
-        self.skipTest("Test data is not available yet")
-        # # Test data
-        # test_assets = []
-        # test_seed_values = []
-        # for i in range(3):
-        #     test_asset = self.data["TEST_COMPUTE_INSTANCE"]
-        #     network_interfaces = test_asset["resource"]["data"]["networkInterfaces"]
-        #     access_configs = network_interfaces[0]["accessConfigs"]
-        #     # TODO: Implement tests
-        #     ip_address = test_asset["asset"]["resourceProperties"]["address"]
-        #     ip_address = ip_address[:-1] + str(i)
-        #     test_asset["resource"]["data"]["address"] = ip_address
-        #     test_seed_values.append(ip_address)
-        #     test_assets.append(self.mock_asset(test_asset))
+        # self.skipTest("Test data is not available yet")
+        # Test data
+        test_assets = []
+        test_seed_values = []
+        test_all_projects = {
+            "123456789123": {
+                "project_id": "censys-cc-test-project",
+                "name": "Censys CC Test Project",
+            }
+        }
+        for i in range(3):
+            test_asset = self.data["TEST_COMPUTE_INSTANCE"]
+            network_interfaces = test_asset["versioned_resources"][0]["resource"][
+                "networkInterfaces"
+            ]
+            access_configs = network_interfaces[0]["accessConfigs"]
+            ip_address = access_configs[0]["natIP"]
+            ip_address = ip_address[:-1] + str(i)
+            access_configs[0]["natIP"] = ip_address
+            access_configs[0]["name"] = "External NAT"
+            network_interfaces[0]["accessConfigs"] = access_configs
+            test_asset["versioned_resources"][0]["resource"][
+                "networkInterfaces"
+            ] = network_interfaces
+            test_seed_values.append(ip_address)
+            test_assets.append(self.mock_asset(test_asset))
 
-        #     private_cluster_config = json.loads(
-        #         test_asset["resource"]["data"]["privateClusterConfig"]
-        #     )
-        #     ip_address = private_cluster_config["publicEndpoint"]
-        #     ip_address = ip_address[:-1] + str(i)
-        #     private_cluster_config["publicEndpoint"] = ip_address
-        #     test_asset["resource"]["data"]["privateClusterConfig"] = json.dumps(
-        #         private_cluster_config
-        #     )
-        # test_label = self.connector.format_label_cai(test_assets[0])
+        test_label = self.connector.format_label("censys-cc-test-project")
 
-        # # Mock
-        # mock_list = self.mocker.patch.object(
-        #     self.connector, "list_assets_cai", return_value=test_assets
-        # )
+        # Mock
+        mock_pager = SearchAllResourcesPager(
+            response=SearchAllResourcesResponse(results=test_assets),
+            request={},
+            method=None,
+        )
+        mock_search_all_resources = self.mocker.patch.object(
+            self.connector, "search_all_resources", return_value=mock_pager
+        )
+        self.mocker.patch.object(self.connector, "all_projects", test_all_projects)
 
-        # # Actual call
-        # self.connector.get_compute_instances()
+        # Actual call
+        self.connector.get_compute_instances()
 
-        # # Assertions
-        # mock_list.assert_called_once_with(
-        #     filter=GcpCloudAssetTypes.COMPUTE_INSTANCE.filter()
-        # )
-        # self.assert_seeds_with_values(
-        #     self.connector.seeds[test_label], test_seed_values
-        # )
+        # Assertions
+        mock_search_all_resources.assert_called_once_with(
+            filter=GcpCloudAssetInventoryTypes.COMPUTE_INSTANCE
+        )
+        self.assert_seeds_with_values(
+            self.connector.seeds[test_label], test_seed_values
+        )
 
     def test_get_compute_addresses(self):
         # Test data

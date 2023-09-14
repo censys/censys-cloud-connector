@@ -779,7 +779,7 @@
     "state": "RUNNABLE",
     "versioned_resources": [
       {
-        "version": "v1",
+        "version": "v1beta4",
         "resource": {
           "kind": "sql#instance",
           "serverCaCert": {
@@ -837,7 +837,7 @@
           },
           "backendType": "SECOND_GEN",
           "databaseInstalledVersion": "MYSQL_8_0_31",
-          "selfLink": "https://sqladmin.googleapis.com/sql/v1/projects/censys-cc-test-project/instances/test-sql-instance-1",
+          "selfLink": "https://sqladmin.googleapis.com/sql/v1beta4/projects/censys-cc-test-project/instances/test-sql-instance-1",
           "name": "test-sql-instance-1",
           "connectionName": "censys-cc-test-project:us-central1:test-sql-instance-1",
           "ipAddresses": [{ "ipAddress": "35.200.0.1", "type": "PRIMARY" }],

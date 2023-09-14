@@ -17,7 +17,7 @@ from censys.cloud_connectors.common.healthcheck import Healthcheck
 from censys.cloud_connectors.common.seed import DomainSeed, IpSeed
 from censys.cloud_connectors.common.settings import Settings
 
-from .enums import GcpCloudAssetInventoryTypes
+from .enums import GcpApiVersions, GcpCloudAssetInventoryTypes
 from .settings import GcpSpecificSettings
 
 
@@ -123,7 +123,9 @@ class GcpCloudConnector(CloudConnector):
                 self.logger.debug(f"Failed to parse project: {project}")
                 continue
             try:
-                if resource := self.check_asset_version(project):
+                if resource := self.check_asset_version(
+                    GcpCloudAssetInventoryTypes.PROJECT, project
+                ):
                     project_id = self.return_if_str(resource.get("projectId"))
                     project_number = self.return_if_str(resource.get("projectNumber"))
                     name = self.return_if_str(resource.get("name"))
@@ -164,31 +166,56 @@ class GcpCloudConnector(CloudConnector):
             return val
         return ""
 
-    def check_asset_version(self, asset: dict) -> Optional[dict]:
+    def check_asset_version(
+        self, asset_type: GcpCloudAssetInventoryTypes, asset: dict
+    ) -> Optional[dict]:
         """Check if the asset version is supported and returns the resource if it is.
 
         Args:
+            asset_type (GcpCloudAssetInventoryTypes): Asset type.
             asset (dict): Asset.
 
         Returns:
-            Optional[dict]: Resource with version `v1`, if it exists.
+            Optional[dict]: Resource with supported version, if it exists.
         """
         versioned_resources = asset.get("versioned_resources", [])
         # Found resource with version `v1`
-        if (len(versioned_resources) == 1) and (
-            versioned_resources[0].get("version") == "v1"
-        ):
-            return versioned_resources[0].get("resource")
+        if len(versioned_resources) == 1:
+            if versioned_resources[0][
+                "version"
+            ] in GcpApiVersions.SUPPORTED_VERSIONS.get_versions(asset_type):
+                return versioned_resources[0].get("resource")
+            elif versioned_resources[0][
+                "version"
+            ] in GcpApiVersions.UNSUPPORTED_VERSIONS.get_versions(asset_type):
+                self.logger.debug(
+                    f"Version {versioned_resources[0]['version']} is unsupported and will be ignored."
+                )
+            else:
+                self.logger.warning(
+                    f"Version {versioned_resources[0]['version']} of the API for resource type {asset_type} is unknown."
+                )
         # Found multiple versioned resources
         elif len(versioned_resources) > 1:
             for versioned_resource in versioned_resources:
-                if versioned_resource.get("version") == "v1":
+                if versioned_resources[0][
+                    "version"
+                ] in GcpApiVersions.SUPPORTED_VERSIONS.get_versions(asset_type):
                     self.logger.debug(
-                        "Found multiple versioned resources. Version `v1` is supported and will be used."
+                        f"Found multiple versioned resources. Version {versioned_resource['version']} is supported and will be used."
                     )
                     return versioned_resource.get("resource")
+                elif versioned_resources[0][
+                    "version"
+                ] in GcpApiVersions.UNSUPPORTED_VERSIONS.get_versions(asset_type):
+                    self.logger.debug(
+                        f"Found multiple versioned resources. Version {versioned_resource['version']} is unsupported and will be ignored."
+                    )
+                else:
+                    self.logger.warning(
+                        f"Version {versioned_resource['version']} of the API for resource type {asset_type} is unknown."
+                    )
 
-        self.logger.debug("Found no resources of version `v1`.")
         return None
 
     def clean_up(self):
@@ -251,36 +278,40 @@ class GcpCloudConnector(CloudConnector):
                 self.logger.error(f"Failed to parse asset: {asset}")
                 continue
 
-            if resource := self.check_asset_version(asset):
+            if resource := self.check_asset_version(
+                GcpCloudAssetInventoryTypes.COMPUTE_INSTANCE, asset
+            ):
                 project_path = self.return_if_str(asset.get("project"))
                 project_number = self.parse_project_number(project_path)
-            if (network_interfaces := resource.get("networkInterfaces")) and (
-                project_id := self.all_projects.get(project_number, {}).get(
-                    "project_id"
-                )
-            ):
-                if (not isinstance(network_interfaces, list)) or (
-                    len(network_interfaces) == 0
+                if (network_interfaces := resource.get("networkInterfaces")) and (
+                    project_id := self.all_projects.get(project_number, {}).get(
+                        "project_id"
+                    )
                 ):
-                    continue
-                for network_interface in network_interfaces:
-                    access_configs = network_interface.get("accessConfigs", [])
-                    external_ip_addresses = [
-                        ip_address
-                        for access_config in access_configs
-                        if (ip_address := access_config.get("natIP"))
-                        and (access_config.get("name") == "External NAT")
-                    ]
-                    for ip_address in external_ip_addresses:
-                        label = self.format_label(project_id)
-                        self.logger.debug(f"FINDME EXAMPLE compute instance: {asset}")
-                        with SuppressValidationError():
-                            ip_seed = IpSeed(
-                                value=ip_address,
-                                label=label,
+                    if (not isinstance(network_interfaces, list)) or (
+                        len(network_interfaces) == 0
+                    ):
+                        continue
+                    for network_interface in network_interfaces:
+                        access_configs = network_interface.get("accessConfigs", [])
+                        external_ip_addresses = [
+                            ip_address
+                            for access_config in access_configs
+                            if (ip_address := access_config.get("natIP"))
+                            and (access_config.get("name") == "External NAT")
+                        ]
+                        for ip_address in external_ip_addresses:
+                            label = self.format_label(project_id)
+                            self.logger.debug(
+                                f"FINDME EXAMPLE compute instance: {asset}"
                             )
-                            self.add_seed(ip_seed)
-                            self.found_projects.add(project_number)
+                            with SuppressValidationError():
+                                ip_seed = IpSeed(
+                                    value=ip_address,
+                                    label=label,
+                                )
+                                self.add_seed(ip_seed)
+                                self.found_projects.add(project_number)
 
     def get_compute_addresses(self):
         """Get Gcp ip address assets."""
@@ -293,7 +324,9 @@ class GcpCloudConnector(CloudConnector):
             except json.JSONDecodeError:
                 self.logger.error(f"Failed to parse asset: {asset}")
                 continue
-            if resource := self.check_asset_version(asset):
+            if resource := self.check_asset_version(
+                GcpCloudAssetInventoryTypes.COMPUTE_ADDRESS, asset
+            ):
                 project_path = asset.get("project")
                 project_number = self.parse_project_number(project_path)
                 if (ip_address := resource.get("address")) and (
@@ -322,7 +355,9 @@ class GcpCloudConnector(CloudConnector):
             except json.decoder.JSONDecodeError:  # pragma: no cover
                 self.logger.debug(f"Failed to parse asset: {asset}")
                 continue
-            if resource := self.check_asset_version(asset):
+            if resource := self.check_asset_version(
+                GcpCloudAssetInventoryTypes.CONTAINER_CLUSTER, asset
+            ):
                 project_path = asset.get("project")
                 project_number = self.parse_project_number(project_path)
                 if (
@@ -355,7 +390,9 @@ class GcpCloudConnector(CloudConnector):
             except json.decoder.JSONDecodeError:  # pragma: no cover
                 self.logger.debug(f"Failed to parse asset: {asset}")
                 continue
-            if resource := self.check_asset_version(asset):
+            if resource := self.check_asset_version(
+                GcpCloudAssetInventoryTypes.CLOUD_SQL_INSTANCE, asset
+            ):
                 project_path = asset.get("project")
                 project_number = self.parse_project_number(project_path)
                 if (ip_addresses := resource.get("ipAddresses", [])) and (
@@ -387,7 +424,9 @@ class GcpCloudConnector(CloudConnector):
             except json.decoder.JSONDecodeError:  # pragma: no cover
                 self.logger.debug(f"Failed to parse asset: {asset}")
                 continue
-            if resource := self.check_asset_version(asset):
+            if resource := self.check_asset_version(
+                GcpCloudAssetInventoryTypes.DNS_ZONE, asset
+            ):
                 project_path = asset.get("project")
                 project_number = self.parse_project_number(project_path)
                 if (
@@ -417,7 +456,9 @@ class GcpCloudConnector(CloudConnector):
             except json.decoder.JSONDecodeError:  # pragma: no cover
                 self.logger.debug(f"Failed to parse asset: {asset}")
                 continue
-            if resource := self.check_asset_version(asset):
+            if resource := self.check_asset_version(
+                GcpCloudAssetInventoryTypes.STORAGE_BUCKET, asset
+            ):
                 project_path = asset.get("project")
                 project_number = self.parse_project_number(project_path)
                 if (bucket_name := resource.get("id")) and project_number:

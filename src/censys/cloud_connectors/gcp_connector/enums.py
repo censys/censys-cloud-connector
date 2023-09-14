@@ -168,3 +168,38 @@ class GcpMessages(str, Enum):
             str: The string representation of the message.
         """
         return self.value
+
+
+class GcpApiVersions(Enum):
+    """GCP API versions."""
+
+    SUPPORTED_VERSIONS: dict[GcpCloudAssetInventoryTypes, set[str]] = {
+        GcpCloudAssetInventoryTypes.COMPUTE_INSTANCE: {"v1", "beta"},
+        GcpCloudAssetInventoryTypes.COMPUTE_ADDRESS: {"v1", "beta"},
+        GcpCloudAssetInventoryTypes.CONTAINER_CLUSTER: {"v1"},
+        GcpCloudAssetInventoryTypes.CLOUD_SQL_INSTANCE: {"v1", "v1beta4"},
+        GcpCloudAssetInventoryTypes.DNS_ZONE: {"v1", "v2"},
+        GcpCloudAssetInventoryTypes.STORAGE_BUCKET: {"v1"},
+        GcpCloudAssetInventoryTypes.PROJECT: {"v1", "v1beta1"},
+    }
+
+    UNSUPPORTED_VERSIONS: dict[GcpCloudAssetInventoryTypes, set[str]] = {
+        GcpCloudAssetInventoryTypes.COMPUTE_INSTANCE: set(),
+        GcpCloudAssetInventoryTypes.COMPUTE_ADDRESS: set(),
+        GcpCloudAssetInventoryTypes.CONTAINER_CLUSTER: set(),
+        GcpCloudAssetInventoryTypes.CLOUD_SQL_INSTANCE: set(),
+        GcpCloudAssetInventoryTypes.DNS_ZONE: set(),
+        GcpCloudAssetInventoryTypes.STORAGE_BUCKET: set(),
+        GcpCloudAssetInventoryTypes.PROJECT: {"v3"},
+    }
+
+    def get_versions(self, asset_type: GcpCloudAssetInventoryTypes) -> set[str]:
+        """Get the set of supported versions for the asset type.
+
+        Args:
+            asset_type (GcpCloudAssetInventoryTypes): The asset type.
+
+        Returns:
+            set: The set of supported versions for the asset type.
+        """
+        return self.value[asset_type]
