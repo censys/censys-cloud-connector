@@ -100,7 +100,6 @@ class GcpRoles(str, Enum):
     FOLDER_VIEWER = "resourcemanager.folderViewer"
     ORGANIZATION_VIEWER = "resourcemanager.organizationViewer"
     CAI_ASSETS_VIEWER = "cloudasset.viewer"
-    BROWSER = "browser"
 
     def __str__(self) -> str:
         """Gets the string representation of the role.

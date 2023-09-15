@@ -596,8 +596,8 @@ class GcpSetupCli(ProviderSetupCli):
         cloud_asset_client = AssetServiceClient(credentials=cred)
         request_search = {
             "scope": provider_settings.parent(),
-            "page_size": 1,
-            "asset_types": GcpCloudAssetInventoryTypes.STORAGE_BUCKET,
+            "asset_types": [GcpCloudAssetInventoryTypes.STORAGE_BUCKET],
+            "read_mask": "*",
         }
         res_search = cloud_asset_client.search_all_resources(request=request_search)
         next(res_search.pages)
