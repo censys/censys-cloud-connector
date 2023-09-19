@@ -179,7 +179,7 @@ class GcpApiVersions(Enum):
         GcpCloudAssetInventoryTypes.CLOUD_SQL_INSTANCE: {"v1", "v1beta4"},
         GcpCloudAssetInventoryTypes.DNS_ZONE: {"v1", "v2"},
         GcpCloudAssetInventoryTypes.STORAGE_BUCKET: {"v1"},
-        GcpCloudAssetInventoryTypes.PROJECT: {"v1", "v1beta1"},
+        GcpCloudAssetInventoryTypes.PROJECT: {"v1", "v1beta1", "v3"},
     }
 
     UNSUPPORTED_VERSIONS: dict[GcpCloudAssetInventoryTypes, set[str]] = {
@@ -189,7 +189,7 @@ class GcpApiVersions(Enum):
         GcpCloudAssetInventoryTypes.CLOUD_SQL_INSTANCE: set(),
         GcpCloudAssetInventoryTypes.DNS_ZONE: set(),
         GcpCloudAssetInventoryTypes.STORAGE_BUCKET: set(),
-        GcpCloudAssetInventoryTypes.PROJECT: {"v3"},
+        GcpCloudAssetInventoryTypes.PROJECT: set(),
     }
 
     def get_versions(self, asset_type: GcpCloudAssetInventoryTypes) -> set[str]:

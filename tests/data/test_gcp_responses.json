@@ -51,6 +51,43 @@
     "tag_values": [],
     "tag_value_ids": []
   },
+  "TEST_PROJECT_V3": {
+    "name": "//cloudresourcemanager.googleapis.com/projects/censys-cc-test-project",
+    "asset_type": "cloudresourcemanager.googleapis.com/Project",
+    "project": "projects/123456789123",
+    "display_name": "Censys CC Test Project",
+    "location": "global",
+    "additional_attributes": { "projectId": "censys-cc-test-project" },
+    "create_time": "2023-06-29T18:40:13Z",
+    "state": "ACTIVE",
+    "versioned_resources": [
+      {
+        "version": "v3",
+        "resource": {
+          "name": "projects/123456789123",
+          "state": "ACTIVE",
+          "parent": "organizations/111222333444",
+          "createTime": "2023-06-29T18:40:13.547Z",
+          "projectId": "censys-cc-test-project",
+          "displayName": "Censys CC Test Project"
+        }
+      }
+    ],
+    "organization": "organizations/111222333444",
+    "parent_full_resource_name": "//cloudresourcemanager.googleapis.com/organizations/111222333444",
+    "parent_asset_type": "cloudresourcemanager.googleapis.com/Organization",
+    "folders": [],
+    "description": "",
+    "labels": {},
+    "network_tags": [],
+    "kms_key": "",
+    "kms_keys": [],
+    "attached_resources": [],
+    "relationships": {},
+    "tag_keys": [],
+    "tag_values": [],
+    "tag_value_ids": []
+  },
   "TEST_COMPUTE_INSTANCE": {
     "name": "//compute.googleapis.com/projects/censys-cc-test-project/zones/us-central1-a/instances/cc-test-instance-1",
     "asset_type": "compute.googleapis.com/Instance",
