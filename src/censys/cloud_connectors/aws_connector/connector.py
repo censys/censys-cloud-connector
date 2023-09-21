@@ -339,7 +339,6 @@ class AwsCloudConnector(CloudConnector):
         """Retrieve all API Gateway V1 domains and emit seeds."""
         client: APIGatewayClient = self.get_aws_client(service=AwsServices.API_GATEWAY)
         label = self.format_label(SeedLabel.API_GATEWAY)
-        has_added_seeds = False
         try:
             apis = client.get_rest_apis()
             for domain in apis.get("items", []):
@@ -348,9 +347,6 @@ class AwsCloudConnector(CloudConnector):
                 with SuppressValidationError():
                     domain_seed = DomainSeed(value=domain_name, label=label)
                     self.add_seed(domain_seed, api_gateway_res=domain)
-                    has_added_seeds = True
-            if not has_added_seeds:
-                self.delete_seeds_by_label(label)
         except ClientError as e:
             self.logger.error(f"Could not connect to API Gateway V1. Error: {e}")
 
@@ -360,7 +356,6 @@ class AwsCloudConnector(CloudConnector):
             service=AwsServices.API_GATEWAY_V2
         )
         label = self.format_label(SeedLabel.API_GATEWAY)
-        has_added_seeds = False
         try:
             apis = client.get_apis()
             for domain in apis.get("Items", []):
@@ -368,9 +363,6 @@ class AwsCloudConnector(CloudConnector):
                 with SuppressValidationError():
                     domain_seed = DomainSeed(value=domain_name, label=label)
                     self.add_seed(domain_seed, api_gateway_res=domain)
-                    has_added_seeds = True
-            if not has_added_seeds:
-                self.delete_seeds_by_label(label)
         except ClientError as e:
             self.logger.error(f"Could not connect to API Gateway V2. Error: {e}")
 
@@ -378,6 +370,9 @@ class AwsCloudConnector(CloudConnector):
         """Retrieve all versions of Api Gateway data and emit seeds."""
         self.get_api_gateway_domains_v1()
         self.get_api_gateway_domains_v2()
+        label = self.format_label(SeedLabel.API_GATEWAY)
+        if not self.seeds.get(label):
+            self.delete_seeds_by_label(label)
 
     def get_load_balancers_v1(self):
         """Retrieve Elastic Load Balancers (ELB) V1 data and emit seeds."""
@@ -385,7 +380,6 @@ class AwsCloudConnector(CloudConnector):
             service=AwsServices.LOAD_BALANCER
         )
         label = self.format_label(SeedLabel.LOAD_BALANCER)
-        has_added_seeds = False
         try:
             data = client.describe_load_balancers()
             for elb in data.get("LoadBalancerDescriptions", []):
@@ -393,9 +387,6 @@ class AwsCloudConnector(CloudConnector):
                     with SuppressValidationError():
                         domain_seed = DomainSeed(value=value, label=label)
                         self.add_seed(domain_seed, elb_res=elb, aws_client=client)
-                        has_added_seeds = True
-            if not has_added_seeds:
-                self.delete_seeds_by_label(label)
         except ClientError as e:
             self.logger.error(f"Could not connect to ELB V1. Error: {e}")
 
@@ -405,7 +396,6 @@ class AwsCloudConnector(CloudConnector):
             service=AwsServices.LOAD_BALANCER_V2
         )
         label = self.format_label(SeedLabel.LOAD_BALANCER)
-        has_added_seeds = False
         try:
             data = client.describe_load_balancers()
             for elb in data.get("LoadBalancers", []):
@@ -413,9 +403,6 @@ class AwsCloudConnector(CloudConnector):
                     with SuppressValidationError():
                         domain_seed = DomainSeed(value=value, label=label)
                         self.add_seed(domain_seed, elb_res=elb, aws_client=client)
-                        has_added_seeds = True
-            if not has_added_seeds:
-                self.delete_seeds_by_label(label)
         except ClientError as e:
             self.logger.error(f"Could not connect to ELB V2. Error: {e}")
 
@@ -423,6 +410,9 @@ class AwsCloudConnector(CloudConnector):
         """Retrieve Elastic Load Balancers (ELB) data and emit seeds."""
         self.get_load_balancers_v1()
         self.get_load_balancers_v2()
+        label = self.format_label(SeedLabel.LOAD_BALANCER)
+        if not self.seeds.get(label):
+            self.delete_seeds_by_label(label)
 
     def get_network_interfaces(self):
         """Retrieve EC2 Elastic Network Interfaces (ENI) data and emit seeds."""
