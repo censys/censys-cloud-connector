@@ -118,7 +118,6 @@ class GcpCloudConnector(CloudConnector):
         for result in results:
             try:
                 project = ResourceSearchResult.to_dict(result)
-                self.logger.debug(f"FINDME EXAMPLE project: {project}")
             except json.decoder.JSONDecodeError:  # pragma: no cover
                 self.logger.debug(f"Failed to parse project: {project}")
                 continue
@@ -308,9 +307,6 @@ class GcpCloudConnector(CloudConnector):
                             ]
                             for ip_address in external_ip_addresses:
                                 label = self.format_label(project_id)
-                                self.logger.debug(
-                                    f"FINDME EXAMPLE compute instance: {asset}"
-                                )
                                 with SuppressValidationError():
                                     ip_seed = IpSeed(
                                         value=ip_address,
@@ -346,9 +342,6 @@ class GcpCloudConnector(CloudConnector):
                     ):
                         with SuppressValidationError():
                             label = self.format_label(project_id)
-                            self.logger.debug(
-                                f"FINDME EXAMPLE compute address: {asset}"
-                            )
                             ip_seed = IpSeed(
                                 value=ip_address,
                                 label=label,
@@ -387,7 +380,6 @@ class GcpCloudConnector(CloudConnector):
                         )
                     ):
                         label = self.format_label(project_id)
-                        self.logger.debug(f"FINDME EXAMPLE cluster: {asset}")
                         with SuppressValidationError():
                             ip_seed = IpSeed(
                                 value=ip_address,
@@ -427,7 +419,6 @@ class GcpCloudConnector(CloudConnector):
                             if (address := ip["ipAddress"])
                         ]:
                             label = self.format_label(project_id)
-                            self.logger.debug(f"FINDME EXAMPLE cloud sql: {asset}")
                             with SuppressValidationError():
                                 ip_seed = IpSeed(
                                     value=ip_address,
@@ -463,7 +454,6 @@ class GcpCloudConnector(CloudConnector):
                         )
                     ):
                         label = self.format_label(project_id)
-                        self.logger.debug(f"FINDME EXAMPLE dns zone: {asset}")
                         with SuppressValidationError():
                             domain_seed = DomainSeed(value=domain, label=label)
                             self.add_seed(domain_seed)
@@ -499,7 +489,6 @@ class GcpCloudConnector(CloudConnector):
                     scan_data["location"]: str = resource["location"]
                     scan_data["selfLink"]: str = resource["selfLink"]
                     uid = self.format_uid(project_id)
-                    self.logger.debug(f"FINDME EXAMPLE storage bucket: {asset}")
                     with SuppressValidationError():
                         bucket_asset = GcpStorageBucketAsset(
                             # TODO: Update when API can accept other urls
