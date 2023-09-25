@@ -97,9 +97,23 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
             p.get_provider_key(): p for p in test_azure_settings
         }
         self.connector.settings.providers[self.connector.provider] = provider_settings
+        test_possible_labels = [
+            "Azure: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/global",
+            "Azure: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/eastus",
+            "Azure: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/southcentralus",
+            "Azure: yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy/global",
+            "Azure: yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy/eastus",
+            "Azure: yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy/southcentralus",
+        ]
 
         # Mock scan
         mock_scan = self.mocker.patch.object(self.connector, "scan")
+
+        # Mock get all labels
+        self.mocker.patch.object(self.connector, "get_all_labels")
+        self.mocker.patch.object(
+            self.connector, "possible_labels", test_possible_labels
+        )
 
         # Actual call
         self.connector.scan_all()
