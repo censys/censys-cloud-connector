@@ -141,6 +141,8 @@ class AwsCloudConnector(CloudConnector):
 
                 # for each account, run each cloud asset scanner
                 try:
+                    self.temp_sts_cred = None
+                    self.region = None
                     with Healthcheck(
                         self.settings,
                         provider_setting,
