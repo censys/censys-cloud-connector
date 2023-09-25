@@ -74,20 +74,22 @@ class TestEnums(TestCase):
             ),
             (
                 GcloudCommands.ADD_ORG_IAM_POLICY,
-                "gcloud organizations add-iam-policy-binding my-org --member 'user:my-user' --role 'roles/viewer'",
+                "gcloud organizations add-iam-policy-binding my-org --member 'user:my-user' --role 'roles/viewer' --condition=None",
                 {
                     "organization_id": "my-org",
                     "member": "user:my-user",
                     "role": "roles/viewer",
+                    "condition": "None",
                 },
             ),
             (
                 GcloudCommands.ADD_ORG_IAM_POLICY,
-                "gcloud organizations add-iam-policy-binding my-org --member 'user:my-user' --role 'roles/viewer' --quiet",
+                "gcloud organizations add-iam-policy-binding my-org --member 'user:my-user' --role 'roles/viewer' --condition=None --quiet",
                 {
                     "organization_id": "my-org",
                     "member": "user:my-user",
                     "role": "roles/viewer",
+                    "condition": "None",
                     "quiet": True,
                 },
             ),
