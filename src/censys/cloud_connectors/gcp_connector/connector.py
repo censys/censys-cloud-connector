@@ -195,34 +195,34 @@ class GcpCloudConnector(CloudConnector):
         unsupported = GcpApiVersions.UNSUPPORTED_VERSIONS.get_versions(asset_type)
         # Found one version of the resource
         if count == 1:
-            if versioned_resources[0]["version"] in supported:
+            version = versioned_resources[0]["version"]
+            if version in supported:
                 return versioned_resources[0]
-            elif versioned_resources[0]["version"] in unsupported:
+            elif version in unsupported:
                 self.logger.debug(
-                    f"Version {versioned_resources[0]['version']} is unsupported and will be ignored."
+                    f"Version {version} is unsupported and will be ignored."
                 )
             else:
                 self.logger.warning(
-                    f"Version {versioned_resources[0]['version']} of the API for resource type {asset_type} is unknown."
+                    f"Version {version} of the API for resource type {asset_type} is unknown."
                 )
         # Found multiple versioned resources
         elif count > 1:
             supported_versioned_resource = None
             for versioned_resource in versioned_resources:
-                if (versioned_resource["version"] in supported) and (
-                    supported_versioned_resource is None
-                ):
+                version = versioned_resource["version"]
+                if (version in supported) and (supported_versioned_resource is None):
                     self.logger.debug(
-                        f"Found multiple versioned resources. Version {versioned_resource['version']} is supported and will be used."
+                        f"Found multiple versioned resources. Version {version} is supported and will be used."
                     )
                     supported_versioned_resource = versioned_resource
-                elif versioned_resource["version"] in unsupported:
+                elif version in unsupported:
                     self.logger.debug(
-                        f"Found multiple versioned resources. Version {versioned_resource['version']} is unsupported and will be ignored."
+                        f"Found multiple versioned resources. Version {version} is unsupported and will be ignored."
                     )
                 else:
                     self.logger.warning(
-                        f"Version {versioned_resource['version']} of the API for resource type {asset_type} is unknown."
+                        f"Version {version} of the API for resource type {asset_type} is unknown."
                     )
             return supported_versioned_resource
 
