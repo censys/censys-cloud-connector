@@ -3072,18 +3072,36 @@ reauth = ["pyu2f (>=0.1.5)"]
 requests = ["requests (>=2.20.0,<3.0.0dev)"]
 
 [[package]]
-name = "google-cloud-resource-manager"
-version = "1.10.0"
-description = "Google Cloud Resource Manager API client library"
+name = "google-cloud-access-context-manager"
+version = "0.1.16"
+description = "Google Cloud Access Context Manager Protobufs"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "google-cloud-resource-manager-1.10.0.tar.gz", hash = "sha256:bfc3e60eb92e25ac562a9248bb8fc17e9bef04c3dc9f031ffbe0dfe28d919287"},
-    {file = "google_cloud_resource_manager-1.10.0-py2.py3-none-any.whl", hash = "sha256:26beb595b957972df50173f1d0fd51c00d280551eac73566017ebdda62b1616a"},
+    {file = "google-cloud-access-context-manager-0.1.16.tar.gz", hash = "sha256:f8be51adee8b1e94a573ecb3750a4c2d2bd444b1dde35d9aa437ace73c337607"},
+    {file = "google_cloud_access_context_manager-0.1.16-py2.py3-none-any.whl", hash = "sha256:7bb9ad134da0622a335c8cd82664d39be8b66bff161af64144d212d2b6582db4"},
 ]
 
 [package.dependencies]
 google-api-core = {version = ">=1.34.0,<2.0.dev0 || >=2.11.dev0,<3.0.0dev", extras = ["grpc"]}
+protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<5.0.0dev"
+
+[[package]]
+name = "google-cloud-asset"
+version = "3.19.1"
+description = "Google Cloud Asset API client library"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "google-cloud-asset-3.19.1.tar.gz", hash = "sha256:466774d471d539386a4b07e7a08ad368c8f1a8716e19c2808f02a9de10f84b9a"},
+    {file = "google_cloud_asset-3.19.1-py2.py3-none-any.whl", hash = "sha256:0c8eb7f2c736e47bc8b9505ee0d25a8dad9ca678ef47980d64c5bf68d98226e8"},
+]
+
+[package.dependencies]
+google-api-core = {version = ">=1.34.0,<2.0.dev0 || >=2.11.dev0,<3.0.0dev", extras = ["grpc"]}
+google-cloud-access-context-manager = ">=0.1.2,<1.0.0dev"
+google-cloud-org-policy = ">=0.1.2,<2.0.0"
+google-cloud-os-config = ">=1.0.0,<2.0.0dev"
 grpc-google-iam-v1 = ">=0.12.4,<1.0.0dev"
 proto-plus = [
     {version = ">=1.22.2,<2.0.0dev", markers = "python_version >= \"3.11\""},
@@ -3092,14 +3110,52 @@ proto-plus = [
 protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<5.0.0dev"
 
 [[package]]
-name = "google-cloud-securitycenter"
-version = "1.21.0"
-description = "Google Cloud Securitycenter API client library"
+name = "google-cloud-org-policy"
+version = "1.8.2"
+description = "Google Cloud Org Policy API client library"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "google-cloud-securitycenter-1.21.0.tar.gz", hash = "sha256:ce4e726587afce95a64ce00026074dc7d967a13c636aae57149fb684340e06e7"},
-    {file = "google_cloud_securitycenter-1.21.0-py2.py3-none-any.whl", hash = "sha256:5c2067a90acc6bb51d486f7f0cc955483b6f426ba5c8bf3957dc86f00763ca4e"},
+    {file = "google-cloud-org-policy-1.8.2.tar.gz", hash = "sha256:489a634bbda478e7fd405d629ac58b6e0312cf10839683b8b6e738bd4cbc6419"},
+    {file = "google_cloud_org_policy-1.8.2-py2.py3-none-any.whl", hash = "sha256:f6b3e8249361d1e5430a0b92fbe73d99cb4117e19e5ee76371c18f819a347e0e"},
+]
+
+[package.dependencies]
+google-api-core = {version = ">=1.34.0,<2.0.dev0 || >=2.11.dev0,<3.0.0dev", extras = ["grpc"]}
+proto-plus = [
+    {version = ">=1.22.2,<2.0.0dev", markers = "python_version >= \"3.11\""},
+    {version = ">=1.22.0,<2.0.0dev", markers = "python_version < \"3.11\""},
+]
+protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<5.0.0dev"
+
+[[package]]
+name = "google-cloud-os-config"
+version = "1.15.2"
+description = "Google Cloud Os Config API client library"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "google-cloud-os-config-1.15.2.tar.gz", hash = "sha256:5a0aeac6756c6c0d29a6f7dcab15be900f2f8e7ef56cc53da80c99adaa98b7c8"},
+    {file = "google_cloud_os_config-1.15.2-py2.py3-none-any.whl", hash = "sha256:dc591e14bbc6759d68dc2bd020d5649de6046a64c3a55afd27795e3238f9e575"},
+]
+
+[package.dependencies]
+google-api-core = {version = ">=1.34.0,<2.0.dev0 || >=2.11.dev0,<3.0.0dev", extras = ["grpc"]}
+proto-plus = [
+    {version = ">=1.22.2,<2.0.0dev", markers = "python_version >= \"3.11\""},
+    {version = ">=1.22.0,<2.0.0dev", markers = "python_version < \"3.11\""},
+]
+protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<5.0.0dev"
+
+[[package]]
+name = "google-cloud-resource-manager"
+version = "1.10.0"
+description = "Google Cloud Resource Manager API client library"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "google-cloud-resource-manager-1.10.0.tar.gz", hash = "sha256:bfc3e60eb92e25ac562a9248bb8fc17e9bef04c3dc9f031ffbe0dfe28d919287"},
+    {file = "google_cloud_resource_manager-1.10.0-py2.py3-none-any.whl", hash = "sha256:26beb595b957972df50173f1d0fd51c00d280551eac73566017ebdda62b1616a"},
 ]
 
 [package.dependencies]
@@ -4217,24 +4273,24 @@ testing = ["google-api-core[grpc] (>=1.31.5)"]
 
 [[package]]
 name = "protobuf"
-version = "4.23.0"
+version = "4.23.4"
 description = ""
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "protobuf-4.23.0-cp310-abi3-win32.whl", hash = "sha256:6c16657d6717a0c62d5d740cb354fbad1b0d8cb811669e06fc1caa0ff4799ddd"},
-    {file = "protobuf-4.23.0-cp310-abi3-win_amd64.whl", hash = "sha256:baca40d067dddd62141a129f244703160d278648b569e90bb0e3753067644711"},
-    {file = "protobuf-4.23.0-cp37-abi3-macosx_10_9_universal2.whl", hash = "sha256:2b94bd6df92d71bd1234a2ffe7ce96ddf6d10cf637a18d6b55ad0a89fbb7fc21"},
-    {file = "protobuf-4.23.0-cp37-abi3-manylinux2014_aarch64.whl", hash = "sha256:9f5a0fbfcdcc364f3986f9ed9f8bb1328fb84114fd790423ff3d7fdb0f85c2d1"},
-    {file = "protobuf-4.23.0-cp37-abi3-manylinux2014_x86_64.whl", hash = "sha256:ebde3a023b8e11bfa6c890ef34cd6a8b47d586f26135e86c21344fe433daf2e2"},
-    {file = "protobuf-4.23.0-cp37-cp37m-win32.whl", hash = "sha256:7cb5b9a05ce52c6a782bb97de52679bd3438ff2b7460eff5da348db65650f227"},
-    {file = "protobuf-4.23.0-cp37-cp37m-win_amd64.whl", hash = "sha256:6fe180b56e1169d72ecc4acbd39186339aed20af5384531b8e8979b02bbee159"},
-    {file = "protobuf-4.23.0-cp38-cp38-win32.whl", hash = "sha256:d5a35ff54e3f62e8fc7be02bb0d2fbc212bba1a5a9cc2748090690093996f07b"},
-    {file = "protobuf-4.23.0-cp38-cp38-win_amd64.whl", hash = "sha256:e62fb869762b4ba18666370e2f8a18f17f8ab92dd4467295c6d38be6f8fef60b"},
-    {file = "protobuf-4.23.0-cp39-cp39-win32.whl", hash = "sha256:03eee35b60317112a72d19c54d0bff7bc58ff12fea4cd7b018232bd99758ffdf"},
-    {file = "protobuf-4.23.0-cp39-cp39-win_amd64.whl", hash = "sha256:36f5370a930cb77c8ad2f4135590c672d0d2c72d4a707c7d0058dce4b4b4a598"},
-    {file = "protobuf-4.23.0-py3-none-any.whl", hash = "sha256:9744e934ea5855d12191040ea198eaf704ac78665d365a89d9572e3b627c2688"},
-    {file = "protobuf-4.23.0.tar.gz", hash = "sha256:5f1eba1da2a2f3f7df469fccddef3cc060b8a16cfe3cc65961ad36b4dbcf59c5"},
+    {file = "protobuf-4.23.4-cp310-abi3-win32.whl", hash = "sha256:5fea3c64d41ea5ecf5697b83e41d09b9589e6f20b677ab3c48e5f242d9b7897b"},
+    {file = "protobuf-4.23.4-cp310-abi3-win_amd64.whl", hash = "sha256:7b19b6266d92ca6a2a87effa88ecc4af73ebc5cfde194dc737cf8ef23a9a3b12"},
+    {file = "protobuf-4.23.4-cp37-abi3-macosx_10_9_universal2.whl", hash = "sha256:8547bf44fe8cec3c69e3042f5c4fb3e36eb2a7a013bb0a44c018fc1e427aafbd"},
+    {file = "protobuf-4.23.4-cp37-abi3-manylinux2014_aarch64.whl", hash = "sha256:fee88269a090ada09ca63551bf2f573eb2424035bcf2cb1b121895b01a46594a"},
+    {file = "protobuf-4.23.4-cp37-abi3-manylinux2014_x86_64.whl", hash = "sha256:effeac51ab79332d44fba74660d40ae79985901ac21bca408f8dc335a81aa597"},
+    {file = "protobuf-4.23.4-cp37-cp37m-win32.whl", hash = "sha256:c3e0939433c40796ca4cfc0fac08af50b00eb66a40bbbc5dee711998fb0bbc1e"},
+    {file = "protobuf-4.23.4-cp37-cp37m-win_amd64.whl", hash = "sha256:9053df6df8e5a76c84339ee4a9f5a2661ceee4a0dab019e8663c50ba324208b0"},
+    {file = "protobuf-4.23.4-cp38-cp38-win32.whl", hash = "sha256:e1c915778d8ced71e26fcf43c0866d7499891bca14c4368448a82edc61fdbc70"},
+    {file = "protobuf-4.23.4-cp38-cp38-win_amd64.whl", hash = "sha256:351cc90f7d10839c480aeb9b870a211e322bf05f6ab3f55fcb2f51331f80a7d2"},
+    {file = "protobuf-4.23.4-cp39-cp39-win32.whl", hash = "sha256:6dd9b9940e3f17077e820b75851126615ee38643c2c5332aa7a359988820c720"},
+    {file = "protobuf-4.23.4-cp39-cp39-win_amd64.whl", hash = "sha256:0a5759f5696895de8cc913f084e27fd4125e8fb0914bb729a17816a33819f474"},
+    {file = "protobuf-4.23.4-py3-none-any.whl", hash = "sha256:e9d0be5bf34b275b9f87ba7407796556abeeba635455d036c7351f7c183ef8ff"},
+    {file = "protobuf-4.23.4.tar.gz", hash = "sha256:ccd9430c0719dce806b93f89c91de7977304729e55377f872a92465d548329a9"},
 ]
 
 [[package]]
@@ -5531,4 +5587,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "28427b2645c077b00e4cd595883c147d22c8697b9071ad171df2d1d5fdc3ad32"
+content-hash = "1c36716ca7aa69cbee68bdeb39ee9c7a7ecbbed87c43b1180a1faafa115182cb"

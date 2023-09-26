@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 from google.api_core import exceptions
-from google.cloud import securitycenter_v1
+from google.cloud.asset_v1.services.asset_service.client import AssetServiceClient
 from google.oauth2 import service_account
 from InquirerPy.separator import Separator
 from pydantic import validate_arguments
@@ -21,9 +21,9 @@ from censys.cloud_connectors.common.enums import ProviderEnum
 from .enums import (
     GcloudCommands,
     GcpApiIds,
+    GcpCloudAssetInventoryTypes,
     GcpMessages,
     GcpRoles,
-    GcpSecurityCenterResourceTypes,
 )
 from .settings import GcpSpecificSettings
 
@@ -389,7 +389,7 @@ class GcpSetupCli(ProviderSetupCli):
             list[str]: Enable API commands.
         """
         if not apis:
-            apis = [GcpApiIds.SECURITYCENTER]
+            apis = [GcpApiIds.CLOUDASSET]
         return [
             "# Enable APIs",
             GcloudCommands.ENABLE_SERVICES.generate(
@@ -593,16 +593,14 @@ class GcpSetupCli(ProviderSetupCli):
             / provider_settings.service_account_json_file
         )
         cred = service_account.Credentials.from_service_account_file(str(key_file_path))
-        security_center_client = securitycenter_v1.SecurityCenterClient(
-            credentials=cred
-        )
-        request = {
-            "parent": provider_settings.parent(),
-            "page_size": 1,
-            "filter": GcpSecurityCenterResourceTypes.COMPUTE_ADDRESS.filter(),
+        cloud_asset_client = AssetServiceClient(credentials=cred)
+        request_search = {
+            "scope": provider_settings.parent(),
+            "asset_types": [GcpCloudAssetInventoryTypes.STORAGE_BUCKET],
+            "read_mask": "*",
         }
-        res = security_center_client.list_assets(request=request)
-        next(res.pages)
+        res_search = cloud_asset_client.search_all_resources(request=request_search)
+        next(res_search.pages)
         return True
 
     def setup_with_cli(self) -> None:

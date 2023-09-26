@@ -48,6 +48,7 @@ inquirerpy = "^0.3.3"
 pydantic = {extras = ["dotenv", "email"], version = "^1.9.0"}
 requests = "^2.30.0"
 rich = "^13.3.5"
+protobuf = "^4.23.4"
 
 [tool.poetry.group.dev.dependencies]
 # Debug
@@ -109,7 +110,7 @@ pywin32 = {version = "^303", markers = "sys_platform == 'win32'"}
 [tool.poetry.group.gcp.dependencies]
 google-auth = "^2.6.0"
 google-cloud-resource-manager = "^1.4.1"
-google-cloud-securitycenter = "^1.9.0"
+google-cloud-asset = "^3.19.1"
 
 [tool.black]
 target-version = ["py39"]

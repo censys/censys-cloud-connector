@@ -16,7 +16,7 @@ class GcloudCommands(str, Enum):
     DESCRIBE_ORGANIZATION = "organizations describe {organization_id}"
     GET_PROJECT_ANCESTORS = "projects get-ancestors {project_id}"
     LIST_SERVICE_ACCOUNTS = "iam service-accounts list"
-    ADD_ORG_IAM_POLICY = "organizations add-iam-policy-binding {organization_id} --member '{member}' --role '{role}'"
+    ADD_ORG_IAM_POLICY = "organizations add-iam-policy-binding {organization_id} --member '{member}' --role '{role}' --condition=None"
     CREATE_SERVICE_ACCOUNT = "iam service-accounts create {name} --display-name '{display_name}' --description '{description}'"
     ENABLE_SERVICE_ACCOUNT = "iam service-accounts enable {service_account_email}"
     CREATE_SERVICE_ACCOUNT_KEY = "iam service-accounts keys create {key_file} --iam-account {service_account_email}"
@@ -61,7 +61,7 @@ class GcpApiIds(str, Enum):
     """GCP API IDs."""
 
     IAM = "iam"
-    SECURITYCENTER = "securitycenter"
+    CLOUDASSET = "cloudasset"
 
     def __str__(self) -> str:
         """Get the string representation of the enum.
@@ -99,8 +99,7 @@ class GcpRoles(str, Enum):
     SECURITY_REVIEWER = "iam.securityReviewer"
     FOLDER_VIEWER = "resourcemanager.folderViewer"
     ORGANIZATION_VIEWER = "resourcemanager.organizationViewer"
-    ASSETS_DISCOVERY_RUNNER = "securitycenter.assetsDiscoveryRunner"
-    ASSETS_VIEWER = "securitycenter.assetsViewer"
+    CAI_ASSETS_VIEWER = "cloudasset.viewer"
 
     def __str__(self) -> str:
         """Gets the string representation of the role.
@@ -111,23 +110,24 @@ class GcpRoles(str, Enum):
         return f"roles/{self.value}"
 
 
-class GcpSecurityCenterResourceTypes(str, Enum):
-    """GCP security center resource types."""
+class GcpCloudAssetInventoryTypes(str, Enum):
+    """GCP Cloud Asset Inventory asset types."""
 
-    COMPUTE_INSTANCE = "google.compute.Instance"
-    COMPUTE_ADDRESS = "google.compute.Address"
-    CONTAINER_CLUSTER = "google.container.Cluster"
-    CLOUD_SQL_INSTANCE = "google.cloud.sql.Instance"
-    DNS_ZONE = "google.cloud.dns.ManagedZone"
-    STORAGE_BUCKET = "google.cloud.storage.Bucket"
+    COMPUTE_INSTANCE = "compute.googleapis.com/Instance"
+    COMPUTE_ADDRESS = "compute.googleapis.com/Address"
+    CONTAINER_CLUSTER = "container.googleapis.com/Cluster"
+    CLOUD_SQL_INSTANCE = "sqladmin.googleapis.com/Instance"
+    DNS_ZONE = "dns.googleapis.com/ManagedZone"
+    STORAGE_BUCKET = "storage.googleapis.com/Bucket"
+    PROJECT = "cloudresourcemanager.googleapis.com/Project"
 
-    def filter(self) -> str:
-        """Get the filter for the resource type.
+    def __str__(self) -> str:
+        """Get the string representation of the resource type.
 
         Returns:
-            str: Filter.
+            str: The string representation of the resource type.
         """
-        return f'securityCenterProperties.resource_type : "{self.value}"'
+        return self.value
 
 
 class GcpMessages(str, Enum):
@@ -167,3 +167,38 @@ class GcpMessages(str, Enum):
             str: The string representation of the message.
         """
         return self.value
+
+
+class GcpApiVersions(Enum):
+    """GCP API versions."""
+
+    SUPPORTED_VERSIONS: dict[GcpCloudAssetInventoryTypes, set[str]] = {
+        GcpCloudAssetInventoryTypes.COMPUTE_INSTANCE: {"v1", "beta"},
+        GcpCloudAssetInventoryTypes.COMPUTE_ADDRESS: {"v1", "beta"},
+        GcpCloudAssetInventoryTypes.CONTAINER_CLUSTER: {"v1"},
+        GcpCloudAssetInventoryTypes.CLOUD_SQL_INSTANCE: {"v1", "v1beta4"},
+        GcpCloudAssetInventoryTypes.DNS_ZONE: {"v1", "v2"},
+        GcpCloudAssetInventoryTypes.STORAGE_BUCKET: {"v1"},
+        GcpCloudAssetInventoryTypes.PROJECT: {"v1", "v1beta1", "v3"},
+    }
+
+    UNSUPPORTED_VERSIONS: dict[GcpCloudAssetInventoryTypes, set[str]] = {
+        GcpCloudAssetInventoryTypes.COMPUTE_INSTANCE: set(),
+        GcpCloudAssetInventoryTypes.COMPUTE_ADDRESS: set(),
+        GcpCloudAssetInventoryTypes.CONTAINER_CLUSTER: set(),
+        GcpCloudAssetInventoryTypes.CLOUD_SQL_INSTANCE: set(),
+        GcpCloudAssetInventoryTypes.DNS_ZONE: set(),
+        GcpCloudAssetInventoryTypes.STORAGE_BUCKET: set(),
+        GcpCloudAssetInventoryTypes.PROJECT: set(),
+    }
+
+    def get_versions(self, asset_type: GcpCloudAssetInventoryTypes) -> set[str]:
+        """Get the set of supported versions for the asset type.
+
+        Args:
+            asset_type (GcpCloudAssetInventoryTypes): The asset type.
+
+        Returns:
+            set: The set of supported versions for the asset type.
+        """
+        return self.value[asset_type]

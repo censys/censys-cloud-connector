@@ -6,8 +6,8 @@ from parameterized import parameterized
 from censys.cloud_connectors.gcp_connector.enums import (
     GcloudCommands,
     GcpApiIds,
+    GcpCloudAssetInventoryTypes,
     GcpRoles,
-    GcpSecurityCenterResourceTypes,
 )
 
 TEST_PROJECT_ID = "my-project"
@@ -74,20 +74,22 @@ class TestEnums(TestCase):
             ),
             (
                 GcloudCommands.ADD_ORG_IAM_POLICY,
-                "gcloud organizations add-iam-policy-binding my-org --member 'user:my-user' --role 'roles/viewer'",
+                "gcloud organizations add-iam-policy-binding my-org --member 'user:my-user' --role 'roles/viewer' --condition=None",
                 {
                     "organization_id": "my-org",
                     "member": "user:my-user",
                     "role": "roles/viewer",
+                    "condition": "None",
                 },
             ),
             (
                 GcloudCommands.ADD_ORG_IAM_POLICY,
-                "gcloud organizations add-iam-policy-binding my-org --member 'user:my-user' --role 'roles/viewer' --quiet",
+                "gcloud organizations add-iam-policy-binding my-org --member 'user:my-user' --role 'roles/viewer' --condition=None --quiet",
                 {
                     "organization_id": "my-org",
                     "member": "user:my-user",
                     "role": "roles/viewer",
+                    "condition": "None",
                     "quiet": True,
                 },
             ),
@@ -148,8 +150,8 @@ class TestEnums(TestCase):
                 "https://console.cloud.google.com/flows/enableapi?apiid=iam.googleapis.com",
             ),
             (
-                GcpApiIds.SECURITYCENTER,
-                "https://console.cloud.google.com/flows/enableapi?apiid=securitycenter.googleapis.com",
+                GcpApiIds.CLOUDASSET,
+                "https://console.cloud.google.com/flows/enableapi?apiid=cloudasset.googleapis.com",
             ),
         ]
     )
@@ -171,8 +173,8 @@ class TestEnums(TestCase):
                 "gcloud services enable iam.googleapis.com --project my-project",
             ),
             (
-                GcpApiIds.SECURITYCENTER,
-                "gcloud services enable securitycenter.googleapis.com --project my-project",
+                GcpApiIds.CLOUDASSET,
+                "gcloud services enable cloudasset.googleapis.com --project my-project",
             ),
         ]
     )
@@ -202,12 +204,8 @@ class TestEnums(TestCase):
                 "roles/resourcemanager.organizationViewer",
             ),
             (
-                GcpRoles.ASSETS_DISCOVERY_RUNNER,
-                "roles/securitycenter.assetsDiscoveryRunner",
-            ),
-            (
-                GcpRoles.ASSETS_VIEWER,
-                "roles/securitycenter.assetsViewer",
+                GcpRoles.CAI_ASSETS_VIEWER,
+                "roles/cloudasset.viewer",
             ),
         ]
     )
@@ -225,34 +223,38 @@ class TestEnums(TestCase):
     @parameterized.expand(
         [
             (
-                GcpSecurityCenterResourceTypes.COMPUTE_ADDRESS,
-                'securityCenterProperties.resource_type : "google.compute.Address"',
+                GcpCloudAssetInventoryTypes.COMPUTE_INSTANCE,
+                "compute.googleapis.com/Instance",
             ),
             (
-                GcpSecurityCenterResourceTypes.CONTAINER_CLUSTER,
-                'securityCenterProperties.resource_type : "google.container.Cluster"',
+                GcpCloudAssetInventoryTypes.COMPUTE_ADDRESS,
+                "compute.googleapis.com/Address",
             ),
             (
-                GcpSecurityCenterResourceTypes.CLOUD_SQL_INSTANCE,
-                'securityCenterProperties.resource_type : "google.cloud.sql.Instance"',
+                GcpCloudAssetInventoryTypes.CONTAINER_CLUSTER,
+                "container.googleapis.com/Cluster",
             ),
             (
-                GcpSecurityCenterResourceTypes.DNS_ZONE,
-                'securityCenterProperties.resource_type : "google.cloud.dns.ManagedZone"',
+                GcpCloudAssetInventoryTypes.CLOUD_SQL_INSTANCE,
+                "sqladmin.googleapis.com/Instance",
             ),
             (
-                GcpSecurityCenterResourceTypes.STORAGE_BUCKET,
-                'securityCenterProperties.resource_type : "google.cloud.storage.Bucket"',
+                GcpCloudAssetInventoryTypes.DNS_ZONE,
+                "dns.googleapis.com/ManagedZone",
+            ),
+            (
+                GcpCloudAssetInventoryTypes.STORAGE_BUCKET,
+                "storage.googleapis.com/Bucket",
             ),
         ]
     )
     def test_gcp_security_center_resource_types(
         self,
-        enum_resource_type: GcpSecurityCenterResourceTypes,
+        enum_resource_type: GcpCloudAssetInventoryTypes,
         expected_filter: str,
     ):
         # Actual call
-        actual_filter = enum_resource_type.filter()
+        actual_filter = enum_resource_type
 
         # Assertions
         assert expected_filter == actual_filter

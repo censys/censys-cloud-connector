@@ -1,266 +1,1004 @@
 {
   "TEST_CREDS": {
-    "organization_id": "6543219870",
+    "organization_id": "111222333444",
     "service_account_json_file": "test_gcp_service_account.json",
     "service_account_email": "test2-service-account@domain.com"
   },
   "TEST_CREDS_IGNORE": {
-    "ignore": ["google.cloud.storage.Bucket", "google.compute.Address", "google.container.Cluster"],
-    "organization_id": "6543219870",
+    "ignore": [
+      "storage.googleapis.com/Bucket",
+      "compute.googleapis.com/Address",
+      "container.googleapis.com/Cluster"
+    ],
+    "organization_id": "111222333444",
     "service_account_json_file": "test_gcp_service_account.json",
     "service_account_email": "test2-service-account@domain.com"
   },
-  "TEST_COMPUTE_ADDRESS": {
-    "asset": {
-      "name": "organizations/xxxxxxxxxxxx/assets/5134954895979630999",
-      "securityCenterProperties": {
-        "resourceName": "//compute.googleapis.com/projects/censys-cc-test-project/regions/us-central1/addresses/6213726453839636195",
-        "resourceType": "google.compute.Address",
-        "resourceParent": "//cloudresourcemanager.googleapis.com/projects/xxxxxxxxxxxx",
-        "resourceProject": "//cloudresourcemanager.googleapis.com/projects/xxxxxxxxxxxx",
-        "resourceOwners": ["user:admin@censys.io"],
-        "resourceDisplayName": "test-instance-1",
-        "resourceParentDisplayName": "censys-cc-test-project",
-        "resourceProjectDisplayName": "censys-cc-test-project",
-        "folders": []
-      },
-      "resourceProperties": {
-        "users": "[\"https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-c/instances/instance-1\"]",
-        "id": "6213726453839636195",
-        "region": "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/regions/us-central1",
-        "addressType": "EXTERNAL",
-        "status": "IN_USE",
-        "name": "test-instance-1",
-        "selfLink": "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/regions/us-central1/addresses/test-instance-1",
-        "creationTimestamp": "2022-03-04T14:51:56.839-08:00",
-        "description": "",
-        "address": "34.67.125.83",
-        "networkTier": "PREMIUM",
-        "kind": "compute#address"
-      },
-      "securityMarks": {
-        "name": "organizations/xxxxxxxxxxxx/assets/5134954895979630999/securityMarks",
-        "marks": {},
-        "canonicalName": ""
-      },
-      "createTime": "2022-03-04T22:51:59.208Z",
-      "updateTime": "2022-03-04T22:51:59.208Z",
-      "iamPolicy": {
-        "policyBlob": ""
-      },
-      "canonicalName": "projects/xxxxxxxxxxxx/assets/5134954895979630999"
+  "TEST_PROJECT": {
+    "name": "//cloudresourcemanager.googleapis.com/projects/censys-cc-test-project",
+    "asset_type": "cloudresourcemanager.googleapis.com/Project",
+    "project": "projects/123456789123",
+    "display_name": "Censys CC Test Project",
+    "location": "global",
+    "additional_attributes": { "projectId": "censys-cc-test-project" },
+    "create_time": "2023-06-29T18:40:13Z",
+    "state": "ACTIVE",
+    "versioned_resources": [
+      {
+        "version": "v1",
+        "resource": {
+          "projectNumber": "123456789123",
+          "lifecycleState": "ACTIVE",
+          "parent": { "type": "organization", "id": "111222333444" },
+          "createTime": "2023-06-29T18:40:13.547Z",
+          "projectId": "censys-cc-test-project",
+          "name": "Censys CC Test Project"
+        }
+      }
+    ],
+    "organization": "organizations/111222333444",
+    "parent_full_resource_name": "//cloudresourcemanager.googleapis.com/organizations/111222333444",
+    "parent_asset_type": "cloudresourcemanager.googleapis.com/Organization",
+    "folders": [],
+    "description": "",
+    "labels": {},
+    "network_tags": [],
+    "kms_key": "",
+    "kms_keys": [],
+    "attached_resources": [],
+    "relationships": {},
+    "tag_keys": [],
+    "tag_values": [],
+    "tag_value_ids": []
+  },
+  "TEST_PROJECT_V3": {
+    "name": "//cloudresourcemanager.googleapis.com/projects/censys-cc-test-project",
+    "asset_type": "cloudresourcemanager.googleapis.com/Project",
+    "project": "projects/123456789123",
+    "display_name": "Censys CC Test Project",
+    "location": "global",
+    "additional_attributes": { "projectId": "censys-cc-test-project" },
+    "create_time": "2023-06-29T18:40:13Z",
+    "state": "ACTIVE",
+    "versioned_resources": [
+      {
+        "version": "v3",
+        "resource": {
+          "name": "projects/123456789123",
+          "state": "ACTIVE",
+          "parent": "organizations/111222333444",
+          "createTime": "2023-06-29T18:40:13.547Z",
+          "projectId": "censys-cc-test-project",
+          "displayName": "Censys CC Test Project"
+        }
+      }
+    ],
+    "organization": "organizations/111222333444",
+    "parent_full_resource_name": "//cloudresourcemanager.googleapis.com/organizations/111222333444",
+    "parent_asset_type": "cloudresourcemanager.googleapis.com/Organization",
+    "folders": [],
+    "description": "",
+    "labels": {},
+    "network_tags": [],
+    "kms_key": "",
+    "kms_keys": [],
+    "attached_resources": [],
+    "relationships": {},
+    "tag_keys": [],
+    "tag_values": [],
+    "tag_value_ids": []
+  },
+  "TEST_COMPUTE_INSTANCE": {
+    "name": "//compute.googleapis.com/projects/censys-cc-test-project/zones/us-central1-a/instances/cc-test-instance-1",
+    "asset_type": "compute.googleapis.com/Instance",
+    "project": "projects/123456789123",
+    "display_name": "cc-test-instance-1",
+    "location": "us-central1-a",
+    "additional_attributes": {
+      "externalIPs": ["35.0.0.1"],
+      "machineType": "e2-micro",
+      "networkInterfaceNames": ["nic0"],
+      "id": "123",
+      "networkInterfaceStackTypes": ["IPV4_ONLY"],
+      "deletionProtection": "FALSE",
+      "internalIPs": ["10.0.0.2"],
+      "networkInterfaceNetworks": [
+        "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/global/networks/default"
+      ]
     },
-    "stateChange": 0
+    "create_time": "2023-09-07T17:12:49Z",
+    "state": "RUNNING",
+    "versioned_resources": [
+      {
+        "version": "v1",
+        "resource": {
+          "cpuPlatform": "Intel Broadwell",
+          "description": "",
+          "confidentialInstanceConfig": { "enableConfidentialCompute": false },
+          "shieldedInstanceIntegrityPolicy": { "updateAutoLearnPolicy": true },
+          "id": "123",
+          "serviceAccounts": [
+            {
+              "email": "123456789123-compute@developer.gserviceaccount.com",
+              "scopes": [
+                "https://www.googleapis.com/auth/devstorage.read_only",
+                "https://www.googleapis.com/auth/logging.write",
+                "https://www.googleapis.com/auth/monitoring.write",
+                "https://www.googleapis.com/auth/servicecontrol",
+                "https://www.googleapis.com/auth/service.management.readonly",
+                "https://www.googleapis.com/auth/trace.append"
+              ]
+            }
+          ],
+          "tags": { "fingerprint": "X=" },
+          "creationTimestamp": "2023-09-07T10:12:49.625-07:00",
+          "shieldedInstanceConfig": {
+            "enableSecureBoot": false,
+            "enableIntegrityMonitoring": true,
+            "enableVtpm": true
+          },
+          "status": "RUNNING",
+          "deletionProtection": false,
+          "disks": [
+            {
+              "interface": "SCSI",
+              "licenses": [
+                "https://www.googleapis.com/compute/v1/projects/debian-cloud/global/licenses/debian-11-bullseye"
+              ],
+              "type": "PERSISTENT",
+              "index": 0.0,
+              "architecture": "X86_64",
+              "source": "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-a/disks/cc-test-instance-1",
+              "diskSizeGb": "10",
+              "guestOsFeatures": [
+                { "type": "UEFI_COMPATIBLE" },
+                { "type": "VIRTIO_SCSI_MULTIQUEUE" },
+                { "type": "GVNIC" },
+                { "type": "SEV_CAPABLE" }
+              ],
+              "boot": true,
+              "mode": "READ_WRITE",
+              "deviceName": "cc-test-instance-1",
+              "autoDelete": true
+            }
+          ],
+          "selfLink": "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-a/instances/cc-test-instance-1",
+          "name": "cc-test-instance-1",
+          "scheduling": {
+            "automaticRestart": true,
+            "onHostMaintenance": "MIGRATE",
+            "preemptible": false,
+            "provisioningModel": "STANDARD"
+          },
+          "lastStartTimestamp": "2023-09-07T10:12:55.873-07:00",
+          "machineType": "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-a/machineTypes/e2-micro",
+          "networkInterfaces": [
+            {
+              "stackType": "IPV4_ONLY",
+              "networkIP": "10.0.0.2",
+              "network": "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/global/networks/default",
+              "subnetwork": "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/regions/us-central1/subnetworks/default",
+              "accessConfigs": [
+                {
+                  "type": "ONE_TO_ONE_NAT",
+                  "natIP": "35.0.0.1",
+                  "networkTier": "STANDARD",
+                  "name": "External NAT"
+                }
+              ],
+              "fingerprint": "X=",
+              "name": "nic0"
+            }
+          ],
+          "displayDevice": { "enableDisplay": false },
+          "resourceStatus": {},
+          "reservationAffinity": { "consumeReservationType": "ANY_ALLOCATION" },
+          "zone": "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-a",
+          "canIpForward": false,
+          "startRestricted": false,
+          "labelFingerprint": "X=",
+          "keyRevocationActionType": "NONE_ON_KEY_REVOCATION",
+          "fingerprint": "X="
+        }
+      }
+    ],
+    "organization": "organizations/111222333444",
+    "parent_full_resource_name": "//cloudresourcemanager.googleapis.com/projects/censys-cc-test-project",
+    "parent_asset_type": "cloudresourcemanager.googleapis.com/Project",
+    "folders": [],
+    "description": "",
+    "labels": {},
+    "network_tags": [],
+    "kms_key": "",
+    "kms_keys": [],
+    "attached_resources": [],
+    "relationships": {},
+    "tag_keys": [],
+    "tag_values": [],
+    "tag_value_ids": []
+  },
+  "TEST_COMPUTE_ADDRESS": {
+    "name": "//compute.googleapis.com/projects/censys-cc-test-project/regions/us-central1/addresses/cc-testing-static-ip-0",
+    "asset_type": "compute.googleapis.com/Address",
+    "project": "projects/123456789123",
+    "display_name": "cc-testing-static-ip-0",
+    "location": "us-central1",
+    "additional_attributes": { "address": "35.0.0.1" },
+    "create_time": "2023-09-07T17:16:29Z",
+    "state": "IN_USE",
+    "versioned_resources": [
+      {
+        "version": "v1",
+        "resource": {
+          "region": "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/regions/us-central1",
+          "description": "",
+          "status": "IN_USE",
+          "users": [
+            "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-a/instances/cc-test-instance-1"
+          ],
+          "id": "123",
+          "creationTimestamp": "2023-09-07T10:16:29.305-07:00",
+          "address": "35.0.0.1",
+          "addressType": "EXTERNAL",
+          "networkTier": "STANDARD",
+          "labelFingerprint": "X=",
+          "selfLink": "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/regions/us-central1/addresses/cc-testing-static-ip-0",
+          "name": "cc-testing-static-ip-0"
+        }
+      }
+    ],
+    "organization": "organizations/111222333444",
+    "parent_full_resource_name": "//cloudresourcemanager.googleapis.com/projects/censys-cc-test-project",
+    "parent_asset_type": "cloudresourcemanager.googleapis.com/Project",
+    "folders": [],
+    "description": "",
+    "labels": {},
+    "network_tags": [],
+    "kms_key": "",
+    "kms_keys": [],
+    "attached_resources": [],
+    "relationships": {},
+    "tag_keys": [],
+    "tag_values": [],
+    "tag_value_ids": []
   },
   "TEST_CONTAINER_CLUSTER": {
-    "asset": {
-      "name": "organizations/xxxxxxxxxxxx/assets/8892776545631122197",
-      "securityCenterProperties": {
-        "resourceName": "//container.googleapis.com/projects/censys-cc-test-project/zones/us-central1-c/clusters/cluster-1",
-        "resourceType": "google.container.Cluster",
-        "resourceParent": "//cloudresourcemanager.googleapis.com/projects/685962742949",
-        "resourceProject": "//cloudresourcemanager.googleapis.com/projects/685962742949",
-        "resourceOwners": ["user:admin-censys@censys.io"],
-        "resourceDisplayName": "cluster-1",
-        "resourceParentDisplayName": "censys-cc-test-project",
-        "resourceProjectDisplayName": "censys-cc-test-project",
-        "folders": []
-      },
-      "resourceProperties": {
-        "name": "cluster-1",
-        "networkConfig": "{\"datapathProvider\":\"LEGACY_DATAPATH\",\"defaultSnatStatus\":{},\"network\":\"projects/censys-cc-test-project/global/networks/default\",\"serviceExternalIpsConfig\":{},\"subnetwork\":\"projects/censys-cc-test-project/regions/us-central1/subnetworks/default\"}",
-        "loggingConfig": "{\"componentConfig\":{\"enableComponents\":[\"SYSTEM_COMPONENTS\",\"WORKLOADS\"]}}",
-        "currentNodeCount": 3.0,
-        "id": "d6a9d225e010436b9fd104f0d62054cbb70a9033f9684649b053b32a7fa07caf",
-        "status": "PROVISIONING",
-        "masterAuth": "{\"clusterCaCertificate\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
-        "subnetwork": "default",
-        "zone": "us-central1-c",
-        "defaultMaxPodsConstraint": "{\"maxPodsPerNode\":\"110\"}",
-        "releaseChannel": "{\"channel\":\"REGULAR\"}",
-        "currentNodeVersion": "1.21.6-gke.1503",
-        "legacyAbac": "{}",
-        "databaseEncryption": "{\"state\":\"DECRYPTED\"}",
-        "monitoringService": "monitoring.googleapis.com/kubernetes",
-        "currentMasterVersion": "1.21.6-gke.1503",
-        "addonsConfig": "{\"dnsCacheConfig\":{},\"gcePersistentDiskCsiDriverConfig\":{\"enabled\":true},\"horizontalPodAutoscaling\":{},\"httpLoadBalancing\":{},\"kubernetesDashboard\":{\"disabled\":true},\"networkPolicyConfig\":{\"disabled\":true}}",
-        "ipAllocationPolicy": "{\"clusterSecondaryRangeName\":\"gke-cluster-1-pods-d6a9d225\",\"servicesSecondaryRangeName\":\"gke-cluster-1-services-d6a9d225\",\"useIpAliases\":true}",
-        "nodePoolDefaults": "{\"nodeConfigDefaults\":{}}",
-        "labelFingerprint": "a9dc16a7",
-        "notificationConfig": "{\"pubsub\":{}}",
-        "location": "us-central1-c",
-        "loggingService": "logging.googleapis.com/kubernetes",
-        "authenticatorGroupsConfig": "{}",
-        "maintenancePolicy": "{\"resourceVersion\":\"e3b0c442\"}",
-        "masterAuthorizedNetworksConfig": "{}",
-        "nodePoolAutoConfig": "{}",
-        "locations": "[\"us-central1-c\"]",
-        "shieldedNodes": "{\"enabled\":true}",
-        "nodeConfig": "{\"diskSizeGb\":100.0,\"diskType\":\"pd-standard\",\"imageType\":\"COS_CONTAINERD\",\"machineType\":\"e2-medium\",\"metadata\":{\"disable-legacy-endpoints\":\"true\"},\"oauthScopes\":[\"https://www.googleapis.com/auth/devstorage.read_only\",\"https://www.googleapis.com/auth/logging.write\",\"https://www.googleapis.com/auth/monitoring\",\"https://www.googleapis.com/auth/servicecontrol\",\"https://www.googleapis.com/auth/service.management.readonly\",\"https://www.googleapis.com/auth/trace.append\"],\"serviceAccount\":\"default\",\"shieldedInstanceConfig\":{\"enableIntegrityMonitoring\":true}}",
-        "monitoringConfig": "{\"componentConfig\":{\"enableComponents\":[\"SYSTEM_COMPONENTS\"]}}",
-        "autoscaling": "{\"autoscalingProfile\":\"BALANCED\"}",
-        "network": "default",
-        "selfLink": "https://container.googleapis.com/v1/projects/censys-cc-test-project/zones/us-central1-c/clusters/cluster-1",
-        "nodePools": "[{\"autoscaling\":{},\"config\":{\"diskSizeGb\":100.0,\"diskType\":\"pd-standard\",\"imageType\":\"COS_CONTAINERD\",\"machineType\":\"e2-medium\",\"metadata\":{\"disable-legacy-endpoints\":\"true\"},\"oauthScopes\":[\"https://www.googleapis.com/auth/devstorage.read_only\",\"https://www.googleapis.com/auth/logging.write\",\"https://www.googleapis.com/auth/monitoring\",\"https://www.googleapis.com/auth/servicecontrol\",\"https://www.googleapis.com/auth/service.management.readonly\",\"https://www.googleapis.com/auth/trace.append\"],\"serviceAccount\":\"default\",\"shieldedInstanceConfig\":{\"enableIntegrityMonitoring\":true}},\"initialNodeCount\":3.0,\"instanceGroupUrls\":[\"https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-c/instanceGroupManagers/gke-cluster-1-default-pool-5e8f5637-grp\"],\"locations\":[\"us-central1-c\"],\"management\":{\"autoRepair\":true,\"autoUpgrade\":true},\"maxPodsConstraint\":{\"maxPodsPerNode\":\"110\"},\"name\":\"default-pool\",\"networkConfig\":{\"podRange\":\"gke-cluster-1-pods-d6a9d225\"},\"podIpv4CidrSize\":24.0,\"selfLink\":\"https://container.googleapis.com/v1/projects/censys-cc-test-project/zones/us-central1-c/clusters/cluster-1/nodePools/default-pool\",\"status\":\"PROVISIONING\",\"upgradeSettings\":{\"maxSurge\":1.0},\"version\":\"1.21.6-gke.1503\"}]",
-        "privateClusterConfig": "{\"enablePrivateNodes\":true,\"masterIpv4CidrBlock\":\"34.67.125.0/28\",\"peeringName\":\"gke-nd475d45257f4e9cebae-699d-1ce9-peer\",\"publicEndpoint\":\"34.67.125.0\"}",
-        "createTime": "2022-03-07T18:06:43+00:00",
-        "instanceGroupUrls": "[\"https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-c/instanceGroupManagers/gke-cluster-1-default-pool-5e8f5637-grp\"]",
-        "initialClusterVersion": "1.21.6-gke.1503"
-      },
-      "securityMarks": {
-        "name": "organizations/xxxxxxxxxxxx/assets/8892776545631122197/securityMarks",
-        "marks": {},
-        "canonicalName": ""
-      },
-      "createTime": "2022-03-07T18:06:47.246Z",
-      "updateTime": "2022-03-07T18:06:47.246Z",
-      "iamPolicy": {
-        "policyBlob": ""
-      },
-      "canonicalName": "projects/685962742949/assets/8892776545631122197"
-    },
-    "stateChange": 0
+    "name": "//container.googleapis.com/projects/censys-cc-test-project/locations/us-central1/clusters/cc-test-cluster-1",
+    "asset_type": "container.googleapis.com/Cluster",
+    "project": "projects/123456789123",
+    "display_name": "cc-test-cluster-1",
+    "description": "Test cluster.",
+    "location": "us-central1",
+    "labels": { "env": "test" },
+    "additional_attributes": { "endpoint": "172.0.0.1" },
+    "create_time": "2023-09-07T22:58:47Z",
+    "state": "RUNNING",
+    "versioned_resources": [
+      {
+        "version": "v1",
+        "resource": {
+          "endpoint": "172.0.0.1",
+          "notificationConfig": { "pubsub": {} },
+          "loggingService": "logging.googleapis.com/kubernetes",
+          "nodeConfig": {
+            "serviceAccount": "default",
+            "workloadMetadataConfig": { "mode": "GKE_METADATA" },
+            "machineType": "e2-medium",
+            "metadata": { "disable-legacy-endpoints": "true" },
+            "reservationAffinity": {
+              "consumeReservationType": "NO_RESERVATION"
+            },
+            "diskSizeGb": 100.0,
+            "diskType": "pd-standard",
+            "imageType": "COS_CONTAINERD",
+            "shieldedInstanceConfig": {
+              "enableSecureBoot": true,
+              "enableIntegrityMonitoring": true
+            },
+            "oauthScopes": [
+              "https://www.googleapis.com/auth/devstorage.read_only",
+              "https://www.googleapis.com/auth/logging.write",
+              "https://www.googleapis.com/auth/monitoring",
+              "https://www.googleapis.com/auth/service.management.readonly",
+              "https://www.googleapis.com/auth/servicecontrol",
+              "https://www.googleapis.com/auth/trace.append"
+            ],
+            "windowsNodeConfig": {}
+          },
+          "initialClusterVersion": "1.27.3-gke.100",
+          "status": "RUNNING",
+          "currentNodeVersion": "1.27.3-gke.100",
+          "binaryAuthorization": { "evaluationMode": "DISABLED" },
+          "clusterIpv4Cidr": "10.0.0.8/17",
+          "defaultMaxPodsConstraint": { "maxPodsPerNode": "110" },
+          "addonsConfig": {
+            "gcpFilestoreCsiDriverConfig": { "enabled": true },
+            "httpLoadBalancing": {},
+            "networkPolicyConfig": { "disabled": true },
+            "horizontalPodAutoscaling": {},
+            "dnsCacheConfig": { "enabled": true },
+            "kubernetesDashboard": { "disabled": true },
+            "gcePersistentDiskCsiDriverConfig": { "enabled": true },
+            "gcsFuseCsiDriverConfig": { "enabled": true }
+          },
+          "monitoringConfig": {
+            "managedPrometheusConfig": { "enabled": true },
+            "advancedDatapathObservabilityConfig": {
+              "relayMode": "DISABLED",
+              "enableMetrics": true
+            },
+            "componentConfig": { "enableComponents": ["SYSTEM_COMPONENTS"] }
+          },
+          "privateClusterConfig": {
+            "privateEndpoint": "172.0.0.1",
+            "peeringName": "gke-ne5f659bd10229444444-9999-888-peer",
+            "publicEndpoint": "104.0.0.5",
+            "enablePrivateNodes": true,
+            "enablePrivateEndpoint": true,
+            "masterIpv4CidrBlock": "172.0.0.4/28"
+          },
+          "resourceLabels": { "env": "test" },
+          "autopilot": { "enabled": true },
+          "networkConfig": {
+            "datapathProvider": "ADVANCED_DATAPATH",
+            "network": "projects/censys-cc-test-project/global/networks/default",
+            "gatewayApiConfig": { "channel": "CHANNEL_STANDARD" },
+            "defaultSnatStatus": {},
+            "enableIntraNodeVisibility": true,
+            "subnetwork": "projects/censys-cc-test-project/regions/us-central1/subnetworks/default",
+            "serviceExternalIpsConfig": {},
+            "dnsConfig": {
+              "clusterDnsScope": "CLUSTER_SCOPE",
+              "clusterDns": "CLOUD_DNS",
+              "clusterDnsDomain": "cluster.local"
+            }
+          },
+          "ipAllocationPolicy": {
+            "stackType": "IPV4",
+            "clusterIpv4Cidr": "10.0.0.8/17",
+            "defaultPodIpv4RangeUtilization": 0.0078,
+            "clusterIpv4CidrBlock": "10.0.0.8/17",
+            "servicesIpv4CidrBlock": "34.0.0.1/20",
+            "podCidrOverprovisionConfig": {},
+            "useIpAliases": true,
+            "clusterSecondaryRangeName": "gke-cc-test-cluster-1-pods-f242081a",
+            "servicesIpv4Cidr": "34.0.0.1/20"
+          },
+          "etag": "abc",
+          "createTime": "2023-09-07T22:58:47+00:00",
+          "loggingConfig": {
+            "componentConfig": {
+              "enableComponents": ["SYSTEM_COMPONENTS", "WORKLOADS"]
+            }
+          },
+          "databaseEncryption": { "state": "DECRYPTED" },
+          "location": "us-central1",
+          "nodePools": [
+            {
+              "upgradeSettings": { "maxSurge": 1.0, "strategy": "SURGE" },
+              "locations": ["us-central1-f"],
+              "status": "RUNNING",
+              "selfLink": "https://container.googleapis.com/v1/projects/censys-cc-test-project/locations/us-central1/clusters/cc-test-cluster-1/nodePools/default-pool",
+              "name": "default-pool",
+              "version": "1.27.3-gke.100",
+              "instanceGroupUrls": [
+                "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-f/instanceGroupManagers/gk3-cc-test-cluster-1-default-pool-8d5f6aae-grp"
+              ],
+              "networkConfig": {
+                "podIpv4RangeUtilization": 0.0078,
+                "podRange": "gke-cc-test-cluster-1-pods-f242081a",
+                "podIpv4CidrBlock": "10.0.0.8/17"
+              },
+              "management": { "autoUpgrade": true, "autoRepair": true },
+              "etag": "abc",
+              "maxPodsConstraint": { "maxPodsPerNode": "32" },
+              "autoscaling": {
+                "enabled": true,
+                "locationPolicy": "BALANCED",
+                "maxNodeCount": 1000.0
+              },
+              "config": {
+                "serviceAccount": "default",
+                "workloadMetadataConfig": { "mode": "GKE_METADATA" },
+                "machineType": "e2-medium",
+                "metadata": { "disable-legacy-endpoints": "true" },
+                "reservationAffinity": {
+                  "consumeReservationType": "NO_RESERVATION"
+                },
+                "diskSizeGb": 100.0,
+                "diskType": "pd-standard",
+                "imageType": "COS_CONTAINERD",
+                "shieldedInstanceConfig": {
+                  "enableSecureBoot": true,
+                  "enableIntegrityMonitoring": true
+                },
+                "oauthScopes": [
+                  "https://www.googleapis.com/auth/devstorage.read_only",
+                  "https://www.googleapis.com/auth/logging.write",
+                  "https://www.googleapis.com/auth/monitoring",
+                  "https://www.googleapis.com/auth/service.management.readonly",
+                  "https://www.googleapis.com/auth/servicecontrol",
+                  "https://www.googleapis.com/auth/trace.append"
+                ],
+                "windowsNodeConfig": {}
+              },
+              "initialNodeCount": 1.0,
+              "podIpv4CidrSize": 26.0
+            },
+            {
+              "upgradeSettings": { "maxSurge": 1.0, "strategy": "SURGE" },
+              "locations": [
+                "us-central1-a",
+                "us-central1-b",
+                "us-central1-c",
+                "us-central1-f"
+              ],
+              "status": "RUNNING",
+              "selfLink": "https://container.googleapis.com/v1/projects/censys-cc-test-project/locations/us-central1/clusters/cc-test-cluster-1/nodePools/pool-1",
+              "name": "pool-1",
+              "version": "1.27.3-gke.100",
+              "instanceGroupUrls": [
+                "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-a/instanceGroupManagers/gk3-cc-test-cluster-1-pool-1-e3d93a81-grp",
+                "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-b/instanceGroupManagers/gk3-cc-test-cluster-1-pool-1-f1b22dc3-grp",
+                "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-c/instanceGroupManagers/gk3-cc-test-cluster-1-pool-1-e0ddeaa4-grp",
+                "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-f/instanceGroupManagers/gk3-cc-test-cluster-1-pool-1-c6fe9917-grp"
+              ],
+              "networkConfig": {
+                "podIpv4RangeUtilization": 0.0078,
+                "podRange": "gke-cc-test-cluster-1-pods-f242081a",
+                "podIpv4CidrBlock": "10.0.0.8/17"
+              },
+              "management": { "autoUpgrade": true, "autoRepair": true },
+              "etag": "abc",
+              "autoscaling": {
+                "enabled": true,
+                "locationPolicy": "BALANCED",
+                "maxNodeCount": 1000.0
+              },
+              "config": {
+                "serviceAccount": "default",
+                "workloadMetadataConfig": { "mode": "GKE_METADATA" },
+                "machineType": "e2-standard-2",
+                "metadata": { "disable-legacy-endpoints": "true" },
+                "reservationAffinity": {
+                  "consumeReservationType": "NO_RESERVATION"
+                },
+                "diskSizeGb": 100.0,
+                "diskType": "pd-standard",
+                "imageType": "COS_CONTAINERD",
+                "shieldedInstanceConfig": {
+                  "enableSecureBoot": true,
+                  "enableIntegrityMonitoring": true
+                },
+                "oauthScopes": [
+                  "https://www.googleapis.com/auth/devstorage.read_only",
+                  "https://www.googleapis.com/auth/logging.write",
+                  "https://www.googleapis.com/auth/monitoring",
+                  "https://www.googleapis.com/auth/service.management.readonly",
+                  "https://www.googleapis.com/auth/servicecontrol",
+                  "https://www.googleapis.com/auth/trace.append"
+                ],
+                "windowsNodeConfig": {}
+              },
+              "maxPodsConstraint": { "maxPodsPerNode": "32" },
+              "podIpv4CidrSize": 26.0
+            },
+            {
+              "upgradeSettings": { "maxSurge": 1.0, "strategy": "SURGE" },
+              "locations": [
+                "us-central1-a",
+                "us-central1-b",
+                "us-central1-c",
+                "us-central1-f"
+              ],
+              "status": "RUNNING",
+              "selfLink": "https://container.googleapis.com/v1/projects/censys-cc-test-project/locations/us-central1/clusters/cc-test-cluster-1/nodePools/pool-2",
+              "name": "pool-2",
+              "version": "1.27.3-gke.100",
+              "instanceGroupUrls": [
+                "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-a/instanceGroupManagers/gk3-cc-test-cluster-1-pool-2-6efa2010-grp",
+                "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-b/instanceGroupManagers/gk3-cc-test-cluster-1-pool-2-4c1c647a-grp",
+                "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-c/instanceGroupManagers/gk3-cc-test-cluster-1-pool-2-6da2dc9c-grp",
+                "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-f/instanceGroupManagers/gk3-cc-test-cluster-1-pool-2-f4c7ddb7-grp"
+              ],
+              "networkConfig": {
+                "podIpv4RangeUtilization": 0.0078,
+                "podRange": "gke-cc-test-cluster-1-pods-f242081a",
+                "podIpv4CidrBlock": "10.0.0.8/17"
+              },
+              "management": { "autoUpgrade": true, "autoRepair": true },
+              "etag": "abc",
+              "autoscaling": {
+                "enabled": true,
+                "locationPolicy": "BALANCED",
+                "maxNodeCount": 1000.0
+              },
+              "config": {
+                "serviceAccount": "default",
+                "workloadMetadataConfig": { "mode": "GKE_METADATA" },
+                "machineType": "e2-standard-4",
+                "metadata": { "disable-legacy-endpoints": "true" },
+                "reservationAffinity": {
+                  "consumeReservationType": "NO_RESERVATION"
+                },
+                "diskSizeGb": 100.0,
+                "diskType": "pd-standard",
+                "imageType": "COS_CONTAINERD",
+                "shieldedInstanceConfig": {
+                  "enableSecureBoot": true,
+                  "enableIntegrityMonitoring": true
+                },
+                "oauthScopes": [
+                  "https://www.googleapis.com/auth/devstorage.read_only",
+                  "https://www.googleapis.com/auth/logging.write",
+                  "https://www.googleapis.com/auth/monitoring",
+                  "https://www.googleapis.com/auth/service.management.readonly",
+                  "https://www.googleapis.com/auth/servicecontrol",
+                  "https://www.googleapis.com/auth/trace.append"
+                ],
+                "windowsNodeConfig": {}
+              },
+              "maxPodsConstraint": { "maxPodsPerNode": "32" },
+              "podIpv4CidrSize": 26.0
+            },
+            {
+              "upgradeSettings": { "maxSurge": 1.0, "strategy": "SURGE" },
+              "locations": [
+                "us-central1-a",
+                "us-central1-b",
+                "us-central1-c",
+                "us-central1-f"
+              ],
+              "status": "RUNNING",
+              "selfLink": "https://container.googleapis.com/v1/projects/censys-cc-test-project/locations/us-central1/clusters/cc-test-cluster-1/nodePools/pool-3",
+              "name": "pool-3",
+              "version": "1.27.3-gke.100",
+              "instanceGroupUrls": [
+                "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-a/instanceGroupManagers/gk3-cc-test-cluster-1-pool-3-169067ac-grp",
+                "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-b/instanceGroupManagers/gk3-cc-test-cluster-1-pool-3-fc48fdfd-grp",
+                "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-c/instanceGroupManagers/gk3-cc-test-cluster-1-pool-3-4d97dca4-grp",
+                "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-f/instanceGroupManagers/gk3-cc-test-cluster-1-pool-3-428eb423-grp"
+              ],
+              "networkConfig": {
+                "podIpv4RangeUtilization": 0.0078,
+                "podRange": "gke-cc-test-cluster-1-pods-f242081a",
+                "podIpv4CidrBlock": "10.0.0.8/17"
+              },
+              "management": { "autoUpgrade": true, "autoRepair": true },
+              "etag": "abc",
+              "autoscaling": {
+                "enabled": true,
+                "locationPolicy": "BALANCED",
+                "maxNodeCount": 1000.0
+              },
+              "config": {
+                "serviceAccount": "default",
+                "workloadMetadataConfig": { "mode": "GKE_METADATA" },
+                "machineType": "e2-standard-8",
+                "metadata": { "disable-legacy-endpoints": "true" },
+                "reservationAffinity": {
+                  "consumeReservationType": "NO_RESERVATION"
+                },
+                "diskSizeGb": 100.0,
+                "diskType": "pd-standard",
+                "imageType": "COS_CONTAINERD",
+                "shieldedInstanceConfig": {
+                  "enableSecureBoot": true,
+                  "enableIntegrityMonitoring": true
+                },
+                "oauthScopes": [
+                  "https://www.googleapis.com/auth/devstorage.read_only",
+                  "https://www.googleapis.com/auth/logging.write",
+                  "https://www.googleapis.com/auth/monitoring",
+                  "https://www.googleapis.com/auth/service.management.readonly",
+                  "https://www.googleapis.com/auth/servicecontrol",
+                  "https://www.googleapis.com/auth/trace.append"
+                ],
+                "windowsNodeConfig": {}
+              },
+              "maxPodsConstraint": { "maxPodsPerNode": "32" },
+              "podIpv4CidrSize": 26.0
+            },
+            {
+              "upgradeSettings": { "maxSurge": 1.0, "strategy": "SURGE" },
+              "locations": [
+                "us-central1-a",
+                "us-central1-b",
+                "us-central1-c",
+                "us-central1-f"
+              ],
+              "status": "RUNNING",
+              "selfLink": "https://container.googleapis.com/v1/projects/censys-cc-test-project/locations/us-central1/clusters/cc-test-cluster-1/nodePools/pool-4",
+              "name": "pool-4",
+              "version": "1.27.3-gke.100",
+              "instanceGroupUrls": [
+                "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-a/instanceGroupManagers/gk3-cc-test-cluster-1-pool-4-a85b32c3-grp",
+                "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-b/instanceGroupManagers/gk3-cc-test-cluster-1-pool-4-a43b6fb7-grp",
+                "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-c/instanceGroupManagers/gk3-cc-test-cluster-1-pool-4-1ceb86d2-grp",
+                "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-f/instanceGroupManagers/gk3-cc-test-cluster-1-pool-4-1db2e1fd-grp"
+              ],
+              "networkConfig": {
+                "podIpv4RangeUtilization": 0.0078,
+                "podRange": "gke-cc-test-cluster-1-pods-f242081a",
+                "podIpv4CidrBlock": "10.0.0.8/17"
+              },
+              "management": { "autoUpgrade": true, "autoRepair": true },
+              "etag": "abc",
+              "autoscaling": {
+                "enabled": true,
+                "locationPolicy": "BALANCED",
+                "maxNodeCount": 1000.0
+              },
+              "config": {
+                "serviceAccount": "default",
+                "workloadMetadataConfig": { "mode": "GKE_METADATA" },
+                "machineType": "e2-standard-16",
+                "metadata": { "disable-legacy-endpoints": "true" },
+                "reservationAffinity": {
+                  "consumeReservationType": "NO_RESERVATION"
+                },
+                "diskSizeGb": 100.0,
+                "diskType": "pd-standard",
+                "imageType": "COS_CONTAINERD",
+                "shieldedInstanceConfig": {
+                  "enableSecureBoot": true,
+                  "enableIntegrityMonitoring": true
+                },
+                "oauthScopes": [
+                  "https://www.googleapis.com/auth/devstorage.read_only",
+                  "https://www.googleapis.com/auth/logging.write",
+                  "https://www.googleapis.com/auth/monitoring",
+                  "https://www.googleapis.com/auth/service.management.readonly",
+                  "https://www.googleapis.com/auth/servicecontrol",
+                  "https://www.googleapis.com/auth/trace.append"
+                ],
+                "windowsNodeConfig": {}
+              },
+              "maxPodsConstraint": { "maxPodsPerNode": "32" },
+              "podIpv4CidrSize": 26.0
+            },
+            {
+              "upgradeSettings": { "maxSurge": 1.0, "strategy": "SURGE" },
+              "locations": [
+                "us-central1-a",
+                "us-central1-b",
+                "us-central1-c",
+                "us-central1-f"
+              ],
+              "status": "RUNNING",
+              "selfLink": "https://container.googleapis.com/v1/projects/censys-cc-test-project/locations/us-central1/clusters/cc-test-cluster-1/nodePools/pool-5",
+              "name": "pool-5",
+              "version": "1.27.3-gke.100",
+              "instanceGroupUrls": [
+                "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-a/instanceGroupManagers/gk3-cc-test-cluster-1-pool-5-9ae9e418-grp",
+                "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-b/instanceGroupManagers/gk3-cc-test-cluster-1-pool-5-4da79c08-grp",
+                "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-c/instanceGroupManagers/gk3-cc-test-cluster-1-pool-5-c4e6636b-grp",
+                "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-f/instanceGroupManagers/gk3-cc-test-cluster-1-pool-5-37212085-grp"
+              ],
+              "networkConfig": {
+                "podIpv4RangeUtilization": 0.0078,
+                "podRange": "gke-cc-test-cluster-1-pods-f242081a",
+                "podIpv4CidrBlock": "10.0.0.8/17"
+              },
+              "management": { "autoUpgrade": true, "autoRepair": true },
+              "etag": "abc",
+              "autoscaling": {
+                "enabled": true,
+                "locationPolicy": "BALANCED",
+                "maxNodeCount": 1000.0
+              },
+              "config": {
+                "serviceAccount": "default",
+                "workloadMetadataConfig": { "mode": "GKE_METADATA" },
+                "machineType": "e2-standard-32",
+                "metadata": { "disable-legacy-endpoints": "true" },
+                "reservationAffinity": {
+                  "consumeReservationType": "NO_RESERVATION"
+                },
+                "diskSizeGb": 100.0,
+                "diskType": "pd-standard",
+                "imageType": "COS_CONTAINERD",
+                "shieldedInstanceConfig": {
+                  "enableSecureBoot": true,
+                  "enableIntegrityMonitoring": true
+                },
+                "oauthScopes": [
+                  "https://www.googleapis.com/auth/devstorage.read_only",
+                  "https://www.googleapis.com/auth/logging.write",
+                  "https://www.googleapis.com/auth/monitoring",
+                  "https://www.googleapis.com/auth/service.management.readonly",
+                  "https://www.googleapis.com/auth/servicecontrol",
+                  "https://www.googleapis.com/auth/trace.append"
+                ],
+                "windowsNodeConfig": {}
+              },
+              "maxPodsConstraint": { "maxPodsPerNode": "32" },
+              "podIpv4CidrSize": 26.0
+            }
+          ],
+          "nodePoolDefaults": {
+            "nodeConfigDefaults": {
+              "gcfsConfig": { "enabled": true },
+              "loggingConfig": { "variantConfig": { "variant": "DEFAULT" } }
+            }
+          },
+          "currentNodeCount": 1.0,
+          "description": "Private cluster with public endpoint, no access to control plane externally.",
+          "releaseChannel": { "channel": "REGULAR" },
+          "authenticatorGroupsConfig": {},
+          "locations": [
+            "us-central1-a",
+            "us-central1-b",
+            "us-central1-c",
+            "us-central1-f"
+          ],
+          "network": "default",
+          "id": "123",
+          "name": "cc-test-cluster-1",
+          "verticalPodAutoscaling": { "enabled": true },
+          "workloadIdentityConfig": {
+            "workloadPool": "censys-cc-test-project.svc.id.goog"
+          },
+          "zone": "us-central1",
+          "monitoringService": "monitoring.googleapis.com/kubernetes",
+          "maintenancePolicy": { "resourceVersion": "e3b0c442" },
+          "selfLink": "https://container.googleapis.com/v1/projects/censys-cc-test-project/locations/us-central1/clusters/cc-test-cluster-1",
+          "legacyAbac": {},
+          "nodePoolAutoConfig": {},
+          "currentMasterVersion": "1.27.3-gke.100",
+          "securityPostureConfig": {
+            "vulnerabilityMode": "VULNERABILITY_BASIC",
+            "mode": "BASIC"
+          },
+          "instanceGroupUrls": [
+            "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-f/instanceGroupManagers/gk3-cc-test-cluster-1-pool-1-c6fe9917-grp",
+            "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-f/instanceGroupManagers/gk3-cc-test-cluster-1-pool-2-f4c7ddb7-grp",
+            "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-f/instanceGroupManagers/gk3-cc-test-cluster-1-pool-3-428eb423-grp",
+            "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-f/instanceGroupManagers/gk3-cc-test-cluster-1-pool-4-1db2e1fd-grp",
+            "https://www.googleapis.com/compute/v1/projects/censys-cc-test-project/zones/us-central1-f/instanceGroupManagers/gk3-cc-test-cluster-1-pool-5-37212085-grp"
+          ],
+          "subnetwork": "default",
+          "shieldedNodes": { "enabled": true },
+          "masterAuth": {
+            "clusterCaCertificate": "X"
+          },
+          "autoscaling": {
+            "enableNodeAutoprovisioning": true,
+            "autoscalingProfile": "OPTIMIZE_UTILIZATION",
+            "resourceLimits": [
+              { "maximum": "1000000000", "resourceType": "cpu" },
+              { "maximum": "1000000000", "resourceType": "memory" },
+              { "maximum": "1000000000", "resourceType": "nvidia-tesla-t4" },
+              { "maximum": "1000000000", "resourceType": "nvidia-tesla-a100" }
+            ],
+            "autoprovisioningNodePoolDefaults": {
+              "serviceAccount": "default",
+              "management": { "autoUpgrade": true, "autoRepair": true },
+              "imageType": "COS_CONTAINERD",
+              "oauthScopes": [
+                "https://www.googleapis.com/auth/devstorage.read_only",
+                "https://www.googleapis.com/auth/logging.write",
+                "https://www.googleapis.com/auth/monitoring",
+                "https://www.googleapis.com/auth/service.management.readonly",
+                "https://www.googleapis.com/auth/servicecontrol",
+                "https://www.googleapis.com/auth/trace.append"
+              ],
+              "upgradeSettings": { "maxSurge": 1.0, "strategy": "SURGE" }
+            }
+          },
+          "labelFingerprint": "X",
+          "masterAuthorizedNetworksConfig": { "enabled": true },
+          "servicesIpv4Cidr": "34.0.0.1/20"
+        }
+      }
+    ],
+    "organization": "organizations/111222333444",
+    "parent_full_resource_name": "//cloudresourcemanager.googleapis.com/projects/censys-cc-test-project",
+    "parent_asset_type": "cloudresourcemanager.googleapis.com/Project",
+    "folders": [],
+    "network_tags": [],
+    "kms_key": "",
+    "kms_keys": [],
+    "attached_resources": [],
+    "relationships": {},
+    "tag_keys": [],
+    "tag_values": [],
+    "tag_value_ids": []
   },
   "TEST_CLOUD_SQL_INSTANCE": {
-    "asset": {
-      "name": "organizations/xxxxxxxxxxxx/assets/6861829112607731028",
-      "securityCenterProperties": {
-        "resourceName": "//cloudsql.googleapis.com/projects/censys-cc-test-project/instances/test-cloud-sql-instance",
-        "resourceType": "google.cloud.sql.Instance",
-        "resourceParent": "//cloudresourcemanager.googleapis.com/projects/685962742949",
-        "resourceProject": "//cloudresourcemanager.googleapis.com/projects/685962742949",
-        "resourceOwners": ["user:admin-censys@censys.io"],
-        "resourceDisplayName": "test-cloud-sql-instance",
-        "resourceParentDisplayName": "censys-cc-test-project",
-        "resourceProjectDisplayName": "censys-cc-test-project",
-        "folders": []
-      },
-      "resourceProperties": {
-        "databaseVersion": "MYSQL_5_7",
-        "connectionName": "censys-cc-test-project:us-central1:test-cloud-sql-instance",
-        "kind": "sql#instance",
-        "createTime": "2022-03-07T18:25:45.079Z",
-        "settings": "{\"activationPolicy\":\"ALWAYS\",\"availabilityType\":\"ZONAL\",\"backupConfiguration\":{\"backupRetentionSettings\":{\"retainedBackups\":7.0,\"retentionUnit\":\"COUNT\"},\"binaryLogEnabled\":false,\"enabled\":false,\"kind\":\"sql#backupConfiguration\",\"startTime\":\"08:00\",\"transactionLogRetentionDays\":7.0},\"dataDiskSizeGb\":\"10\",\"dataDiskType\":\"PD_HDD\",\"ipConfiguration\":{\"authorizedNetworks\":[{\"kind\":\"sql#aclEntry\",\"value\":\"167.94.146.0/24\"}],\"ipv4Enabled\":true},\"kind\":\"sql#settings\",\"locationPreference\":{\"kind\":\"sql#locationPreference\",\"zone\":\"us-central1-f\"},\"maintenanceWindow\":{\"day\":0.0,\"hour\":0.0,\"kind\":\"sql#maintenanceWindow\"},\"pricingPlan\":\"PER_USE\",\"replicationType\":\"SYNCHRONOUS\",\"settingsVersion\":\"3\",\"storageAutoResize\":false,\"storageAutoResizeLimit\":\"0\",\"tier\":\"db-f1-micro\"}",
-        "databaseInstalledVersion": "MYSQL_5_7_36",
-        "instanceType": "CLOUD_SQL_INSTANCE",
-        "state": "RUNNABLE",
-        "backendType": "SECOND_GEN",
-        "gceZone": "us-central1-f",
-        "selfLink": "https://sqladmin.googleapis.com/sql/v1beta4/projects/censys-cc-test-project/instances/test-cloud-sql-instance",
-        "project": "censys-cc-test-project",
-        "serverCaCert": "{\"certSerialNumber\":\"0\",\"commonName\":\"C\\u003dUS,O\\u003dGoogle\\\\, Inc,CN\\u003dGoogle Cloud SQL Server CA,dnQualifier\\u003d43c6e4cb-fa36-4330-b0d5-bd3463acf7da\",\"createTime\":\"2022-03-07T18:27:45.673Z\",\"expirationTime\":\"2032-03-04T18:28:45.673Z\",\"instance\":\"test-cloud-sql-instance\",\"kind\":\"sql#sslCert\",\"sha1Fingerprint\":\"79294c92908b9fea999aae81fc61da899eef17d7\"}",
-        "region": "us-central1",
-        "serviceAccountEmailAddress": "email@domain.iam.gserviceaccount.com",
-        "ipAddresses": "[{\"ipAddress\":\"34.68.26.108\",\"type\":\"PRIMARY\"}]",
-        "name": "test-cloud-sql-instance"
-      },
-      "securityMarks": {
-        "name": "organizations/xxxxxxxxxxxx/assets/6861829112607731028/securityMarks",
-        "marks": {},
-        "canonicalName": ""
-      },
-      "createTime": "2022-03-07T18:42:57.547Z",
-      "updateTime": "2022-03-07T18:44:05.327Z",
-      "iamPolicy": {
-        "policyBlob": ""
-      },
-      "canonicalName": "projects/685962742949/assets/6861829112607731028"
-    },
-    "stateChange": 0
+    "name": "//cloudsql.googleapis.com/projects/censys-cc-test-project/instances/test-sql-instance-1",
+    "asset_type": "sqladmin.googleapis.com/Instance",
+    "project": "projects/123456789123",
+    "display_name": "test-sql-instance-1",
+    "location": "us-central1",
+    "labels": { "env": "dev" },
+    "create_time": "2023-08-04T00:24:28Z",
+    "state": "RUNNABLE",
+    "versioned_resources": [
+      {
+        "version": "v1beta4",
+        "resource": {
+          "kind": "sql#instance",
+          "serverCaCert": {
+            "expirationTime": "2033-08-01T00:25:18.716Z",
+            "certSerialNumber": "0",
+            "kind": "sql#sslCert",
+            "sha1Fingerprint": "X",
+            "commonName": "C=US,O=Google\\, Inc,CN=Google Cloud SQL Server CA,dnQualifier=f055333e-d777-4777-a999-87d722253222",
+            "instance": "test-sql-instance-1",
+            "createTime": "2023-08-04T00:24:18.716Z"
+          },
+          "instanceType": "CLOUD_SQL_INSTANCE",
+          "serviceAccountEmailAddress": "p123456789123-sg69la@gcp-sa-cloud-sql.iam.gserviceaccount.com",
+          "databaseVersion": "MYSQL_8_0_31",
+          "region": "us-central1",
+          "settings": {
+            "backupConfiguration": {
+              "binaryLogEnabled": false,
+              "kind": "sql#backupConfiguration",
+              "transactionLogRetentionDays": 7.0,
+              "backupRetentionSettings": {
+                "retentionUnit": "COUNT",
+                "retainedBackups": 1.0
+              },
+              "enabled": true,
+              "startTime": "02:00",
+              "location": "us"
+            },
+            "kind": "sql#settings",
+            "pricingPlan": "PER_USE",
+            "dataDiskType": "PD_HDD",
+            "activationPolicy": "ALWAYS",
+            "insightsConfig": {},
+            "dataDiskSizeGb": "10",
+            "ipConfiguration": { "ipv4Enabled": true },
+            "tier": "db-f1-micro",
+            "availabilityType": "ZONAL",
+            "edition": "ENTERPRISE",
+            "deletionProtectionEnabled": true,
+            "storageAutoResizeLimit": "0",
+            "maintenanceWindow": {
+              "kind": "sql#maintenanceWindow",
+              "day": 0.0,
+              "hour": 0.0
+            },
+            "userLabels": { "env": "dev" },
+            "connectorEnforcement": "NOT_REQUIRED",
+            "storageAutoResize": false,
+            "locationPreference": {
+              "kind": "sql#locationPreference",
+              "zone": "us-central1-a"
+            },
+            "settingsVersion": "2",
+            "replicationType": "SYNCHRONOUS"
+          },
+          "backendType": "SECOND_GEN",
+          "databaseInstalledVersion": "MYSQL_8_0_31",
+          "selfLink": "https://sqladmin.googleapis.com/sql/v1beta4/projects/censys-cc-test-project/instances/test-sql-instance-1",
+          "name": "test-sql-instance-1",
+          "connectionName": "censys-cc-test-project:us-central1:test-sql-instance-1",
+          "ipAddresses": [{ "ipAddress": "35.200.0.1", "type": "PRIMARY" }],
+          "maintenanceVersion": "MYSQL_8_0_31.R20230624.00_05",
+          "createTime": "2023-08-04T00:24:28.302Z",
+          "state": "RUNNABLE",
+          "project": "censys-cc-test-project",
+          "gceZone": "us-central1-a"
+        }
+      }
+    ],
+    "organization": "organizations/111222333444",
+    "parent_full_resource_name": "//cloudresourcemanager.googleapis.com/projects/censys-cc-test-project",
+    "parent_asset_type": "cloudresourcemanager.googleapis.com/Project",
+    "folders": [],
+    "description": "",
+    "network_tags": [],
+    "kms_key": "",
+    "kms_keys": [],
+    "attached_resources": [],
+    "relationships": {},
+    "tag_keys": [],
+    "tag_values": [],
+    "tag_value_ids": []
   },
   "TEST_DNS_ZONE": {
-    "asset": {
-      "name": "organizations/xxxxxxxxxxxx/assets/7309045273847566279",
-      "securityCenterProperties": {
-        "resourceName": "//dns.googleapis.com/projects/685962742949/managedZones/7070347943381972466",
-        "resourceType": "google.cloud.dns.ManagedZone",
-        "resourceParent": "//cloudresourcemanager.googleapis.com/projects/685962742949",
-        "resourceProject": "//cloudresourcemanager.googleapis.com/projects/685962742949",
-        "resourceOwners": ["user:admin-censys@censys.io"],
-        "resourceDisplayName": "test-zone",
-        "resourceParentDisplayName": "censys-cc-test-project",
-        "resourceProjectDisplayName": "censys-cc-test-project",
-        "folders": []
-      },
-      "resourceProperties": {
-        "id": "7070347943381972466",
-        "creationTime": "2022-03-07T19:00:16.184Z",
-        "name": "test-zone",
-        "description": "",
-        "visibility": "PUBLIC",
-        "dnsName": "gcp.censys.io.",
-        "nameServers": "[\"ns-cloud-e1.googledomains.com.\",\"ns-cloud-e2.googledomains.com.\",\"ns-cloud-e3.googledomains.com.\",\"ns-cloud-e4.googledomains.com.\"]",
-        "cloudLoggingConfig": "{\"enableLogging\":false}"
-      },
-      "securityMarks": {
-        "name": "organizations/xxxxxxxxxxxx/assets/7309045273847566279/securityMarks",
-        "marks": {},
-        "canonicalName": ""
-      },
-      "createTime": "2022-03-07T19:00:18.841Z",
-      "updateTime": "2022-03-07T19:00:18.841Z",
-      "iamPolicy": {
-        "policyBlob": ""
-      },
-      "canonicalName": "projects/685962742949/assets/7309045273847566279"
-    },
-    "stateChange": 0
+    "name": "//dns.googleapis.com/projects/censys-cc-test-project/managedZones/123",
+    "asset_type": "dns.googleapis.com/ManagedZone",
+    "project": "projects/123456789123",
+    "display_name": "test-zone",
+    "additional_attributes": { "dnsName": "gcp.censys.io." },
+    "create_time": "2022-03-07T19:00:16Z",
+    "state": "DISABLED",
+    "versioned_resources": [
+      {
+        "version": "v1",
+        "resource": {
+          "dnsName": "gcp.censys.io.",
+          "description": "",
+          "id": "123",
+          "nameServers": [
+            "ns-cloud-e1.googledomains.com.",
+            "ns-cloud-e2.googledomains.com.",
+            "ns-cloud-e3.googledomains.com.",
+            "ns-cloud-e4.googledomains.com."
+          ],
+          "cloudLoggingConfig": { "enableLogging": false },
+          "visibility": "PUBLIC",
+          "creationTime": "2022-03-07T19:00:16.184Z",
+          "name": "test-zone"
+        }
+      }
+    ],
+    "organization": "organizations/111222333444",
+    "parent_full_resource_name": "//cloudresourcemanager.googleapis.com/projects/censys-cc-test-project",
+    "parent_asset_type": "cloudresourcemanager.googleapis.com/Project",
+    "folders": [],
+    "description": "",
+    "location": "",
+    "labels": {},
+    "network_tags": [],
+    "kms_key": "",
+    "kms_keys": [],
+    "attached_resources": [],
+    "relationships": {},
+    "tag_keys": [],
+    "tag_values": [],
+    "tag_value_ids": []
   },
   "TEST_STORAGE_BUCKET": {
-    "asset": {
-      "name": "organizations/xxxxxxxxxxxx/assets/16178591102545408997",
-      "securityCenterProperties": {
-        "resourceName": "//storage.googleapis.com/censys-cc-test-bucket",
-        "resourceType": "google.cloud.storage.Bucket",
-        "resourceParent": "//cloudresourcemanager.googleapis.com/projects/685962742949",
-        "resourceProject": "//cloudresourcemanager.googleapis.com/projects/685962742949",
-        "resourceOwners": ["user:admin-censys@censys.io"],
-        "resourceDisplayName": "censys-cc-test-bucket",
-        "resourceParentDisplayName": "censys-cc-test-project",
-        "resourceProjectDisplayName": "censys-cc-test-project",
-        "folders": []
-      },
-      "resourceProperties": {
-        "storageClass": "ARCHIVE",
-        "billing": "{}",
-        "kind": "storage#bucket",
-        "lifecycle": "{\"rule\":[]}",
-        "defaultObjectAcl": "[]",
-        "updated": "2022-03-07T19:12:23.907Z",
-        "satisfiesPZS": false,
-        "selfLink": "https://www.googleapis.com/storage/v1/b/censys-cc-test-bucket",
-        "metageneration": 1.0,
-        "etag": "CAE=",
-        "iamConfiguration": "{\"bucketPolicyOnly\":{\"enabled\":true,\"lockedTime\":\"2022-06-05T19:12:23.907Z\"},\"publicAccessPrevention\":\"inherited\",\"uniformBucketLevelAccess\":{\"enabled\":true,\"lockedTime\":\"2022-06-05T19:12:23.907Z\"}}",
-        "name": "censys-cc-test-bucket",
-        "website": "{}",
-        "location": "US-EAST4",
-        "owner": "{}",
-        "retentionPolicy": "{}",
-        "cors": "[]",
-        "encryption": "{}",
-        "locationType": "region",
-        "acl": "[]",
-        "timeCreated": "2022-03-07T19:12:23.907Z",
-        "versioning": "{}",
-        "labels": "{}",
-        "logging": "{}",
-        "projectNumber": 685962742949.0,
-        "id": "censys-cc-test-bucket",
-        "autoclass": "{}"
-      },
-      "securityMarks": {
-        "name": "organizations/xxxxxxxxxxxx/assets/16178591102545408997/securityMarks",
-        "marks": {},
-        "canonicalName": ""
-      },
-      "createTime": "2022-03-07T19:12:26.257Z",
-      "updateTime": "2022-03-07T19:12:28.874Z",
-      "iamPolicy": {
-        "policyBlob": "{\"bindings\":[{\"role\":\"roles/storage.legacyBucketOwner\",\"members\":[\"projectEditor:censys-cc-test-project\",\"projectOwner:censys-cc-test-project\"]},{\"role\":\"roles/storage.legacyBucketReader\",\"members\":[\"projectViewer:censys-cc-test-project\"]},{\"role\":\"roles/storage.legacyObjectOwner\",\"members\":[\"projectEditor:censys-cc-test-project\",\"projectOwner:censys-cc-test-project\"]},{\"role\":\"roles/storage.legacyObjectReader\",\"members\":[\"projectViewer:censys-cc-test-project\"]}]}"
-      },
-      "canonicalName": "projects/685962742949/assets/16178591102545408997"
-    },
-    "stateChange": 0
+    "assetType": "storage.googleapis.com/Bucket",
+    "createTime": "2023-04-11T01:38:01Z",
+    "displayName": "censys-cc-test-bucket",
+    "location": "us",
+    "name": "//storage.googleapis.com/censys-cc-test-bucket",
+    "organization": "organizations/111222333444",
+    "parentAssetType": "cloudresourcemanager.googleapis.com/Project",
+    "parentFullResourceName": "//cloudresourcemanager.googleapis.com/projects/censys-cc-test-project",
+    "project": "projects/123456789123",
+    "updateTime": "2023-04-11T01:38:01Z",
+    "versioned_resources": [
+      {
+        "resource": {
+          "acl": [],
+          "autoclass": {},
+          "billing": {},
+          "cors": [],
+          "defaultObjectAcl": [],
+          "encryption": {},
+          "etag": "ABC=",
+          "iamConfiguration": {
+            "bucketPolicyOnly": {
+              "enabled": true,
+              "lockedTime": "2023-07-10T01:38:01.583Z"
+            },
+            "publicAccessPrevention": "enforced",
+            "uniformBucketLevelAccess": {
+              "enabled": true,
+              "lockedTime": "2023-07-10T01:38:01.583Z"
+            }
+          },
+          "id": "censys-cc-test-bucket",
+          "kind": "storage#bucket",
+          "labels": {},
+          "lifecycle": {
+            "rule": []
+          },
+          "location": "US",
+          "locationType": "multi-region",
+          "logging": {},
+          "metageneration": 1,
+          "name": "censys-cc-test-bucket",
+          "owner": {},
+          "projectNumber": "123456789123",
+          "retentionPolicy": {},
+          "selfLink": "https://www.googleapis.com/storage/v1/b/censys-cc-test-bucket",
+          "storageClass": "NEARLINE",
+          "timeCreated": "2023-04-11T01:38:01.583Z",
+          "updated": "2023-04-11T01:38:01.583Z",
+          "versioning": {},
+          "website": {}
+        },
+        "version": "v1"
+      }
+    ]
   }
 }
