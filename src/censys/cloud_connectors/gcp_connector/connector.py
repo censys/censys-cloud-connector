@@ -121,6 +121,7 @@ class GcpCloudConnector(CloudConnector):
             except json.decoder.JSONDecodeError:  # pragma: no cover
                 self.logger.debug(f"Failed to parse project: {project}")
                 continue
+
             try:
                 if versioned_resource := self.check_asset_version(
                     GcpCloudAssetInventoryTypes.PROJECT, project
@@ -135,6 +136,7 @@ class GcpCloudConnector(CloudConnector):
                         project_id = resource["projectId"]
                         project_number = resource["projectNumber"]
                         name = resource.get("name", "")  # Optional
+
                     if (not project_id) or (not project_number):
                         self.logger.debug(f"Failed to parse project: {project}")
                     projects[project_number] = {"project_id": project_id, "name": name}
@@ -159,9 +161,8 @@ class GcpCloudConnector(CloudConnector):
             str: Asset parts.
         """
         project = AssetServiceClient.parse_common_project_path(path)
-        if project_number := project.get("project"):
-            return project_number
-        return ""
+        project_number = project["project"]
+        return project_number
 
     def return_if_str(self, val: Any) -> str:
         """Return the value if it is a string.
@@ -189,15 +190,14 @@ class GcpCloudConnector(CloudConnector):
             Optional[dict]: Resource with supported version, if it exists.
         """
         versioned_resources = asset.get("versioned_resources", [])
-        # Found resource with version `v1`
-        if len(versioned_resources) == 1:
-            if versioned_resources[0][
-                "version"
-            ] in GcpApiVersions.SUPPORTED_VERSIONS.get_versions(asset_type):
+        count = len(versioned_resources)
+        supported = GcpApiVersions.SUPPORTED_VERSIONS.get_versions(asset_type)
+        unsupported = GcpApiVersions.UNSUPPORTED_VERSIONS.get_versions(asset_type)
+        # Found one version of the resource
+        if count == 1:
+            if versioned_resources[0]["version"] in supported:
                 return versioned_resources[0]
-            elif versioned_resources[0][
-                "version"
-            ] in GcpApiVersions.UNSUPPORTED_VERSIONS.get_versions(asset_type):
+            elif versioned_resources[0]["version"] in unsupported:
                 self.logger.debug(
                     f"Version {versioned_resources[0]['version']} is unsupported and will be ignored."
                 )
@@ -206,18 +206,17 @@ class GcpCloudConnector(CloudConnector):
                     f"Version {versioned_resources[0]['version']} of the API for resource type {asset_type} is unknown."
                 )
         # Found multiple versioned resources
-        elif len(versioned_resources) > 1:
+        elif count > 1:
+            supported_versioned_resource = None
             for versioned_resource in versioned_resources:
-                if versioned_resources[0][
-                    "version"
-                ] in GcpApiVersions.SUPPORTED_VERSIONS.get_versions(asset_type):
+                if (versioned_resource["version"] in supported) and (
+                    supported_versioned_resource is None
+                ):
                     self.logger.debug(
                         f"Found multiple versioned resources. Version {versioned_resource['version']} is supported and will be used."
                     )
-                    return versioned_resource
-                elif versioned_resources[0][
-                    "version"
-                ] in GcpApiVersions.UNSUPPORTED_VERSIONS.get_versions(asset_type):
+                    supported_versioned_resource = versioned_resource
+                elif versioned_resource["version"] in unsupported:
                     self.logger.debug(
                         f"Found multiple versioned resources. Version {versioned_resource['version']} is unsupported and will be ignored."
                     )
@@ -225,6 +224,7 @@ class GcpCloudConnector(CloudConnector):
                     self.logger.warning(
                         f"Version {versioned_resource['version']} of the API for resource type {asset_type} is unknown."
                     )
+            return supported_versioned_resource
 
         return None
 

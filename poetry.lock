@@ -3168,26 +3168,6 @@ proto-plus = [
 protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<5.0.0dev"
 
 [[package]]
-name = "google-cloud-securitycenter"
-version = "1.21.0"
-description = "Google Cloud Securitycenter API client library"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "google-cloud-securitycenter-1.21.0.tar.gz", hash = "sha256:ce4e726587afce95a64ce00026074dc7d967a13c636aae57149fb684340e06e7"},
-    {file = "google_cloud_securitycenter-1.21.0-py2.py3-none-any.whl", hash = "sha256:5c2067a90acc6bb51d486f7f0cc955483b6f426ba5c8bf3957dc86f00763ca4e"},
-]
-
-[package.dependencies]
-google-api-core = {version = ">=1.34.0,<2.0.dev0 || >=2.11.dev0,<3.0.0dev", extras = ["grpc"]}
-grpc-google-iam-v1 = ">=0.12.4,<1.0.0dev"
-proto-plus = [
-    {version = ">=1.22.2,<2.0.0dev", markers = "python_version >= \"3.11\""},
-    {version = ">=1.22.0,<2.0.0dev", markers = "python_version < \"3.11\""},
-]
-protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<5.0.0dev"
-
-[[package]]
 name = "googleapis-common-protos"
 version = "1.59.0"
 description = "Common protobufs used in Google APIs"
@@ -5607,4 +5587,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "00c79e34902a096476c4181ebc832c2a6540c751b851995e67adc5ab7e3af104"
+content-hash = "1c36716ca7aa69cbee68bdeb39ee9c7a7ecbbed87c43b1180a1faafa115182cb"
