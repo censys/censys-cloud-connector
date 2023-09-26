@@ -57,5 +57,5 @@ jobs:
 
       - name: Tag Version
         id: tag-version
-        if: ${{ inputs.version }}
+        if: false
         uses: ./.github/actions/create-version-tag
