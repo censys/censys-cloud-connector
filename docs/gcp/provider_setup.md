@@ -26,8 +26,7 @@ these roles are listed below:
 - [Security Reviewer (roles/iam.securityReviewer)][security-reviewer]
 - [Folder Viewer (roles/resourcemanager.folderViewer)][folder-viewer]
 - [Organization Viewer (roles/resourcemanager.organizationViewer)][organization-viewer]
-- [Security Center Assets Discovery Runner (roles/securitycenter.assetsDiscoveryRunner)][securitycenter-assets-discovery-runner]
-- [Security Center Assets Viewer (roles/securitycenter.assetsViewer)][securitycenter-assets-viewer]
+- [Cloud Asset Viewer (roles/cloudasset.viewer)][cloud-asset-viewer]
 
 ```{admonition} Note
 :class: censys
@@ -46,5 +45,4 @@ each role.
 [security-reviewer]: https://cloud.google.com/iam/docs/understanding-roles#iam.securityReviewer
 [folder-viewer]: https://cloud.google.com/iam/docs/understanding-roles#resourcemanager.folderViewer
 [organization-viewer]: https://cloud.google.com/iam/docs/understanding-roles#resourcemanager.organizationViewer
-[securitycenter-assets-discovery-runner]: https://cloud.google.com/iam/docs/understanding-roles#securitycenter.assetsDiscoveryRunner
-[securitycenter-assets-viewer]: https://cloud.google.com/iam/docs/understanding-roles#securitycenter.assetsViewer
+[cloud-asset-viewer]: https://cloud.google.com/iam/docs/understanding-roles#cloudasset.viewer

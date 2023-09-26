@@ -6,6 +6,7 @@ maxdepth: 1
 caption: Contents
 ---
 
+whats_new
 overview
 getting_started
 providers_yml
