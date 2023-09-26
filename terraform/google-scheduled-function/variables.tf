@@ -21,7 +21,7 @@ variable "gcp_service_list" {
     "cloudscheduler.googleapis.com",
     "pubsub.googleapis.com",
     "secretmanager.googleapis.com",
-    "securitycenter.googleapis.com"
+    "cloudasset.googleapis.com"
   ]
 }
 

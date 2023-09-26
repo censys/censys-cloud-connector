@@ -41,8 +41,8 @@ class TestEnums(TestCase):
             ),
             (
                 GcloudCommands.ENABLE_SERVICES,
-                "gcloud services enable securitycenter.googleapis.com",
-                {"service": "securitycenter.googleapis.com"},
+                "gcloud services enable cloudasset.googleapis.com",
+                {"service": "cloudasset.googleapis.com"},
             ),
             (
                 GcloudCommands.LIST_PROJECTS,
@@ -248,7 +248,7 @@ class TestEnums(TestCase):
             ),
         ]
     )
-    def test_gcp_security_center_resource_types(
+    def test_gcp_cloud_asset_inventory_resource_types(
         self,
         enum_resource_type: GcpCloudAssetInventoryTypes,
         expected_filter: str,

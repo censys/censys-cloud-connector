@@ -148,7 +148,7 @@ terraform destroy -var-file terraform.tfvars
 | function\_name | The name to apply to the function. Will default to a string of `censys-cloud-connector-function-XXXX` with `XXXX` being random characters. | `string` | `""` | no |
 | function\_source\_dir | The directory containing the source code for the function. | `string` | `"function_source"` | no |
 | function\_timeout\_s | The amount of time in seconds allotted for the execution of the function. (Can be up to 540 seconds) | `number` | `540` | no |
-| gcp\_service\_list | The list of apis necessary for the project | `list(string)` | <pre>[<br>  "cloudbuild.googleapis.com",<br>  "cloudfunctions.googleapis.com",<br>  "cloudresourcemanager.googleapis.com",<br>  "cloudscheduler.googleapis.com",<br>  "pubsub.googleapis.com",<br>  "secretmanager.googleapis.com",<br>  "securitycenter.googleapis.com"<br>]</pre> | no |
+| gcp\_service\_list | The list of apis necessary for the project | `list(string)` | <pre>[<br>  "cloudbuild.googleapis.com",<br>  "cloudfunctions.googleapis.com",<br>  "cloudresourcemanager.googleapis.com",<br>  "cloudscheduler.googleapis.com",<br>  "pubsub.googleapis.com",<br>  "secretmanager.googleapis.com",<br>  "cloudasset.googleapis.com"<br>]</pre> | no |
 | job\_description | Addition text to describe the job | `string` | `"Scheduled time to run the Censys Cloud Connector function"` | no |
 | job\_name | The name of the scheduled job to run | `string` | `"censys-cloud-connector-job"` | no |
 | job\_schedule | The cron schedule for triggering the cloud function | `string` | `"0 */4 * * *"` | no |
