@@ -109,8 +109,9 @@ Default: `true`
 
 Azure-specific environmental variable. If set to `true`, the connector will
 clear stale seeds from regions no longer containing assets. This may take
-longer to run, but will ensure that the connector is not submitting stale seeds.
-If set to `false`, the connector will submit seeds that are found as normal.
+longer to run, but will ensure that stale seeds do not persist in the
+workspace. If set to `false`, the connector will submit seeds that are found
+as normal.
 
 Default: `false`
 ```

@@ -498,7 +498,6 @@ class GcpCloudConnector(CloudConnector):
                             scan_data=scan_data,
                         )
                         self.add_cloud_asset(bucket_asset)
-                        self.found_projects.add(project_number)
             except (
                 json.decoder.JSONDecodeError,
                 ValueError,
