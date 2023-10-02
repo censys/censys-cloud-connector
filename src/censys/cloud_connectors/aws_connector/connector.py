@@ -156,7 +156,7 @@ class AwsCloudConnector(CloudConnector):
         )
 
         self.scan_contexts[scan_context_key] = scan_context
-        # TODO: self.dispatch_event(EventTypeEnum.SCAN_STARTED)
+        # TODO: self.dispatch_event(EventTypeEnum.SCAN_STARTED) <-- make sure events are working (and not broken by the worker pool change)
         super().scan_seeds(**kwargs)
         # TODO: self.dispatch_event(EventTypeEnum.SCAN_FINISHED)
 
@@ -190,7 +190,7 @@ class AwsCloudConnector(CloudConnector):
             self.scan_contexts = {}
 
             # for credential in self.provider_settings.get_credentials():
-            for credential in provider_settings.get_credentials():
+            for credential in provider_setting.get_credentials():
                 # self.credential = credential
                 # self.account_number = credential["account_number"]
                 account_number = credential["account_number"]
@@ -198,13 +198,13 @@ class AwsCloudConnector(CloudConnector):
                 # self.ignored_tags = ignored_tags
 
                 # for each account + region combination, run each seed scanner
-                for region in provider_settings.regions:
+                for region in provider_setting.regions:
                     # self.temp_sts_cred = None
                     # self.region = region
                     try:
                         with Healthcheck(
                             self.settings,
-                            provider_settings,
+                            provider_setting,
                             provider={
                                 "region": region,
                                 "account_number": account_number,
@@ -212,11 +212,10 @@ class AwsCloudConnector(CloudConnector):
                             },
                         ):
                             self.logger.debug(
-                                "starting pool account:%s region:%s",
+                                "starting seed pool account:%s region:%s",
                                 account_number,
                                 region,
                             )
-
                             # Credentials aren't exactly obvious how they work
                             # Assume role flow:
                             # - use the "primary account" access + secret key to "connect"
@@ -225,7 +224,7 @@ class AwsCloudConnector(CloudConnector):
                             # - note: creds expire after N time (hours?)
                             scan_context_key = f"{account_number}_{region}"
                             scan_context = AwsScanContext(
-                                provider_settings=provider_settings,
+                                provider_settings=provider_setting,
                                 credential=credential,
                                 account_number=account_number,
                                 region=region,
@@ -237,7 +236,6 @@ class AwsCloudConnector(CloudConnector):
                             # scan workflow:
                             # - get seeds + cloud-assets + tags-plugin
                             # - submit seeds + cloud-assets
-                            print(f"scan_all logging level {self.logger.level}")
                             pool.apply_async(
                                 self.scan_seeds,
                                 kwds={
@@ -252,7 +250,7 @@ class AwsCloudConnector(CloudConnector):
                             # self.scan(**kwargs)
                     except Exception as e:
                         self.logger.error(
-                            f"Unable to scan account {credential['account_number']} in region {region}. Error: {e}"
+                            f"Unable to scan account {account_number} in region {region}. Error: {e}"
                         )
                         self.dispatch_event(EventTypeEnum.SCAN_FAILED, exception=e)
                     # self.region = None
@@ -264,13 +262,34 @@ class AwsCloudConnector(CloudConnector):
                     with Healthcheck(
                         self.settings,
                         provider_setting,
-                        provider={"account_number": self.account_number},
+                        provider={"account_number": account_number},
                     ):
+                        self.logger.debug(
+                            "starting cloud-asset pool account:%s region:%s",
+                            account_number,
+                            region,
+                        )
+                        # Credentials aren't exactly obvious how they work
+                        # Assume role flow:
+                        # - use the "primary account" access + secret key to "connect"
+                        # - call STS assume role to get "temporary credentials"
+                        # - temporary credentials can be used for all resource types in an account + region
+                        # - note: creds expire after N time (hours?)
+                        scan_context_key = f"{account_number}_{region}"
+                        scan_context = AwsScanContext(
+                            provider_settings=provider_setting,
+                            credential=credential,
+                            account_number=account_number,
+                            region=region,
+                            ignored_tags=ignored_tags,
+                            logger=None,
+                            # temp_sts_cred=None,
+                        )
                         pool.apply_async(
                             self.scan_cloud_assets,
                             kwds={
-                                "credential": credential,
-                                "region": region,
+                                "scan_context_key": scan_context_key,
+                                "scan_context": scan_context,
                             },
                         )
                 except Exception as e:
@@ -509,7 +528,7 @@ class AwsCloudConnector(CloudConnector):
         key = kwargs["scan_context_key"]
         ctx: AwsScanContext = self.scan_contexts[key]
 
-        client: APIGatewayClient = self.get_aws_client(service=AwsServices.API_GATEWAY, ctx)
+        client: APIGatewayClient = self.get_aws_client(AwsServices.API_GATEWAY, ctx)
         label = self.format_label(SeedLabel.API_GATEWAY, ctx.account_number, ctx.region)
 
         try:
@@ -564,6 +583,8 @@ class AwsCloudConnector(CloudConnector):
         """Retrieve all versions of Api Gateway data and emit seeds."""
         self.get_api_gateway_domains_v1(**kwargs)
         self.get_api_gateway_domains_v2(**kwargs)
+
+        # TODO: this won't work anymore since self.seeds is no longer used
         label = self.format_label(SeedLabel.API_GATEWAY)
         if not self.seeds.get(label):
             self.delete_seeds_by_label(label)
@@ -574,9 +595,11 @@ class AwsCloudConnector(CloudConnector):
         ctx: AwsScanContext = self.scan_contexts[key]
 
         client: ElasticLoadBalancingClient = self.get_aws_client(
-            service=AwsServices.LOAD_BALANCER, ctx
+            AwsServices.LOAD_BALANCER, ctx
         )
-        label = self.format_label(SeedLabel.LOAD_BALANCER, ctx.account_number, ctx.region)
+        label = self.format_label(
+            SeedLabel.LOAD_BALANCER, ctx.account_number, ctx.region
+        )
 
         try:
             seeds = []
@@ -605,7 +628,9 @@ class AwsCloudConnector(CloudConnector):
         client: ElasticLoadBalancingv2Client = self.get_aws_client(
             AwsServices.LOAD_BALANCER_V2, ctx
         )
-        label = self.format_label(SeedLabel.LOAD_BALANCER, ctx.account_number, ctx.region)
+        label = self.format_label(
+            SeedLabel.LOAD_BALANCER, ctx.account_number, ctx.region
+        )
 
         try:
             seeds = []
@@ -630,6 +655,8 @@ class AwsCloudConnector(CloudConnector):
         """Retrieve Elastic Load Balancers (ELB) data and emit seeds."""
         self.get_load_balancers_v1(**kwargs)
         self.get_load_balancers_v2(**kwargs)
+
+        # TODO: this won't work anymore since self.seeds is no longer used
         label = self.format_label(SeedLabel.LOAD_BALANCER)
         if not self.seeds.get(label):
             self.delete_seeds_by_label(label)
@@ -639,7 +666,9 @@ class AwsCloudConnector(CloudConnector):
         key = kwargs["scan_context_key"]
         ctx: AwsScanContext = self.scan_contexts[key]
 
-        label = self.format_label(SeedLabel.NETWORK_INTERFACE, ctx.account_number, ctx.region)
+        label = self.format_label(
+            SeedLabel.NETWORK_INTERFACE, ctx.account_number, ctx.region
+        )
         interfaces = self.describe_network_interfaces(ctx)
         instance_tags, instance_tag_sets = self.get_resource_tags(ctx)
 
@@ -785,7 +814,7 @@ class AwsCloudConnector(CloudConnector):
         key = kwargs["scan_context_key"]
         ctx: AwsScanContext = self.scan_contexts[key]
 
-        client: RDSClient = self.get_aws_client(service=AwsServices.RDS, ctx)
+        client: RDSClient = self.get_aws_client(AwsServices.RDS, ctx)
         label = self.format_label(SeedLabel.RDS, ctx.account_number, ctx.region)
         has_added_seeds = False
 
