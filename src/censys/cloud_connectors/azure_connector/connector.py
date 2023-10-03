@@ -137,9 +137,12 @@ class AzureCloudConnector(CloudConnector):
         for asset in network_client.public_ip_addresses.list_all():
             asset_dict = asset.as_dict()
             if ip_address := asset_dict.get("ip_address"):
+                resource_id = asset_dict.get("id")
                 with SuppressValidationError():
                     label = self.format_label(asset)
-                    ip_seed = IpSeed(value=ip_address, label=label)
+                    ip_seed = IpSeed(
+                        value=ip_address, label=label, cloud_resource_id=resource_id
+                    )
                     self.add_seed(ip_seed)
                     self.possible_labels.discard(label)
 
@@ -156,13 +159,18 @@ class AzureCloudConnector(CloudConnector):
                 and (ip_address := ip_address_dict.get("ip"))
             ):
                 label = self.format_label(asset)
+                resource_id = asset_dict.get("id")
                 with SuppressValidationError():
-                    ip_seed = IpSeed(value=ip_address, label=label)
+                    ip_seed = IpSeed(
+                        value=ip_address, label=label, cloud_resource_id=resource_id
+                    )
                     self.add_seed(ip_seed)
                     self.possible_labels.discard(label)
                 if domain := ip_address_dict.get("fqdn"):
                     with SuppressValidationError():
-                        domain_seed = DomainSeed(value=domain, label=label)
+                        domain_seed = DomainSeed(
+                            value=domain, label=label, cloud_resource_id=resource_id
+                        )
                         self.add_seed(domain_seed)
                         self.possible_labels.discard(label)
 
@@ -174,9 +182,12 @@ class AzureCloudConnector(CloudConnector):
             if (
                 domain := asset_dict.get("fully_qualified_domain_name")
             ) and asset_dict.get("public_network_access") == "Enabled":
+                label = self.format_label(asset)
+                resource_id = asset_dict.get("id")
                 with SuppressValidationError():
-                    label = self.format_label(asset)
-                    domain_seed = DomainSeed(value=domain, label=label)
+                    domain_seed = DomainSeed(
+                        value=domain, label=label, cloud_resource_id=resource_id
+                    )
                     self.add_seed(domain_seed)
                     self.possible_labels.discard(label)
 
@@ -203,14 +214,21 @@ class AzureCloudConnector(CloudConnector):
                 zone_resource_group, zone_dict.get("name")
             ):
                 asset_dict = asset.as_dict()
+                resource_id = asset_dict.get("id")
                 if domain_name := asset_dict.get("fqdn"):
                     with SuppressValidationError():
-                        domain_seed = DomainSeed(value=domain_name, label=label)
+                        domain_seed = DomainSeed(
+                            value=domain_name,
+                            label=label,
+                            cloud_resource_id=resource_id,
+                        )
                         self.add_seed(domain_seed)
                         self.possible_labels.discard(label)
                 if cname := asset_dict.get("cname_record", {}).get("cname"):
                     with SuppressValidationError():
-                        domain_seed = DomainSeed(value=cname, label=label)
+                        domain_seed = DomainSeed(
+                            value=cname, label=label, cloud_resource_id=resource_id
+                        )
                         self.add_seed(domain_seed)
                         self.possible_labels.discard(label)
                 for a_record in asset_dict.get("a_records", []):
@@ -219,7 +237,9 @@ class AzureCloudConnector(CloudConnector):
                         continue
 
                     with SuppressValidationError():
-                        ip_seed = IpSeed(value=ip_address, label=label)
+                        ip_seed = IpSeed(
+                            value=ip_address, label=label, cloud_resource_id=resource_id
+                        )
                         self.add_seed(ip_seed)
                         self.possible_labels.discard(label)
 
@@ -253,11 +273,14 @@ class AzureCloudConnector(CloudConnector):
             )
             label = self.format_label(account)
             account_dict = account.as_dict()
+            resource_id = account_dict.get("id")
             if (custom_domain := account_dict.get("custom_domain")) and (
                 domain := custom_domain.get("name")
             ):
                 with SuppressValidationError():
-                    domain_seed = DomainSeed(value=domain, label=label)
+                    domain_seed = DomainSeed(
+                        value=domain, label=label, cloud_resource_id=resource_id
+                    )
                     self.add_seed(domain_seed)
                     self.possible_labels.discard(label)
             uid = f"{self.subscription_id}/{self.credentials._tenant_id}/{account.name}"
@@ -275,6 +298,7 @@ class AzureCloudConnector(CloudConnector):
                                 "publicAccess": container.public_access,
                                 "location": account.location,
                             },
+                            cloud_resource_id=resource_id,
                         )
                         self.add_cloud_asset(container_asset)
                 except ServiceRequestError as error:  # pragma: no cover
