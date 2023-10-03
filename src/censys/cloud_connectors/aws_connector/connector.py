@@ -48,13 +48,10 @@ T = TypeVar("T", bound="botocore.client.BaseClient")
 VALID_RECORD_TYPES = ["A", "CNAME"]
 IGNORED_TAGS = ["censys-cloud-connector-ignore"]
 
+# TODO: potentially send seeds with empty values to remove "stale" seeds
 # TODO: fix self.{property} references:
 # This has to happen because if the worker pool spawns multiple account + regions, each worker will change the self.{property} value, thus making each process scan the SAME account.
 #
-# instead of changing everything everywhere, perhaps a data structure can handle this?
-# make a dictionary of provider-setting-key (which is account + region)
-# then inside scan use self.scan_contexts[provider-setting-key] = {...}
-
 # TODO: logging changes:
 # add account + region, current resource-type
 
@@ -64,7 +61,7 @@ class AwsScanContext:
     """Required configuration context for scan()."""
 
     provider_settings: AwsSpecificSettings
-    # temp_sts_cred: Optional[dict]
+    temp_sts_cred: Optional[dict]
     credential: dict
     account_number: str
     region: str
@@ -83,29 +80,6 @@ class AwsCloudConnector(CloudConnector):
     """
 
     provider = ProviderEnum.AWS
-
-    # workaround for storing multiple configurations during a scan() call
-    # multiprocessing dictates that each worker runs scan in a different process
-    # each process will share the same AwsCloudConnector instance
-    # if a worker sets a self property, that is updated for _all_ workers
-    # therefore, make a dict that each worker can reference it's unique account+region configuration
-    #
-    # each scan_contexts entry will have a unique key so that multiple accounts and regions can be scanned in parallel
-    # scan_config_entry = {
-    #   "temp_sts_cred": {}, "account_number": "", "region": "", "ignored_tags":[], credential: {}
-    # }
-    scan_contexts: dict[str, AwsScanContext] = {}
-
-    # Temporary STS credentials created with Assume Role will be stored here during
-    # a connector scan.
-    # temp_sts_cred: Optional[dict] = None
-    # During a run this will be set to the current account being scanned
-    # It is common to have multiple top level accounts in providers.yml
-    # provider_settings: AwsSpecificSettings
-    # credential: dict = {}
-    # account_number: str
-    # ignored_tags: list[str]
-    # pool: Pool
 
     global_ignored_tags: set[
         str
@@ -130,17 +104,10 @@ class AwsCloudConnector(CloudConnector):
             AwsResourceTypes.STORAGE_BUCKET: self.get_s3_instances,
         }
         self.global_ignored_tags: set[str] = set(IGNORED_TAGS)
-        # self.ignored_tags = []
-        # self.pool = Pool(processes=settings.scan_concurrency)
 
     def scan_seeds(self, **kwargs):
         """Scan AWS."""
-        # when scan() is called, it has been forked into a separate process (from scan_all)
-
-        scan_context_key = kwargs["scan_context_key"]
         scan_context: AwsScanContext = kwargs["scan_context"]
-        # scan_context must be set within scan(), otherwise race conditions happen where it doesn't exist when accessed
-        self.scan_contexts[scan_context_key] = scan_context
 
         # multiprocessing requires separate logger instances per process
         # TODO: there is still something odd going on here, notice logger isnt being set to self.logger, but by even calling get_logger it "fixes" the sub-process log level from being WARNING to .env's DEBUG
@@ -155,18 +122,24 @@ class AwsCloudConnector(CloudConnector):
             f"Scanning AWS - account:{scan_context.account_number} region:{scan_context.region}"
         )
 
-        self.scan_contexts[scan_context_key] = scan_context
         # TODO: self.dispatch_event(EventTypeEnum.SCAN_STARTED) <-- make sure events are working (and not broken by the worker pool change)
         super().scan_seeds(**kwargs)
         # TODO: self.dispatch_event(EventTypeEnum.SCAN_FINISHED)
 
     def scan_cloud_assets(self, **kwargs):
         """Scan AWS for cloud assets."""
-        # TODO: pull scan_seeds changes in after rebase
-        scan_context_key = kwargs["scan_context_key"]
+        # TODO: pull self.scan_seeds changes in after rebase
+
         scan_context = kwargs["scan_context"]
-        self.scan_contexts[scan_context_key] = scan_context
-        self.logger.info(f"Scanning AWS account {scan_context.account_number}")
+
+        logger = get_logger(
+            log_name=f"{self.provider.lower()}_cloud_connector",
+            level=self.settings.logging_level,
+            provider=f"{self.provider}_{scan_context.account_number}",
+        )
+        scan_context.logger = logger
+
+        self.logger.info(f"Scanning AWS - account:{scan_context.account_number}")
         super().scan_cloud_assets(**kwargs)
 
     def scan_all(self):
@@ -187,20 +160,16 @@ class AwsCloudConnector(CloudConnector):
             # DO NOT use provider_settings anywhere in this class!
             # provider_settings exists for the parent CloudConnector
             self.provider_settings = provider_setting
-            self.scan_contexts = {}
 
             # for credential in self.provider_settings.get_credentials():
             for credential in provider_setting.get_credentials():
-                # self.credential = credential
-                # self.account_number = credential["account_number"]
                 account_number = credential["account_number"]
                 ignored_tags = self.get_ignored_tags(credential["ignore_tags"])
-                # self.ignored_tags = ignored_tags
 
                 # for each account + region combination, run each seed scanner
                 for region in provider_setting.regions:
+                    # TODO: verify sts still works and caches
                     # self.temp_sts_cred = None
-                    # self.region = region
                     try:
                         with Healthcheck(
                             self.settings,
@@ -208,21 +177,14 @@ class AwsCloudConnector(CloudConnector):
                             provider={
                                 "region": region,
                                 "account_number": account_number,
-                                # self.account_number,
                             },
                         ):
                             self.logger.debug(
-                                "starting seed pool account:%s region:%s",
+                                "starting pool account:%s region:%s",
                                 account_number,
                                 region,
                             )
-                            # Credentials aren't exactly obvious how they work
-                            # Assume role flow:
-                            # - use the "primary account" access + secret key to "connect"
-                            # - call STS assume role to get "temporary credentials"
-                            # - temporary credentials can be used for all resource types in an account + region
-                            # - note: creds expire after N time (hours?)
-                            scan_context_key = f"{account_number}_{region}"
+
                             scan_context = AwsScanContext(
                                 provider_settings=provider_setting,
                                 credential=credential,
@@ -230,52 +192,30 @@ class AwsCloudConnector(CloudConnector):
                                 region=region,
                                 ignored_tags=ignored_tags,
                                 logger=None,
-                                # temp_sts_cred=None,
+                                temp_sts_cred=None,
                             )
 
-                            # scan workflow:
-                            # - get seeds + cloud-assets + tags-plugin
-                            # - submit seeds + cloud-assets
                             pool.apply_async(
                                 self.scan_seeds,
                                 kwds={
-                                    # TODO remove all of this except `scan_context_key`
-                                    # "provider_setting": provider_setting,
-                                    # "credential": credential,
-                                    # "region": region,
-                                    "scan_context_key": scan_context_key,
                                     "scan_context": scan_context,
                                 },
                             )
-                            # self.scan(**kwargs)
                     except Exception as e:
                         self.logger.error(
                             f"Unable to scan account {account_number} in region {region}. Error: {e}"
                         )
                         self.dispatch_event(EventTypeEnum.SCAN_FAILED, exception=e)
-                    # self.region = None
 
+                # TODO: find a way to combine parts of this with seeds above (scan context)
                 # for each account, run each cloud asset scanner
                 try:
-                    # self.temp_sts_cred = None
-                    # self.region = None
+                    # TODO: verify sts still works and caches
                     with Healthcheck(
                         self.settings,
                         provider_setting,
                         provider={"account_number": account_number},
                     ):
-                        self.logger.debug(
-                            "starting cloud-asset pool account:%s region:%s",
-                            account_number,
-                            region,
-                        )
-                        # Credentials aren't exactly obvious how they work
-                        # Assume role flow:
-                        # - use the "primary account" access + secret key to "connect"
-                        # - call STS assume role to get "temporary credentials"
-                        # - temporary credentials can be used for all resource types in an account + region
-                        # - note: creds expire after N time (hours?)
-                        scan_context_key = f"{account_number}_{region}"
                         scan_context = AwsScanContext(
                             provider_settings=provider_setting,
                             credential=credential,
@@ -283,18 +223,17 @@ class AwsCloudConnector(CloudConnector):
                             region=region,
                             ignored_tags=ignored_tags,
                             logger=None,
-                            # temp_sts_cred=None,
+                            temp_sts_cred=None,
                         )
                         pool.apply_async(
                             self.scan_cloud_assets,
                             kwds={
-                                "scan_context_key": scan_context_key,
                                 "scan_context": scan_context,
                             },
                         )
                 except Exception as e:
                     self.logger.error(
-                        f"Unable to scan account {self.account_number}. Error: {e}"
+                        f"Unable to scan account {account_number}. Error: {e}"
                     )
                     self.dispatch_event(EventTypeEnum.SCAN_FAILED, exception=e)
 
@@ -337,7 +276,6 @@ class AwsCloudConnector(CloudConnector):
         # Once activated the temporary STS creds will be used by all
         # subsequent AWS service client calls.
 
-        # TODO: fix self.credential
         if role_name := ctx.credential.get("role_name"):
             self.logger.debug(f"Using STS for role {role_name}")
             return self.get_assume_role_credentials(ctx)  # (account_number, role_name)
@@ -417,6 +355,10 @@ class AwsCloudConnector(CloudConnector):
         # if self.temp_sts_cred:
         #     self.logger.debug("Using cached temporary STS credentials")
         # else:
+        if ctx.temp_sts_cred:
+            self.logger.debug("Using cached temporary STS credential")
+            return ctx.temp_sts_cred
+
         try:
             temp_creds = self.assume_role(
                 # account_number, region, role_name, role_session_name
@@ -424,10 +366,11 @@ class AwsCloudConnector(CloudConnector):
                 role_name=role_name,
                 role_session_name=role_session_name,
             )
+            self.logger.debug(f"Created temporary STS credentials for role {role_name}")
+
             # TODO: fix self.temp_sts_cred
             # self.temp_sts_cred = self.boto_cred(
-            self.logger.debug(f"Created temporary STS credentials for role {role_name}")
-            return self.boto_cred(
+            ctx.temp_sts_cred = self.boto_cred(
                 ctx.region,
                 temp_creds["AccessKeyId"],
                 temp_creds["SecretAccessKey"],
@@ -436,8 +379,8 @@ class AwsCloudConnector(CloudConnector):
         except Exception as e:
             self.logger.error(f"Failed to assume role: {e}")
             raise
-        # TODO: fix self.temp_sts_cred
-        # return self.temp_sts_cred
+
+        return ctx.temp_sts_cred
 
     def boto_cred(
         self,
@@ -525,8 +468,7 @@ class AwsCloudConnector(CloudConnector):
 
     def get_api_gateway_domains_v1(self, **kwargs):
         """Retrieve all API Gateway V1 domains and emit seeds."""
-        key = kwargs["scan_context_key"]
-        ctx: AwsScanContext = self.scan_contexts[key]
+        ctx: AwsScanContext = kwargs["scan_context"]
 
         client: APIGatewayClient = self.get_aws_client(AwsServices.API_GATEWAY, ctx)
         label = self.format_label(SeedLabel.API_GATEWAY, ctx.account_number, ctx.region)
@@ -539,7 +481,6 @@ class AwsCloudConnector(CloudConnector):
                 with SuppressValidationError():
                     # domain_seed = DomainSeed(value=domain_name, label=label)
                     # self.add_seed(domain_seed, api_gateway_res=domain)
-                    # self.emit_seed(ctx, domain_seed, api_gateway_res=domain)
                     seed = self.process_seed(
                         DomainSeed(
                             value=domain_name, label=label, api_gateway_res=domain
@@ -552,8 +493,7 @@ class AwsCloudConnector(CloudConnector):
 
     def get_api_gateway_domains_v2(self, **kwargs):
         """Retrieve API Gateway V2 domains and emit seeds."""
-        key = kwargs["scan_context_key"]
-        ctx: AwsScanContext = self.scan_contexts[key]
+        ctx: AwsScanContext = kwargs["scan_context"]
 
         client: ApiGatewayV2Client = self.get_aws_client(
             AwsServices.API_GATEWAY_V2, ctx
@@ -568,7 +508,6 @@ class AwsCloudConnector(CloudConnector):
                 with SuppressValidationError():
                     # domain_seed = DomainSeed(value=domain_name, label=label)
                     # self.add_seed(domain_seed, api_gateway_res=domain)
-                    # self.emit_seed(ctx, domain_seed, api_gateway_res=domain)
                     seed = self.process_seed(
                         DomainSeed(
                             value=domain_name, label=label, api_gateway_res=domain
@@ -585,14 +524,14 @@ class AwsCloudConnector(CloudConnector):
         self.get_api_gateway_domains_v2(**kwargs)
 
         # TODO: this won't work anymore since self.seeds is no longer used
-        label = self.format_label(SeedLabel.API_GATEWAY)
+        ctx: AwsScanContext = kwargs["scan_context"]
+        label = self.format_label(SeedLabel.API_GATEWAY, ctx.account_number, ctx.region)
         if not self.seeds.get(label):
             self.delete_seeds_by_label(label)
 
     def get_load_balancers_v1(self, **kwargs):
         """Retrieve Elastic Load Balancers (ELB) V1 data and emit seeds."""
-        key = kwargs["scan_context_key"]
-        ctx: AwsScanContext = self.scan_contexts[key]
+        ctx: AwsScanContext = kwargs["scan_context"]
 
         client: ElasticLoadBalancingClient = self.get_aws_client(
             AwsServices.LOAD_BALANCER, ctx
@@ -609,7 +548,6 @@ class AwsCloudConnector(CloudConnector):
                     with SuppressValidationError():
                         # domain_seed = DomainSeed(value=value, label=label)
                         # self.add_seed(domain_seed, elb_res=elb, aws_client=client)
-                        # self.emit_seed(ctx, domain_seed, elb_res=elb, aws_client=client)
                         seed = self.process_seed(
                             DomainSeed(value=value, label=label),
                             elb_res=elb,
@@ -622,8 +560,7 @@ class AwsCloudConnector(CloudConnector):
 
     def get_load_balancers_v2(self, **kwargs):
         """Retrieve Elastic Load Balancers (ELB) V2 data and emit seeds."""
-        key = kwargs["scan_context_key"]
-        ctx: AwsScanContext = self.scan_contexts[key]
+        ctx: AwsScanContext = kwargs["scan_context"]
 
         client: ElasticLoadBalancingv2Client = self.get_aws_client(
             AwsServices.LOAD_BALANCER_V2, ctx
@@ -640,7 +577,6 @@ class AwsCloudConnector(CloudConnector):
                     with SuppressValidationError():
                         # domain_seed = DomainSeed(value=value, label=label)
                         # self.add_seed(domain_seed, elb_res=elb, aws_client=client)
-                        # self.emit_seed(ctx, domain_seed, elb_res=elb, aws_client=client)
                         seed = self.process_seed(
                             DomainSeed(value=value, label=label),
                             elb_res=elb,
@@ -657,14 +593,16 @@ class AwsCloudConnector(CloudConnector):
         self.get_load_balancers_v2(**kwargs)
 
         # TODO: this won't work anymore since self.seeds is no longer used
-        label = self.format_label(SeedLabel.LOAD_BALANCER)
+        ctx: AwsScanContext = kwargs["scan_context"]
+        label = self.format_label(
+            SeedLabel.LOAD_BALANCER, ctx.account_number, ctx.region
+        )
         if not self.seeds.get(label):
             self.delete_seeds_by_label(label)
 
     def get_network_interfaces(self, **kwargs):
         """Retrieve EC2 Elastic Network Interfaces (ENI) data and emit seeds."""
-        key = kwargs["scan_context_key"]
-        ctx: AwsScanContext = self.scan_contexts[key]
+        ctx: AwsScanContext = kwargs["scan_context"]
 
         label = self.format_label(
             SeedLabel.NETWORK_INTERFACE, ctx.account_number, ctx.region
@@ -685,7 +623,6 @@ class AwsCloudConnector(CloudConnector):
             with SuppressValidationError():
                 # ip_seed = IpSeed(value=ip_address, label=label)
                 # self.add_seed(ip_seed, tags=instance_tag_sets.get(instance_id))
-                # self.emit_seed(ctx, ip_seed, tags=instance_tag_sets.get(instance_id))
                 seed = self.process_seed(
                     IpSeed(value=ip_address, label=label),
                     tags=instance_tag_sets.get(instance_id),
@@ -775,7 +712,7 @@ class AwsCloudConnector(CloudConnector):
         resource_tags: dict = {}
         resource_tag_sets: dict = {}
 
-        for tag in self.get_resource_tags_paginated(resource_types, ctx):
+        for tag in self.get_resource_tags_paginated(ctx, resource_types):
             # Tags come in two formats:
             # 1. Tag = { Key = "Name", Value = "actual-tag-name" }
             # 2. Tag = { Key = "actual-key-name", Value = "tag-value-that-is-unused-here"}
@@ -811,8 +748,7 @@ class AwsCloudConnector(CloudConnector):
 
     def get_rds_instances(self, **kwargs):
         """Retrieve Relational Database Services (RDS) data and emit seeds."""
-        key = kwargs["scan_context_key"]
-        ctx: AwsScanContext = self.scan_contexts[key]
+        ctx: AwsScanContext = kwargs["scan_context"]
 
         client: RDSClient = self.get_aws_client(AwsServices.RDS, ctx)
         label = self.format_label(SeedLabel.RDS, ctx.account_number, ctx.region)
@@ -829,7 +765,6 @@ class AwsCloudConnector(CloudConnector):
                     with SuppressValidationError():
                         # domain_seed = DomainSeed(value=domain_name, label=label)
                         # self.add_seed(domain_seed, rds_res=instance)
-                        # self.emit_seed(ctx, domain_seed, rds_res=instance)
                         has_added_seeds = True
                         seed = self.process_seed(
                             DomainSeed(value=domain_name, label=label), rds_res=instance
@@ -876,8 +811,7 @@ class AwsCloudConnector(CloudConnector):
 
     def get_route53_zones(self, **kwargs):
         """Retrieve Route 53 Zones and emit seeds."""
-        key = kwargs["scan_context_key"]
-        ctx: AwsScanContext = self.scan_contexts[key]
+        ctx: AwsScanContext = kwargs["scan_context"]
 
         client: Route53Client = self.get_aws_client(AwsServices.ROUTE53_ZONES, ctx)
         label = self.format_label(
@@ -885,8 +819,6 @@ class AwsCloudConnector(CloudConnector):
         )
 
         has_added_seeds = False
-        # TODO: potentially send seeds with empty values to remove "stale" seeds
-
         # Notice add_seed has extra keyword arguments - these were piped into add_seed for dispatch_event
         # - add_seed cannot use self.seeds anymore because concurrency
         # - add_seed dispatched_event PER seed, but seeds were later submitted in submit_seeds
@@ -910,14 +842,6 @@ class AwsCloudConnector(CloudConnector):
                         aws_client=client,
                     )
                     seeds.append(seed)
-                    # self.emit_seed(ctx, domain_seed, route53_zone_res=zone)
-                    # self.dispatch_event(
-                    #     EventTypeEnum.SEED_FOUND,
-                    #     seed=domain_seed,
-                    #     route53_zone_res=zone,
-                    #     aws_client=client,
-                    # )
-                    # seeds.append(domain_seed)
 
                 id = zone.get("Id")
                 resource_sets = self._get_route53_zone_resources(client, id)
@@ -929,23 +853,7 @@ class AwsCloudConnector(CloudConnector):
                     domain_name = resource_set.get("Name").rstrip(".")
                     with SuppressValidationError():
                         # domain_seed = DomainSeed(value=domain_name, label=label)
-                        #
-                        # TODO: label is for this entire loop, emitting per item will make more requests than necessary!
-                        # seeds[seed.label].push(seed)
                         # self.add_seed(domain_seed, route53_zone_res=zone, aws_client=client)
-                        # TODO: add_seed quadratic time - loops here, then loops to submit seed
-                        # self.emit_seed(
-                        #     ctx, domain_seed, route53_zone_res=zone, aws_client=client
-                        # )
-                        #
-                        # self.dispatch_event(
-                        #     EventTypeEnum.SEED_FOUND,
-                        #     seed=domain_seed,
-                        #     route53_zone_res=zone,
-                        #     aws_client=client,
-                        # )
-                        # seeds.append(domain_seed)
-
                         seed = self.process_seed(
                             DomainSeed(value=domain_name, label=label),
                             route53_zone_res=zone,
@@ -962,8 +870,7 @@ class AwsCloudConnector(CloudConnector):
 
     def get_ecs_instances(self, **kwargs):
         """Retrieve Elastic Container Service data and emit seeds."""
-        key = kwargs["scan_context_key"]
-        ctx: AwsScanContext = self.scan_contexts[key]
+        ctx: AwsScanContext = kwargs["scan_context"]
 
         ecs: ECSClient = self.get_aws_client(AwsServices.ECS, ctx)
         ec2: EC2Client = self.get_aws_client(AwsServices.EC2, ctx)
@@ -999,14 +906,7 @@ class AwsCloudConnector(CloudConnector):
 
                         with SuppressValidationError():
                             # ip_seed = IpSeed(value=ip_address, label=label)
-                            # TODO: don't use add_seed
-                            # instead, emit Payload
-                            # modifying add seed would require managing account+region or use AwsScanContext which requires more time than available
                             # self.add_seed(ip_seed, ecs_res=instance)
-                            # self.emit_seed(ctx, ip_seed, ecs_res=instance)
-                            # or maybe self.enqueue(seed)
-                            # would be best to async queue these
-                            # but we are in a pool already...
                             seed = self.process_seed(
                                 IpSeed(value=ip_address, label=label), ecs_res=instance
                             )
@@ -1034,8 +934,7 @@ class AwsCloudConnector(CloudConnector):
 
     def get_s3_instances(self, **kwargs):
         """Retrieve Simple Storage Service data and emit seeds."""
-        key = kwargs["scan_context_key"]
-        ctx: AwsScanContext = self.scan_contexts[key]
+        ctx: AwsScanContext = kwargs["scan_context"]
 
         client: S3Client = self.get_aws_client(AwsServices.STORAGE_BUCKET, ctx)
 
@@ -1058,14 +957,9 @@ class AwsCloudConnector(CloudConnector):
                 label = self.format_label(
                     SeedLabel.STORAGE_BUCKET,
                     ctx.account_number,
-                    # oh this is interesting.... lookup_region OR ctx.region.. which one?
-                    # pretty sure it's lookup_region, otherwise whats the point of looking up the bucket's region?
                     lookup_region,
                     # ctx.region,
                 )
-
-                # TODO: this isnt right
-                # assets = []
 
                 with SuppressValidationError():
                     asset = AwsStorageBucketAsset(
@@ -1082,15 +976,10 @@ class AwsCloudConnector(CloudConnector):
                     asset = self.process_cloud_asset(
                         asset, bucket_name=bucket_name, aws_client=client
                     )
-                    # assets.append(asset)
                     if label not in findings:
                         findings[label] = []
                     findings[label].append(asset)
 
-                # TODO convert this to findings below
-                # self.submit_cloud_asset_payload(label, assets)
-
-            # TODO: submit findings map here
             for label, assets in findings.items():
                 self.submit_cloud_asset_payload(label, assets)
         except ClientError as e:
