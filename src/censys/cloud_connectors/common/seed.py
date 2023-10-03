@@ -1,6 +1,7 @@
 """Seed Objects."""
+from datetime import datetime
 from ipaddress import IPv4Address, IPv4Network
-from typing import Union
+from typing import Optional, Union
 
 from pydantic import AnyUrl, parse_obj_as, validator
 
@@ -14,6 +15,8 @@ class Seed(HashableBaseModel):
     type: str
     value: Union[str, int]
     label: str
+    cloud_resource_id: str
+    created_at: Optional[datetime] = None
 
     def to_dict(self) -> dict[str, Union[str, int]]:
         """Convert the seed to a dictionary.
