@@ -195,6 +195,20 @@ class AwsCloudConnector(CloudConnector):
             self.provider_settings.session_token,
         )
 
+    def get_aws_partition(self) -> str:
+        """Get the AWS partition.
+
+        Returns:
+            str: AWS partition.
+        """
+        default_session = boto3._get_default_session()
+        return default_session.get_partition_for_region(
+            self.region
+            or default_session.region_name
+            # We need to have some type of region name here, just to check the partition.
+            # This shouldn't effect the client since we are passing in the credentials.
+        )
+
     def get_aws_client(
         self, service: AwsServices, credentials: Optional[dict] = None
     ) -> T:
@@ -215,13 +229,7 @@ class AwsCloudConnector(CloudConnector):
             if credentials.get("aws_access_key_id"):
                 self.logger.debug(f"AWS Service {service} using access key credentials")
                 client = boto3.client(service, **credentials)  # type: ignore
-                default_session = boto3._get_default_session()
-                self.partition = default_session.get_partition_for_region(
-                    self.region
-                    or default_session.region_name
-                    # We need to have some type of region name here, just to check the partition.
-                    # This shouldn't effect the client since we are passing in the credentials.
-                )
+                self.partition = self.get_aws_partition()
                 return client
 
             # calling client without credentials follows the standard
@@ -230,13 +238,7 @@ class AwsCloudConnector(CloudConnector):
                 f"AWS Service {service} using external boto configuration"
             )
             client = boto3.client(service)  # type: ignore
-            default_session = boto3._get_default_session()
-            self.partition = default_session.get_partition_for_region(
-                self.region
-                or default_session.region_name
-                # We need to have some type of region name here, just to check the partition
-                # This shouldn't effect the client since we are passing in the credentials.
-            )
+            self.partition = self.get_aws_partition()
             return client
         except Exception as e:
             self.logger.error(

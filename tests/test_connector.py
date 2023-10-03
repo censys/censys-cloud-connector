@@ -11,6 +11,8 @@ from censys.cloud_connectors.common.seed import Seed
 from censys.cloud_connectors.common.settings import Settings
 from tests.base_connector_case import BaseConnectorCase
 
+TEST_CLOUD_RESOURCE_ID = "test-cloud-resource-id"
+
 
 class ExampleCloudConnector(CloudConnector):
     provider = ProviderEnum.GCP
@@ -57,7 +59,12 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
             ExampleCloudConnector(test_settings)
 
     def test_add_seed(self):
-        seed = Seed(type="TEST", value="test-value", label="test-label")
+        seed = Seed(
+            type="TEST",
+            value="test-value",
+            label="test-label",
+            cloud_resource_id=TEST_CLOUD_RESOURCE_ID,
+        )
         self.connector.add_seed(seed)
         test_label = self.connector.label_prefix + "test-label"
         assert len(self.connector.seeds[test_label]) == 1
@@ -65,7 +72,11 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
 
     def test_add_cloud_asset(self):
         asset = CloudAsset(
-            type="TEST", value="test-value", csp_label=ProviderEnum.GCP, uid="test-uid"
+            type="TEST",
+            value="test-value",
+            csp_label=ProviderEnum.GCP,
+            uid="test-uid",
+            cloud_resource_id=TEST_CLOUD_RESOURCE_ID,
         )
         self.connector.add_cloud_asset(asset)
         test_uid = self.connector.label_prefix + "test-uid"
@@ -73,7 +84,12 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
         assert self.connector.cloud_assets[test_uid].pop() == asset
 
     def test_submit_seeds(self):
-        seed = Seed(type="TEST", value="test-value", label="test-label")
+        seed = Seed(
+            type="TEST",
+            value="test-value",
+            label="test-label",
+            cloud_resource_id=TEST_CLOUD_RESOURCE_ID,
+        )
         self.connector.add_seed(seed)
         replace_seeds_mock = self.mocker.patch.object(
             self.connector.seeds_api, "replace_seeds_by_label"
@@ -85,7 +101,12 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
         )
 
     def test_fail_submit_seeds(self):
-        seed = Seed(type="TEST", value="test-value", label="test-label")
+        seed = Seed(
+            type="TEST",
+            value="test-value",
+            label="test-label",
+            cloud_resource_id=TEST_CLOUD_RESOURCE_ID,
+        )
         self.connector.add_seed(seed)
         replace_seeds_mock = self.mocker.patch.object(
             self.connector.seeds_api, "replace_seeds_by_label"
@@ -98,7 +119,11 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
     def test_submit_cloud_assets(self):
         # Test data
         asset = CloudAsset(
-            type="TEST", value="test-value", csp_label=ProviderEnum.GCP, uid="test-uid"
+            type="TEST",
+            value="test-value",
+            csp_label=ProviderEnum.GCP,
+            uid="test-uid",
+            cloud_resource_id=TEST_CLOUD_RESOURCE_ID,
         )
         self.connector.add_cloud_asset(asset)
 
@@ -118,7 +143,11 @@ class TestCloudConnector(BaseConnectorCase, TestCase):
     def test_fail_submit_cloud_assets(self):
         # Test data
         asset = CloudAsset(
-            type="TEST", value="test-value", csp_label=ProviderEnum.GCP, uid="test-uid"
+            type="TEST",
+            value="test-value",
+            csp_label=ProviderEnum.GCP,
+            uid="test-uid",
+            cloud_resource_id=TEST_CLOUD_RESOURCE_ID,
         )
         self.connector.add_cloud_asset(asset)
 

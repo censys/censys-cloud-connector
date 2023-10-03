@@ -25,6 +25,8 @@ try:
 except ImportError:
     failed_import = True
 
+TEST_CLOUD_RESOURCE_ID = "test-cloud-resource-id"
+
 
 @pytest.mark.skipif(failed_import, reason="AWS SDK not installed")
 class TestAwsConnector(BaseConnectorCase, TestCase):
@@ -109,6 +111,9 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
 
         # Mock
         mock_client = self.mocker.patch("boto3.client", autospec=True)
+        mock_get_partition = self.mocker.patch.object(
+            self.connector, "get_aws_partition", return_value="aws"
+        )
 
         # Actual call
         self.connector.get_aws_client(service)
@@ -120,6 +125,7 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
             aws_access_key_id=self.connector.provider_settings.access_key,
             aws_secret_access_key=self.connector.provider_settings.secret_key,
         )
+        mock_get_partition.assert_called_once()
 
     def test_get_aws_client_uses_override_credentials(self):
         service = AwsServices.API_GATEWAY
@@ -460,17 +466,29 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
         test_label = f"AWS: Route53/Zones - 999999999999/{self.region}"
         expected_calls = [
             call(
-                DomainSeed(value="example.com", label=test_label),
+                DomainSeed(
+                    value="example.com",
+                    label=test_label,
+                    cloud_resource_id=TEST_CLOUD_RESOURCE_ID,
+                ),
                 route53_zone_res=self.mocker.ANY,
                 aws_client=self.mocker.ANY,
             ),
             call(
-                DomainSeed(value="example.com", label=test_label),
+                DomainSeed(
+                    value="example.com",
+                    label=test_label,
+                    cloud_resource_id=TEST_CLOUD_RESOURCE_ID,
+                ),
                 route53_zone_res=self.mocker.ANY,
                 aws_client=self.mocker.ANY,
             ),
             call(
-                DomainSeed(value="sub.example.com", label=test_label),
+                DomainSeed(
+                    value="sub.example.com",
+                    label=test_label,
+                    cloud_resource_id=TEST_CLOUD_RESOURCE_ID,
+                ),
                 route53_zone_res=self.mocker.ANY,
                 aws_client=self.mocker.ANY,
             ),
@@ -507,6 +525,7 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
                     value="https://test-bucket-1.s3.test-region-1.amazonaws.com",
                     uid=test_label,
                     scan_data={"accountNumber": "999999999999"},
+                    cloud_resource_id=TEST_CLOUD_RESOURCE_ID,
                 ),
                 bucket_name=self.mocker.ANY,
                 aws_client=self.mocker.ANY,
@@ -516,6 +535,7 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
                     value="https://test-bucket-2.s3.test-region-1.amazonaws.com",
                     uid=test_label,
                     scan_data={"accountNumber": "999999999999"},
+                    cloud_resource_id=TEST_CLOUD_RESOURCE_ID,
                 ),
                 bucket_name=self.mocker.ANY,
                 aws_client=self.mocker.ANY,
@@ -575,11 +595,19 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
         test_label = f"AWS: ECS - 999999999999/{self.region}"
         expected_calls = [
             call(
-                IpSeed(value="108.156.117.66", label=test_label),
+                IpSeed(
+                    value="108.156.117.66",
+                    label=test_label,
+                    cloud_resource_id=TEST_CLOUD_RESOURCE_ID,
+                ),
                 ecs_res=self.mocker.ANY,
             ),
             call(
-                IpSeed(value="108.156.117.67", label=test_label),
+                IpSeed(
+                    value="108.156.117.67",
+                    label=test_label,
+                    cloud_resource_id=TEST_CLOUD_RESOURCE_ID,
+                ),
                 ecs_res=self.mocker.ANY,
             ),
         ]

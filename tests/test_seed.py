@@ -15,13 +15,19 @@ from censys.cloud_connectors.common.seed import (
 )
 
 TEST_LABEL = "test_label"
+TEST_CLOUD_RESOURCE_ID = "test-cloud-resource-id"
 
 
 class SeedTest(TestCase):
     def test_seed_to_dict(self):
         test_type = "test"
         test_value = "test-seed-value"
-        seed = Seed(type=test_type, value=test_value, label=TEST_LABEL)
+        seed = Seed(
+            type=test_type,
+            value=test_value,
+            label=TEST_LABEL,
+            cloud_resource_id=TEST_CLOUD_RESOURCE_ID,
+        )
         assert seed.to_dict() == {
             "type": test_type,
             "value": test_value,
@@ -29,7 +35,9 @@ class SeedTest(TestCase):
 
     def test_asn_seed(self):
         test_value = 123
-        seed = AsnSeed(value=test_value, label=TEST_LABEL)
+        seed = AsnSeed(
+            value=test_value, label=TEST_LABEL, cloud_resource_id=TEST_CLOUD_RESOURCE_ID
+        )
         assert seed.type == "ASN"
         assert seed.value == test_value
         assert seed.label == TEST_LABEL
@@ -37,11 +45,17 @@ class SeedTest(TestCase):
     @parameterized.expand([("AS123", "value is not a valid integer")])
     def test_asn_seed_validation(self, test_value: str, exception_message: str):
         with pytest.raises(ValidationError, match=exception_message):
-            AsnSeed(value=test_value, label=TEST_LABEL)
+            AsnSeed(
+                value=test_value,
+                label=TEST_LABEL,
+                cloud_resource_id=TEST_CLOUD_RESOURCE_ID,
+            )
 
     def test_ip_seed(self):
         test_value = "192.35.168.0"
-        seed = IpSeed(value=test_value, label=TEST_LABEL)
+        seed = IpSeed(
+            value=test_value, label=TEST_LABEL, cloud_resource_id=TEST_CLOUD_RESOURCE_ID
+        )
         assert seed.type == "IP_ADDRESS"
         assert seed.value == test_value
         assert seed.label == TEST_LABEL
@@ -54,7 +68,9 @@ class SeedTest(TestCase):
     )
     def test_ip_seed_validation(self, value: str, exception_message: str):
         with pytest.raises(ValidationError, match=exception_message):
-            IpSeed(value=value, label=TEST_LABEL)
+            IpSeed(
+                value=value, label=TEST_LABEL, cloud_resource_id=TEST_CLOUD_RESOURCE_ID
+            )
 
     @parameterized.expand(
         [
@@ -67,7 +83,9 @@ class SeedTest(TestCase):
         ]
     )
     def test_domain_seed(self, test_value: str, expected_value: str):
-        seed = DomainSeed(value=test_value, label=TEST_LABEL)
+        seed = DomainSeed(
+            value=test_value, label=TEST_LABEL, cloud_resource_id=TEST_CLOUD_RESOURCE_ID
+        )
         assert seed.type == "DOMAIN_NAME"
         assert seed.value == expected_value
         assert seed.label == TEST_LABEL
@@ -81,11 +99,15 @@ class SeedTest(TestCase):
     )
     def test_domain_seed_validation(self, value: str, exception_message: str):
         with pytest.raises(ValidationError, match=exception_message):
-            DomainSeed(value=value, label=TEST_LABEL)
+            DomainSeed(
+                value=value, label=TEST_LABEL, cloud_resource_id=TEST_CLOUD_RESOURCE_ID
+            )
 
     def test_cidr_seed(self):
         test_value = "192.35.168.0/24"
-        seed = CidrSeed(value=test_value, label=TEST_LABEL)
+        seed = CidrSeed(
+            value=test_value, label=TEST_LABEL, cloud_resource_id=TEST_CLOUD_RESOURCE_ID
+        )
         assert seed.type == "CIDR"
         assert seed.value == test_value
         assert seed.label == TEST_LABEL
@@ -98,7 +120,9 @@ class SeedTest(TestCase):
     )
     def test_cidr_validation(self, value: str, exception_message: str):
         with pytest.raises(ValidationError, match=exception_message):
-            CidrSeed(value=value, label=TEST_LABEL)
+            CidrSeed(
+                value=value, label=TEST_LABEL, cloud_resource_id=TEST_CLOUD_RESOURCE_ID
+            )
 
     @parameterized.expand(
         [
@@ -113,5 +137,7 @@ class SeedTest(TestCase):
     ):
         seed = None
         with SuppressValidationError():
-            seed = seed_cls(value=value, label=TEST_LABEL)
+            seed = seed_cls(
+                value=value, label=TEST_LABEL, cloud_resource_id=TEST_CLOUD_RESOURCE_ID
+            )
         assert seed is None, "Seed should have failed validation"
