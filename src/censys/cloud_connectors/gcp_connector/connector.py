@@ -284,6 +284,7 @@ class GcpCloudConnector(CloudConnector):
         for result in results:
             try:
                 asset = ResourceSearchResult.to_dict(result)
+                asset_name = asset["name"]
                 if versioned_resource := self.check_asset_version(
                     GcpCloudAssetInventoryTypes.COMPUTE_INSTANCE, asset
                 ):
@@ -311,6 +312,7 @@ class GcpCloudConnector(CloudConnector):
                                     ip_seed = IpSeed(
                                         value=ip_address,
                                         label=label,
+                                        cloud_resource_id=asset_name,
                                     )
                                     self.add_seed(ip_seed)
                                     self.found_projects.add(project_number)
@@ -330,6 +332,7 @@ class GcpCloudConnector(CloudConnector):
         for result in results:
             try:
                 asset = ResourceSearchResult.to_dict(result)
+                asset_name = asset["name"]
                 if versioned_resource := self.check_asset_version(
                     GcpCloudAssetInventoryTypes.COMPUTE_ADDRESS, asset
                 ):
@@ -345,6 +348,7 @@ class GcpCloudConnector(CloudConnector):
                             ip_seed = IpSeed(
                                 value=ip_address,
                                 label=label,
+                                cloud_resource_id=asset_name,
                             )
                             self.add_seed(ip_seed)
                             self.found_projects.add(project_number)
@@ -364,6 +368,7 @@ class GcpCloudConnector(CloudConnector):
         for result in results:
             try:
                 asset = ResourceSearchResult.to_dict(result)
+                asset_name = asset["name"]
                 if versioned_resource := self.check_asset_version(
                     GcpCloudAssetInventoryTypes.CONTAINER_CLUSTER, asset
                 ):
@@ -384,6 +389,7 @@ class GcpCloudConnector(CloudConnector):
                             ip_seed = IpSeed(
                                 value=ip_address,
                                 label=label,
+                                cloud_resource_id=asset_name,
                             )
                             self.add_seed(ip_seed)
                             self.found_projects.add(project_number)
@@ -403,6 +409,7 @@ class GcpCloudConnector(CloudConnector):
         for result in results:
             try:
                 asset = ResourceSearchResult.to_dict(result)
+                asset_name = asset["name"]
                 if versioned_resource := self.check_asset_version(
                     GcpCloudAssetInventoryTypes.CLOUD_SQL_INSTANCE, asset
                 ):
@@ -423,6 +430,7 @@ class GcpCloudConnector(CloudConnector):
                                 ip_seed = IpSeed(
                                     value=ip_address,
                                     label=label,
+                                    cloud_resource_id=asset_name,
                                 )
                                 self.add_seed(ip_seed)
                                 self.found_projects.add(project_number)
@@ -440,7 +448,7 @@ class GcpCloudConnector(CloudConnector):
         for result in results:
             try:
                 asset = ResourceSearchResult.to_dict(result)
-
+                asset_name = asset["name"]
                 if versioned_resource := self.check_asset_version(
                     GcpCloudAssetInventoryTypes.DNS_ZONE, asset
                 ):
@@ -455,7 +463,9 @@ class GcpCloudConnector(CloudConnector):
                     ):
                         label = self.format_label(project_id)
                         with SuppressValidationError():
-                            domain_seed = DomainSeed(value=domain, label=label)
+                            domain_seed = DomainSeed(
+                                value=domain, label=label, cloud_resource_id=asset_name
+                            )
                             self.add_seed(domain_seed)
                             self.found_projects.add(project_number)
             except (
@@ -474,6 +484,7 @@ class GcpCloudConnector(CloudConnector):
         for result in results:
             try:
                 asset = ResourceSearchResult.to_dict(result)
+                asset_name = asset["name"]
                 if versioned_resource := self.check_asset_version(
                     GcpCloudAssetInventoryTypes.STORAGE_BUCKET, asset
                 ):
@@ -496,6 +507,7 @@ class GcpCloudConnector(CloudConnector):
                             uid=uid,
                             # Cast project_number to int from float
                             scan_data=scan_data,
+                            cloud_resource_id=asset_name,
                         )
                         self.add_cloud_asset(bucket_asset)
             except (
