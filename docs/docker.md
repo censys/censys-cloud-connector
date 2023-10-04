@@ -49,7 +49,7 @@ flag to ensure the container is removed after it has finished.
         -v $(pwd)/providers.yml:/app/providers.yml \
         -v $(pwd)/secrets:/app/secrets \
         gcr.io/censys-io/censys-cloud-connector:latest \
-        scan --daemon 4
+        /app/.venv/bin/censys-cc scan --daemon 4
     ```
 
     ```{admonition} Note
