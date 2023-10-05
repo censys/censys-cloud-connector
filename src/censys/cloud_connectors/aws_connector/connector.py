@@ -276,6 +276,9 @@ class AwsCloudConnector(CloudConnector):
 
         Returns:
             dict: boto3 credential dict.
+
+        Raises:
+            Exception: If no credentials could be created.
         """
         cred = {}
 
@@ -290,6 +293,9 @@ class AwsCloudConnector(CloudConnector):
 
         if session_token:
             cred["aws_session_token"] = session_token
+
+        if cred == {}:
+            raise Exception("Could not create STS request credentials")
 
         return cred
 
@@ -307,16 +313,15 @@ class AwsCloudConnector(CloudConnector):
         Returns:
             CredentialsTypeDef: Temporary credentials.
         """
+        # use primary account's credentials to query STS for temp creds
         credentials = self.boto_cred(
             self.region,
             self.provider_settings.access_key,
             self.provider_settings.secret_key,
             self.provider_settings.session_token,
         )
-
-        # pass in explicit boto creds to force a new STS session
         client: STSClient = self.get_aws_client(
-            service=AwsServices.SECURE_TOKEN_SERVICE,  # type: ignore
+            AwsServices.SECURE_TOKEN_SERVICE,
             credentials=credentials,
         )
 
