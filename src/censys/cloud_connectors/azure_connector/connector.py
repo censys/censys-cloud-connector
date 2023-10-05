@@ -209,7 +209,6 @@ class AzureCloudConnector(CloudConnector):
         try:
             zones = dns_client.zones.list()
         except HttpResponseError as error:
-            # TODO: Better error handling here - consolidate common error handling
             self.logger.error(f"Failed to get Azure DNS records: {error.message}")
             return
 
