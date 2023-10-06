@@ -1,5 +1,7 @@
 """Cloud Asset Objects."""
 import json
+from datetime import datetime
+from typing import Optional
 
 from pydantic import AnyUrl, parse_obj_as, validator
 
@@ -15,6 +17,8 @@ class CloudAsset(HashableBaseModel):
     csp_label: ProviderEnum
     scan_data: dict = {}
     uid: str  # Used as cloudConnectorUid
+    cloud_resource_id: str
+    created_at: Optional[datetime] = None
 
     def to_dict(self) -> dict[str, str]:
         """Convert the cloud asset to a dictionary.
