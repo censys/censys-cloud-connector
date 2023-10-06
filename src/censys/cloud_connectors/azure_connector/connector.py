@@ -104,7 +104,9 @@ class AzureCloudConnector(CloudConnector):
                 try:
                     if self.scan_all_regions:
                         self.get_all_labels()
+
                     self.scan()
+
                     if self.scan_all_regions:
                         for label_not_found in self.possible_labels:
                             self.delete_seeds_by_label(label_not_found)
@@ -207,7 +209,6 @@ class AzureCloudConnector(CloudConnector):
         try:
             zones = dns_client.zones.list()
         except HttpResponseError as error:
-            # TODO: Better error handling here - consolidate common error handling
             self.logger.error(f"Failed to get Azure DNS records: {error.message}")
             return
 

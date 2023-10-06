@@ -13,8 +13,7 @@ This module allows Terraform to manage
 ## Login Instructions
 
 Use the [AWS CLI][aws-cli] tool to configure a [named profile][aws-cli-named-profile].
-You can set the profile to use with the variable `aws_profile`. This can be
-defined using a Terraform [variable definition file][tf-var-def-file].
+The AWS Terraform provider uses standard [configuration and credential precedence][aws-config-creds].
 
 ## Setup
 
@@ -145,5 +144,5 @@ terraform destroy -var-file terraform.tfvars
 <!-- References -->
 [aws-cli]: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html
 [aws-cli-named-profile]: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html
-[tf-var-def-file]: https://www.terraform.io/language/values/variables#variable-definitions-tfvars-files
+[aws-config-creds]: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
 [tf-aws-auth]: https://registry.terraform.io/providers/hashicorp/aws/latest/docs#authentication-and-configuration
