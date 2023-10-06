@@ -101,8 +101,9 @@ class AzureCloudConnector(CloudConnector):
             for subscription_id in self.provider_settings.subscription_id:
                 self.logger.info(f"Scanning Azure Subscription {subscription_id}")
                 self.subscription_id = subscription_id
-                self.get_all_labels()
                 try:
+                    if self.scan_all_regions:
+                        self.get_all_labels()
                     self.scan()
                     if self.scan_all_regions:
                         for label_not_found in self.possible_labels:
@@ -134,7 +135,13 @@ class AzureCloudConnector(CloudConnector):
     def get_ip_addresses(self):
         """Get Azure IP addresses."""
         network_client = NetworkManagementClient(self.credentials, self.subscription_id)
-        for asset in network_client.public_ip_addresses.list_all():
+        try:
+            assets = network_client.public_ip_addresses.list_all()
+        except HttpResponseError as error:
+            self.logger.error(f"Failed to get Azure IP addresses: {error.message}")
+            return
+
+        for asset in assets:
             asset_dict = asset.as_dict()
             if ip_address := asset_dict.get("ip_address"):
                 with SuppressValidationError():
@@ -148,7 +155,15 @@ class AzureCloudConnector(CloudConnector):
         container_client = ContainerInstanceManagementClient(
             self.credentials, self.subscription_id
         )
-        for asset in container_client.container_groups.list():
+        try:
+            assets = container_client.container_groups.list()
+        except HttpResponseError as error:
+            self.logger.error(
+                f"Failed to get Azure Container Instances: {error.message}"
+            )
+            return
+
+        for asset in assets:
             asset_dict = asset.as_dict()
             if (
                 (ip_address_dict := asset_dict.get("ip_address"))
@@ -169,7 +184,13 @@ class AzureCloudConnector(CloudConnector):
     def get_sql_servers(self):
         """Get Azure SQL servers."""
         sql_client = SqlManagementClient(self.credentials, self.subscription_id)
-        for asset in sql_client.servers.list():
+        try:
+            assets = sql_client.servers.list()
+        except HttpResponseError as error:
+            self.logger.error(f"Failed to get Azure SQL servers: {error.message}")
+            return
+
+        for asset in assets:
             asset_dict = asset.as_dict()
             if (
                 domain := asset_dict.get("fully_qualified_domain_name")
@@ -184,12 +205,10 @@ class AzureCloudConnector(CloudConnector):
         """Get Azure DNS records."""
         dns_client = DnsManagementClient(self.credentials, self.subscription_id)
         try:
-            zones = list(dns_client.zones.list())
+            zones = dns_client.zones.list()
         except HttpResponseError as error:
-            # TODO: Better error handling here
-            self.logger.error(
-                f"Failed to get Azure DNS records: {error.message}", exc_info=True
-            )
+            # TODO: Better error handling here - consolidate common error handling
+            self.logger.error(f"Failed to get Azure DNS records: {error.message}")
             return
 
         for zone in zones:
@@ -246,8 +265,13 @@ class AzureCloudConnector(CloudConnector):
     def get_storage_containers(self):
         """Get Azure containers."""
         storage_client = StorageManagementClient(self.credentials, self.subscription_id)
+        try:
+            accounts = storage_client.storage_accounts.list()
+        except HttpResponseError as error:
+            self.logger.error(f"Failed to get Azure storage accounts: {error.message}")
+            return
 
-        for account in storage_client.storage_accounts.list():
+        for account in accounts:
             bucket_client = BlobServiceClient(
                 f"https://{account.name}.blob.core.windows.net/", self.credentials
             )
