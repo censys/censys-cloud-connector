@@ -1,5 +1,12 @@
 # What's new?
 
+## v3.2.1
+
+- Improved handling of Azure resource type errors ([#49][pr-49])
+- Improved handling of Azure subscription errors ([#48][pr-48])
+- Fix invalid Docker deployment scan command ([#48][pr-48])
+- Remove reference to invalid AWS profile in AWS ECS deployment ([#48][pr-48])
+
 ## v3.2.0
 
 ### Changelog
@@ -97,6 +104,8 @@ to true in the connector’s `.env`` file.
 [pr-40]: https://github.com/censys/censys-cloud-connector/pull/40
 [pr-41]: https://github.com/censys/censys-cloud-connector/pull/41
 [pr-42]: https://github.com/censys/censys-cloud-connector/pull/42
+[pr-48]: https://github.com/censys/censys-cloud-connector/pull/48
+[pr-49]: https://github.com/censys/censys-cloud-connector/pull/49
 [scc-deprecation]: https://cloud.google.com/security-command-center/docs/how-to-api-list-assets
 [cai-api]: https://cloud.google.com/asset-inventory/docs/overview
 [scc-list-assets]: https://cloud.google.com/security-command-center/docs/how-to-api-list-assets#list_all_assets
