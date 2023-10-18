@@ -10,6 +10,7 @@ from censys.common.exceptions import CensysAsmException
 
 from .cloud_asset import CloudAsset
 from .enums import EventTypeEnum, ProviderEnum
+from .exceptions import CensysCloudProviderException
 from .logger import get_logger
 from .plugins import CloudConnectorPluginRegistry, EventContext
 from .seed import Seed
@@ -73,13 +74,16 @@ class CloudConnector(ABC):
         Args:
             label: Label for seeds to be deleted.
         """
-        try:
-            self.logger.debug(f"Deleting any seeds matching label {label}.")
-            self.seeds_api.replace_seeds_by_label(label, [], True)
-        except CensysAsmException as e:
-            self.logger.error(f"Error deleting seeds for label {label}: {e}")
-        self.logger.info(f"Deleted any seeds for label {label}.")
-        self.dispatch_event(EventTypeEnum.SEEDS_DELETED, label=label)
+        if self.settings.dry_run:
+            self.logger.info("Dry run enabled. Skipping stale seed removal.")
+        else:
+            try:
+                self.logger.debug(f"Deleting any seeds matching label {label}.")
+                self.seeds_api.replace_seeds_by_label(label, [], True)
+            except CensysAsmException as e:
+                self.logger.error(f"Error deleting seeds for label {label}: {e}")
+            self.logger.info(f"Deleted any seeds for label {label}.")
+            self.dispatch_event(EventTypeEnum.SEEDS_DELETED, label=label)
 
     def get_seeds(self) -> None:
         """Gather seeds."""
@@ -92,7 +96,10 @@ class CloudConnector(ABC):
                 self.logger.debug(f"Skipping {seed_type}")
                 continue
             self.logger.debug(f"Scanning {seed_type}")
-            seed_scanner()
+            try:
+                seed_scanner()
+            except CensysCloudProviderException as e:
+                self.logger.error(f"Error scanning {seed_type}: {e}")
         self.current_service = None
 
     def get_cloud_assets(self) -> None:

@@ -118,6 +118,7 @@ Censys Cloud Connector Chart.
 | --------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `envSecretName`             | The name of the secret containing the .env file.                                                                            |
 | `providersSecretName`       | The name of the secret containing the providers.yml file.                                                                   |
+| `credentialsSecretName`     | (Optional) The name of the secret containing all the credentials stored in the secrets directory.                            |
 | `nameOverride`              | (Optional) The override for the name of the chart.                                                                          |
 | `fullnameOverride`          | (Optional) The override for the fullname (including release name) of the chart.                                             |
 | `imagePullSecrets`          | (Optional) The authorization token to use when accessing the docker registry.                                               |

@@ -51,6 +51,51 @@ The client 'user@example.com' with object id 'uuid' does not have authorization 
 ```
 <!-- markdownlint-enable MD013 -->
 
+### Why does the Cloud Connector say that my Azure subscription does not exist?
+
+There are two cases where the Cloud Connector might report that your Azure
+subscription does not exist.
+
+#### Case 1: Your providers.yaml file includes a non-existent subscription ID
+
+If you encounter this error:
+
+<!-- markdownlint-disable MD013 -->
+```{code-block}
+Failed to get Azure <RESOURCE_TYPE>: (SubscriptionNotFound) The subscription <SUBSCRIPTION_ID> could not be found.
+```
+<!-- markdownlint-enable MD013 -->
+
+Check to see if this subscription ID exists within the Azure tenant you've
+defined in your providers.yaml file.
+
+#### Case 2: Your Azure Subscription is empty or has unregistered resource providers
+
+If you encounter an error like this:
+
+<!-- markdownlint-disable MD013 -->
+```{code-block}
+Error scanning Microsoft.Network/dnszones: (BadRequest) The specified subscription <SUBSCRIPTION_ID> does not exist
+```
+<!-- markdownlint-enable MD013 -->
+
+Check in your Azure portal if this subscription is empty. Azure reports this
+error if the "Resource Provider" we are trying to access is not registered
+for this subscription and there are no resources of this type in this
+subscription. You can check this by going to the subscription in question in
+your Azure portal, and clicking on "Resource Providers" in the left-hand menu.
+If the resource provider you are trying to access is not listed, you will need
+to register it.
+
+For example, the error shown above is for the `Microsoft.Network/dnszones`
+resource provider. To register this resource provider, you would click on
+"Microsoft.Network" in the list of resource providers, and then click the
+"Register" button at the top of the page.
+
+This is a non-fatal error, so it will not prevent the Cloud Connector from
+scanning the rest of the resource types in this subscription, or the rest of
+the subscriptions in your providers.yaml file.
+
 ## GCP
 
 ### GCP Service Account Keys

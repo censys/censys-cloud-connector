@@ -16,6 +16,12 @@ Use our {doc}`../cli` to step through the configuration process:
 censys-cc config --provider azure
 ```
 
+```{admonition} Note
+:class: censys
+Running the provider setup will overwrite any existing Service Principals with
+the name `Censys Cloud Connector`.
+```
+
 ### Roles and Permissions
 
 Azure uses [role-based access control][azure-rbac]. Ensure that your account's

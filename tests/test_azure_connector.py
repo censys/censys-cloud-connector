@@ -7,6 +7,7 @@ from parameterized import parameterized
 
 from censys.cloud_connectors.azure_connector.enums import AzureResourceTypes
 from censys.cloud_connectors.common.enums import ProviderEnum
+from censys.cloud_connectors.common.exceptions import CensysAzureException
 from tests.base_connector_case import BaseConnectorCase
 
 failed_import = False
@@ -344,20 +345,18 @@ class TestAzureCloudConnector(BaseConnectorCase, TestCase):
         mock_dns_client = self.mock_client("DnsManagementClient")
         mock_zones = self.mocker.patch.object(mock_dns_client.return_value, "zones")
         mock_zones.list.side_effect = HttpResponseError
-        mock_error_logger = self.mocker.patch.object(self.connector.logger, "error")
 
         # Actual call
-        self.connector.get_dns_records()
+        with pytest.raises(
+            CensysAzureException, match="Failed to get Azure DNS records"
+        ):
+            self.connector.get_dns_records()
 
         # Assertions
         mock_dns_client.assert_called_with(
             self.connector.credentials, self.connector.subscription_id
         )
         mock_zones.list.assert_called_once()
-        mock_error_logger.assert_called_once()
-        assert mock_error_logger.call_args[0][0].startswith(
-            "Failed to get Azure DNS records"
-        )
 
     def test_get_cloud_assets(self):
         # Test data
