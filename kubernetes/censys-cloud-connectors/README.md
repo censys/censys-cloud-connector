@@ -97,17 +97,19 @@ available configuration options.
 helm upgrade --install censys-cloud-connectors ./kubernetes/censys-cloud-connectors
 ```
 
-8. Run the Censys Cloud Connector Manually
+8. Optionally test:
 
-```{prompt} bash
-kubectl create job --from=cronjob/censys-cloud-connectors censys-cloud-connectors-manual --dry-run=client -o yaml | kubectl apply -f -
-```
+- Run the Censys Cloud Connector Manually
 
-9. Check the logs of the Censys Cloud Connector Job
+  ```{prompt} bash
+  kubectl create job --from=cronjob/censys-cloud-connectors censys-cloud-connectors-manual --dry-run=client -o yaml | kubectl apply -f -
+  ```
 
-```{prompt} bash
-kubectl logs job.batch/censys-cloud-connectors-manual --follow
-```
+- Check the logs of the Censys Cloud Connector Job
+
+  ```{prompt} bash
+  kubectl logs job.batch/censys-cloud-connectors-manual --follow
+  ```
 <!-- markdownlint-enable MD029 -->
 ## Configuration
 
@@ -118,6 +120,7 @@ Censys Cloud Connector Chart.
 | --------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `envSecretName`             | The name of the secret containing the .env file.                                                                            |
 | `providersSecretName`       | The name of the secret containing the providers.yml file.                                                                   |
+| `credentialsSecretName`     | (Optional) The name of the secret containing all the credentials stored in the secrets directory.                            |
 | `nameOverride`              | (Optional) The override for the name of the chart.                                                                          |
 | `fullnameOverride`          | (Optional) The override for the fullname (including release name) of the chart.                                             |
 | `imagePullSecrets`          | (Optional) The authorization token to use when accessing the docker registry.                                               |
