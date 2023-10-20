@@ -97,17 +97,19 @@ available configuration options.
 helm upgrade --install censys-cloud-connectors ./kubernetes/censys-cloud-connectors
 ```
 
-8. Run the Censys Cloud Connector Manually
+8. Optionally test:
 
-```{prompt} bash
-kubectl create job --from=cronjob/censys-cloud-connectors censys-cloud-connectors-manual --dry-run=client -o yaml | kubectl apply -f -
-```
+- Run the Censys Cloud Connector Manually
 
-9. Check the logs of the Censys Cloud Connector Job
+  ```{prompt} bash
+  kubectl create job --from=cronjob/censys-cloud-connectors censys-cloud-connectors-manual --dry-run=client -o yaml | kubectl apply -f -
+  ```
 
-```{prompt} bash
-kubectl logs job.batch/censys-cloud-connectors-manual --follow
-```
+- Check the logs of the Censys Cloud Connector Job
+
+  ```{prompt} bash
+  kubectl logs job.batch/censys-cloud-connectors-manual --follow
+  ```
 <!-- markdownlint-enable MD029 -->
 ## Configuration
 
