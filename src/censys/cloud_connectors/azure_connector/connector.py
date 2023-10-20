@@ -267,6 +267,9 @@ class AzureCloudConnector(CloudConnector):
                             self.add_seed(ip_seed)
                             self.possible_labels.discard(label)
 
+        # Note: The generic AzureError is used to ensure the connector does not
+        # fail entirely if the exception is not fatal.
+        # See ticket AP-3180 for future improvements to error handling.
         except AzureError as error:
             raise CensysAzureException(
                 message=f"Failed to get Azure DNS records: {error.message}"

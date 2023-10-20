@@ -30,7 +30,10 @@ def get_parser() -> argparse.ArgumentParser:
 
     for command in commands.__dict__.values():
         try:
-            # FIXME: This is weird and doesn't just include the commands
+            # Note: The way this is currently implemented, the function
+            # `include_cli` needs to be passed into the parent parser to
+            # include the commands in the parsing. For the future, implementing
+            # dynamic parsing of commands would require refactoring here.
             include_func = command.include_cli
         except AttributeError:
             continue
