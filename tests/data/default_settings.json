@@ -4,5 +4,6 @@
   "censys_cookies": {
     "session": "test-censys-session-xxxxxxxxxxxxxxxx"
   },
-  "validation_timeout": 5
+  "validation_timeout": 5,
+  "aws_endpoint_url": ""
 }

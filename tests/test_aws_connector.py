@@ -121,6 +121,16 @@ class TestAwsConnector(BaseConnectorCase, TestCase):
             aws_secret_access_key=self.connector.provider_settings.secret_key,
         )
 
+    def test_endpoint_url_override(self):
+        endpoint_url = "test-endpoint-url"
+        expected = {"aws_access_key_id": "test", "endpoint_url": endpoint_url}
+        self.settings.aws_endpoint_url = endpoint_url
+        mock_client = self.mocker.patch("boto3.client", autospec=True)
+        self.connector.get_aws_client(
+            AwsServices.API_GATEWAY, {"aws_access_key_id": "test"}
+        )
+        mock_client.assert_called_with(AwsServices.API_GATEWAY, **expected)
+
     def test_get_aws_client_uses_override_credentials(self):
         service = AwsServices.API_GATEWAY
         expected = self.data["TEST_BOTO_CRED_FULL"]

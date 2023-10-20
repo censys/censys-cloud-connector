@@ -62,3 +62,10 @@ class EventTypeEnum(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     SEEDS_SUBMITTED = "SEEDS_SUBMITTED"
     CLOUD_ASSETS_SUBMITTED = "CLOUD_ASSETS_SUBMITTED"
     SEEDS_DELETED = "SEEDS_DELETED"
+
+
+class PayloadTypes(str, Enum, metaclass=CaseInsensitiveEnumMeta):
+    """Payload types supported by Censys."""
+
+    PAYLOAD_SEED = "com.censys.cloud-connector.seed"
+    PAYLOAD_CLOUD_ASSET = "com.censys.cloud-connector.cloud-asset"

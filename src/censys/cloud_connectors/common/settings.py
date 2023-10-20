@@ -157,6 +157,11 @@ class Settings(BaseSettings):
     censys_cookies: dict = Field(
         default={}, env="CENSYS_COOKIES", description="Censys Cookies"
     )
+    cloud_connector_version: str = Field(
+        default=censys_cloud_connectors_version,
+        env="CLOUD_CONNECTOR_VERSION",
+        description="Cloud Connector Version",
+    )
 
     # Optional
     providers_config_file: str = Field(
@@ -188,6 +193,16 @@ class Settings(BaseSettings):
         default=False,
         env="AZURE_REFRESH_ALL_REGIONS",
         description="Scan all available Azure regions",
+    )
+    aws_endpoint_url: str = Field(
+        default="",
+        env="AWS_ENDPOINT_URL",
+        description="AWS endpoint url override (for testing)",
+    )
+    scan_concurrency: int = Field(
+        default=1,
+        env="SCAN_CONCURRENCY",
+        description="Maximum number of concurrent scans",
     )
 
     # Verification timeout
