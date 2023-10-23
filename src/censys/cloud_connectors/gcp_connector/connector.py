@@ -1,5 +1,8 @@
 """Gcp Cloud Connector."""
 import json
+from dataclasses import dataclass
+from logging import Logger
+from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, Optional
 
@@ -13,6 +16,7 @@ from censys.cloud_connectors.common.cloud_asset import GcpStorageBucketAsset
 from censys.cloud_connectors.common.connector import CloudConnector
 from censys.cloud_connectors.common.context import SuppressValidationError
 from censys.cloud_connectors.common.enums import EventTypeEnum, ProviderEnum
+from censys.cloud_connectors.common.logger import get_logger
 from censys.cloud_connectors.common.healthcheck import Healthcheck
 from censys.cloud_connectors.common.seed import DomainSeed, IpSeed
 from censys.cloud_connectors.common.settings import Settings
@@ -21,16 +25,22 @@ from .enums import GcpApiVersions, GcpCloudAssetInventoryTypes
 from .settings import GcpSpecificSettings
 
 
+@dataclass
+class GcpScanContext:
+    """Required configuration context for scan()."""
+
+    provider_settings: GcpSpecificSettings
+    organization_id: int
+    credentials: service_account.Credentials
+
+    cloud_asset_client: AssetServiceClient
+    logger: Logger
+
+
 class GcpCloudConnector(CloudConnector):
     """Gcp Cloud Connector."""
 
     provider = ProviderEnum.GCP
-    organization_id: int
-    credentials: service_account.Credentials
-    provider_settings: GcpSpecificSettings
-    cloud_asset_client: AssetServiceClient
-    all_projects: dict[str, dict[str, str]]
-    found_projects: set[str]
 
     def __init__(self, settings: Settings):
         """Initialize Gcp Cloud Connector.
@@ -50,62 +60,148 @@ class GcpCloudConnector(CloudConnector):
             GcpCloudAssetInventoryTypes.STORAGE_BUCKET: self.get_storage_buckets,
         }
 
-    def scan(self):
-        """Scan Gcp.
+    def scan_seeds(self, **kwargs):
+        """Scan AWS for seeds."""
+        scan_context: GcpScanContext = kwargs["scan_context"]
 
-        Scans Gcp for assets and seeds.
+        logger = get_logger(
+            log_name=f"{self.provider.lower()}_connector",
+            level=self.settings.logging_level,
+            provider=f"{self.provider}_{scan_context.organization_id}",
+        )
+        scan_context.logger = logger
 
-        Raises:
-            ValueError: If the service account credentials file is invalid.
-        """
-        try:
-            with Healthcheck(
-                self.settings,
-                self.provider_settings,
-                exception_map={
-                    exceptions.Unauthenticated: "PERMISSIONS",
-                    exceptions.PermissionDenied: "PERMISSIONS",
-                },
-            ):
-                key_file_path = (
-                    Path(self.settings.secrets_dir)
-                    / self.provider_settings.service_account_json_file
-                )
-                try:
-                    self.credentials = (
-                        service_account.Credentials.from_service_account_file(
-                            str(key_file_path)
-                        )
-                    )
-                except ValueError as e:
-                    self.logger.error(
-                        "Failed to load service account credentials from"
-                        f" {key_file_path}: {e}"
-                    )
-                    raise
-                self.cloud_asset_client = AssetServiceClient(
-                    credentials=self.credentials
-                )
-                self.logger.info(f"Scanning GCP organization {self.organization_id}")
-                self.all_projects = self.list_projects()
-                self.found_projects = set()
-                super().scan()
-                self.clean_up()
-        except Exception as e:
-            self.logger.error(
-                f"Unable to scan GCP organization {self.organization_id}. Error: {e}",
-            )
-            self.dispatch_event(EventTypeEnum.SCAN_FAILED, exception=e)
+        self.logger.info(
+            f"Scanning GCP organization {scan_context.organization_id} for seeds."
+        )
+
+        super().scan_seeds(**kwargs)
+
+    def scan_cloud_assets(self, **kwargs):
+        """Scan AWS for cloud assets."""
+        scan_context: GcpScanContext = kwargs["scan_context"]
+
+        logger = get_logger(
+            log_name=f"{self.provider.lower()}_connector",
+            level=self.settings.logging_level,
+            provider=f"{self.provider}_{scan_context.organization_id}",
+        )
+        scan_context.logger = logger
+
+        self.logger.info(
+            f"Scanning GCP organization {scan_context.organization_id} for cloud assets."
+        )
+
+        super().scan_cloud_assets(**kwargs)
 
     def scan_all(self):
         """Scan all Gcp Organizations."""
         provider_settings: dict[
             tuple, GcpSpecificSettings
         ] = self.settings.providers.get(self.provider, {})
+
+        self.logger.debug(
+            f"Scanning GCP using {self.settings.scan_concurrency} processes."
+        )
+
+        pool = Pool(processes=self.settings.scan_concurrency)
+
         for provider_setting in provider_settings.values():
+            # `provider_setting` represents a specific top-level GcpOrganization entry in providers.yml
+            #
+            # DO NOT use provider_settings anywhere in this class!
+            # provider_settings exists for the parent CloudConnector
             self.provider_settings = provider_setting
-            self.organization_id = provider_setting.organization_id
-            self.scan()
+            organization_id = provider_setting.organization_id
+
+            key_file_path = (
+                Path(self.settings.secrets_dir)
+                / provider_setting.service_account_json_file
+            )
+            try:
+                credentials = (
+                    service_account.Credentials.from_service_account_file(
+                        str(key_file_path)
+                    )
+                )
+            except ValueError as e:
+                self.logger.error(
+                    "Failed to load service account credentials from"
+                    f" {key_file_path}: {e}"
+                )
+                raise
+            cloud_asset_client = AssetServiceClient(
+                credentials=credentials
+            )
+
+            try:
+                # scan seeds
+                with Healthcheck(
+                    self.settings,
+                    provider_setting,
+                    provider={
+                        exceptions.Unauthenticated: "PERMISSIONS",
+                        exceptions.PermissionDenied: "PERMISSIONS",
+                    },
+                ):
+                    self.logger.debug(
+                        "Starting pool organization:%s", organization_id
+                    )
+
+                    scan_context = GcpScanContext(
+                        provider_settings=provider_setting,
+                        organization_id=organization_id,
+                        credentials=credentials,
+                        cloud_asset_client=cloud_asset_client,
+                        logger=None,
+                    )
+                    
+                    pool.apply_async(
+                        self.scan_seeds,
+                        kwds={"scan_context": scan_context},
+                    )
+
+            except Exception as e:
+                self.logger.error(
+                    f"Unable to scan GCP organization {organization_id}. Error: {e}",
+                )
+                self.dispatch_event(EventTypeEnum.SCAN_FAILED, exception=e)
+
+            try:
+                # scan cloud assets
+                with Healthcheck(
+                    self.settings,
+                    provider_setting,
+                    provider={
+                        exceptions.Unauthenticated: "PERMISSIONS",
+                        exceptions.PermissionDenied: "PERMISSIONS",
+                    },
+                ):
+                    self.logger.debug(
+                        "Starting pool organization:%s", organization_id
+                    )
+
+                    scan_context = GcpScanContext(
+                        provider_settings=provider_setting,
+                        organization_id=organization_id,
+                        credentials=credentials,
+                        cloud_asset_client=cloud_asset_client,
+                        logger=None,
+                    )
+                    
+                    pool.apply_async(
+                        self.scan_cloud_assets,
+                        kwds={"scan_context": scan_context},
+                    )
+
+            except Exception as e:
+                self.logger.error(
+                    f"Unable to scan GCP organization {organization_id}. Error: {e}",
+                )
+                self.dispatch_event(EventTypeEnum.SCAN_FAILED, exception=e)
+
+        pool.close()
+        pool.join()
 
     def list_projects(self) -> dict[str, dict]:
         """List Gcp projects.
@@ -178,11 +274,12 @@ class GcpCloudConnector(CloudConnector):
         return ""
 
     def check_asset_version(
-        self, asset_type: GcpCloudAssetInventoryTypes, asset: dict
+        self, ctx: GcpScanContext, asset_type: GcpCloudAssetInventoryTypes, asset: dict
     ) -> Optional[dict]:
         """Check if the asset version is supported and returns the resource if it is.
 
         Args:
+            ctx (GcpScanContext): Scan context.
             asset_type (GcpCloudAssetInventoryTypes): Asset type.
             asset (dict): Asset.
 
@@ -236,30 +333,32 @@ class GcpCloudConnector(CloudConnector):
             label = self.format_label(self.all_projects[project]["project_id"])
             self.delete_seeds_by_label(label)
 
-    def format_label(self, project_id: str) -> str:
+    def format_label(self, ctx: GcpScanContext, project_id: str) -> str:
         """Format Gcp label.
 
         Args:
+            ctx (GcpScanContext): Scan context.
             project_id (str): Gcp asset project ID
 
         Returns:
             str: Formatted asset label.
         """
-        return f"{self.label_prefix}{self.organization_id}/{project_id}"
+        return f"{self.label_prefix}{ctx.organization_id}/{project_id}"
 
-    def format_uid(self, project_id: Optional[str]) -> str:
+    def format_uid(self, ctx: GcpScanContext, project_id: Optional[str]) -> str:
         """Format Gcp uid.
 
         Args:
+            ctx (GcpScanContext): Scan context.
             project_id (Optional[str]): Gcp asset project id.
 
         Returns:
             str: Formatted asset uid.
         """
-        return f"{self.label_prefix}{self.organization_id}/{project_id}"
+        return f"{self.label_prefix}{ctx.organization_id}/{project_id}"
 
     def search_all_resources(
-        self, filter: Optional[str] = None
+        self, ctx: GcpScanContext, filter: Optional[str] = None
     ) -> SearchAllResourcesPager:
         """List Gcp assets.
 
@@ -270,11 +369,11 @@ class GcpCloudConnector(CloudConnector):
             SearchAllResourcesPager: Gcp assets.
         """
         request = {
-            "scope": self.provider_settings.parent(),
+            "scope": ctx.provider_settings.parent(),
             "asset_types": [filter],
             "read_mask": "*",
         }
-        return self.cloud_asset_client.search_all_resources(request=request)
+        return ctx.cloud_asset_client.search_all_resources(request=request)
 
     def get_compute_instances(self):
         """Get Gcp compute instances assets."""
