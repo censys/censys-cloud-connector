@@ -49,7 +49,7 @@ class CloudConnector(ABC):
         """
         if not self.provider:
             raise ValueError("The provider must be set.")
-        self.label_prefix = self.provider.label() + ": "
+        self.label_prefix = self.get_provider_label_prefix()
         self.settings = settings
         self.logger = get_logger(
             log_name=f"{self.provider.lower()}_cloud_connector",
@@ -79,6 +79,14 @@ class CloudConnector(ABC):
         self.cloud_assets = defaultdict(set)
         self.current_service = None
 
+    def get_provider_label_prefix(self):
+        """Get the provider label prefix.
+
+        Returns:
+            str: Provider label prefix.
+        """
+        return self.provider.label() + ": "
+
     def delete_seeds_by_label(self, label: str):
         """Replace seeds for [label] with an empty list.
 
@@ -86,8 +94,14 @@ class CloudConnector(ABC):
             label: Label for seeds to be deleted.
         """
         try:
-            self.logger.debug(f"Deleting any seeds matching label {label}.")
-            self.seeds_api.replace_seeds_by_label(label, [], True)
+            if self.settings.dry_run:
+                self.logger.debug(
+                    f"Dry run: Skipping deleting any seeds matching label {label}."
+                )
+            else:
+                self.logger.debug(f"Deleting any seeds matching label {label}.")
+                self.seeds_api.replace_seeds_by_label(label, [], True)
+
         except CensysAsmException as e:
             self.logger.error(f"Error deleting seeds for label {label}: {e}")
         self.logger.info(f"Deleted any seeds for label {label}.")
@@ -171,6 +185,7 @@ class CloudConnector(ABC):
         context = self.get_event_context(event_type, service)
         CloudConnectorPluginRegistry.dispatch_event(context=context, **kwargs)
 
+    # TODO: remove
     def add_seed(self, seed: Seed, **kwargs):
         """Add a seed.
 
@@ -185,6 +200,7 @@ class CloudConnector(ABC):
         self.logger.debug(f"Found Seed: {seed.to_dict()}")
         self.dispatch_event(EventTypeEnum.SEED_FOUND, seed=seed, **kwargs)
 
+    # TODO: remove
     def add_cloud_asset(self, cloud_asset: CloudAsset, **kwargs):
         """Add a cloud asset.
 
@@ -201,6 +217,7 @@ class CloudConnector(ABC):
             EventTypeEnum.CLOUD_ASSET_FOUND, cloud_asset=cloud_asset, **kwargs
         )
 
+    # TODO remove
     def submit_seeds(self):
         """Submit the seeds to Censys ASM."""
         # TODO: not compatible with multiprocessing
@@ -216,6 +233,7 @@ class CloudConnector(ABC):
         self.logger.info(f"Submitted {submitted_seeds} seeds.")
         self.dispatch_event(EventTypeEnum.SEEDS_SUBMITTED, count=submitted_seeds)
 
+    # TODO remove
     def submit_cloud_assets(self):
         """Submit the cloud assets to Censys ASM."""
         # TODO: not compatible with multiprocessing
@@ -233,6 +251,7 @@ class CloudConnector(ABC):
             EventTypeEnum.CLOUD_ASSETS_SUBMITTED, count=submitted_assets
         )
 
+    # TODO: rename this method to something like prepare_seed
     def process_seed(self, seed: Seed, **kwargs) -> Seed:
         """Prepare a seed for submission. Also dispatch events.
 
@@ -299,9 +318,17 @@ class CloudConnector(ABC):
         Returns:
             str: Event ID.
         """
-        result = self.aurora_api.enqueue_payload(payload)
-        event_id = result.get("eventId", "ERROR")
-        return event_id
+        if self.settings.dry_run:
+            self.logger.debug("Dry run: Skipping enqueueing payload.")
+            return "dry-run-event-id"
+        else:
+            result = self.aurora_api.enqueue_payload(payload)
+            event_id = result.get("eventId")
+            if not event_id:
+                self.logger.error(
+                    f"Error enqueuing payload {payload} event_id:{event_id}"
+                )
+            return event_id
 
     def submit_seed_payload(self, label: str, seeds: list[Seeds]) -> str:
         """Submit a seed payload.
@@ -319,7 +346,7 @@ class CloudConnector(ABC):
         }
         payload = self.payload(PayloadTypes.PAYLOAD_SEED, data)
         event_id = self.enqueue_payload(payload)
-        self.logger.debug(f"seed payload {payload} event_id:{event_id}")
+        self.logger.debug(f"Payload label:{label} event_id:{event_id}")
         return event_id
 
     def submit_cloud_asset_payload(self, uid: str, cloud_assets: list[CloudAsset]):
@@ -335,7 +362,7 @@ class CloudConnector(ABC):
         }
         payload = self.payload(PayloadTypes.PAYLOAD_CLOUD_ASSET, data)
         event_id = self.enqueue_payload(payload)
-        self.logger.debug(f"cloud asset payload {payload} event_id:{event_id}")
+        self.logger.debug(f"Payload uid:{uid} event_id:{event_id}")
         return event_id
 
     def clear(self):
@@ -347,6 +374,7 @@ class CloudConnector(ABC):
         self.logger.debug(f"Clearing {len(self.cloud_assets)} cloud assets")
         self.cloud_assets.clear()
 
+    # TODO: remove
     def submit(self, **kwargs):  # pragma: no cover
         """Submit the seeds and cloud assets to Censys ASM."""
         if self.settings.dry_run:
@@ -358,6 +386,7 @@ class CloudConnector(ABC):
 
         self.clear()
 
+    # TODO: remove
     def submit_seeds_wrapper(self):  # pragma: no cover
         """Submit the seeds to Censys ASM."""
         if self.settings.dry_run:
@@ -381,7 +410,7 @@ class CloudConnector(ABC):
         self.logger.info("Gathering seeds...")
         self.dispatch_event(EventTypeEnum.SCAN_STARTED)
         self.get_seeds(**kwargs)
-        self.submit_seeds_wrapper()
+        # self.submit_seeds_wrapper()
         self.dispatch_event(EventTypeEnum.SCAN_FINISHED)
 
     def scan_cloud_assets(self, **kwargs):
@@ -399,7 +428,7 @@ class CloudConnector(ABC):
         self.dispatch_event(EventTypeEnum.SCAN_STARTED)
         self.get_seeds(**kwargs)
         self.get_cloud_assets(**kwargs)
-        self.submit()
+        # self.submit()
         self.dispatch_event(EventTypeEnum.SCAN_FINISHED)
 
     @abstractmethod

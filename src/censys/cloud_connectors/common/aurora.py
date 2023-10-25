@@ -8,7 +8,7 @@ from censys.asm import Seeds
 class Aurora(Seeds):
     """Aurora API client."""
 
-    base_path = "/api"
+    base_path = "/api/integrations"
 
     # TODO @_backoff_wrapper
     def enqueue_payload(self, payload: CloudEvent) -> None:
@@ -20,7 +20,7 @@ class Aurora(Seeds):
         headers, body = to_structured(payload)
         request_kwargs = {"timeout": self.timeout, "data": body, "headers": headers}
 
-        url = f"{self._api_url}{self.base_path}/payload/enqueue"
+        url = f"{self._api_url}{self.base_path}/v1/payloads/enqueue"
         resp = self._call_method(self._session.post, url, request_kwargs)
 
         if resp.ok:
