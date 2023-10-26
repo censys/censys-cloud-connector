@@ -1,5 +1,8 @@
 """Gcp Cloud Connector."""
 import json
+from dataclasses import dataclass
+from logging import Logger
+from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, Optional
 
@@ -13,6 +16,7 @@ from censys.cloud_connectors.common.cloud_asset import GcpStorageBucketAsset
 from censys.cloud_connectors.common.connector import CloudConnector
 from censys.cloud_connectors.common.context import SuppressValidationError
 from censys.cloud_connectors.common.enums import EventTypeEnum, ProviderEnum
+from censys.cloud_connectors.common.logger import get_logger
 from censys.cloud_connectors.common.healthcheck import Healthcheck
 from censys.cloud_connectors.common.seed import DomainSeed, IpSeed
 from censys.cloud_connectors.common.settings import Settings
@@ -21,16 +25,25 @@ from .enums import GcpApiVersions, GcpCloudAssetInventoryTypes
 from .settings import GcpSpecificSettings
 
 
+@dataclass
+class GcpScanContext:
+    """Required configuration context for scan()."""
+
+    label_prefix: str
+    provider_settings: GcpSpecificSettings
+    organization_id: int
+    credentials: service_account.Credentials
+
+    cloud_asset_client: AssetServiceClient
+    all_projects: dict[str, dict[str, str]]
+    logger: Logger
+
+# TODO: question: seed labels and cloud asset uids are the same for GCP. Is that confusing for keeping stale seeds out? Or does the fact that we submit seeds and cloud assets separately make it ok?
+
 class GcpCloudConnector(CloudConnector):
     """Gcp Cloud Connector."""
 
     provider = ProviderEnum.GCP
-    organization_id: int
-    credentials: service_account.Credentials
-    provider_settings: GcpSpecificSettings
-    cloud_asset_client: AssetServiceClient
-    all_projects: dict[str, dict[str, str]]
-    found_projects: set[str]
 
     def __init__(self, settings: Settings):
         """Initialize Gcp Cloud Connector.
@@ -50,70 +63,207 @@ class GcpCloudConnector(CloudConnector):
             GcpCloudAssetInventoryTypes.STORAGE_BUCKET: self.get_storage_buckets,
         }
 
-    def scan(self):
-        """Scan Gcp.
+    def scan_seeds(self, **kwargs):
+        """Scan AWS for seeds."""
+        ctx: GcpScanContext = kwargs["scan_context"]
 
-        Scans Gcp for assets and seeds.
+        logger = get_logger(
+            log_name=f"{self.provider.lower()}_connector",
+            level=self.settings.logging_level,
+            provider=f"{self.provider}_{ctx.organization_id}",
+        )
+        ctx.logger = logger
 
-        Raises:
-            ValueError: If the service account credentials file is invalid.
-        """
+        key_file_path = (
+            Path(self.settings.secrets_dir)
+            / ctx.provider_settings.service_account_json_file
+        )
         try:
-            with Healthcheck(
-                self.settings,
-                self.provider_settings,
-                exception_map={
-                    exceptions.Unauthenticated: "PERMISSIONS",
-                    exceptions.PermissionDenied: "PERMISSIONS",
-                },
-            ):
-                key_file_path = (
-                    Path(self.settings.secrets_dir)
-                    / self.provider_settings.service_account_json_file
+            ctx.credentials = (
+                service_account.Credentials.from_service_account_file(
+                    str(key_file_path)
                 )
-                try:
-                    self.credentials = (
-                        service_account.Credentials.from_service_account_file(
-                            str(key_file_path)
-                        )
-                    )
-                except ValueError as e:
-                    self.logger.error(
-                        "Failed to load service account credentials from"
-                        f" {key_file_path}: {e}"
-                    )
-                    raise
-                self.cloud_asset_client = AssetServiceClient(
-                    credentials=self.credentials
-                )
-                self.logger.info(f"Scanning GCP organization {self.organization_id}")
-                self.all_projects = self.list_projects()
-                self.found_projects = set()
-                super().scan()
-                self.clean_up()
-        except Exception as e:
-            self.logger.error(
-                f"Unable to scan GCP organization {self.organization_id}. Error: {e}",
             )
-            self.dispatch_event(EventTypeEnum.SCAN_FAILED, exception=e)
+        except ValueError as e:
+            ctx.logger.error(
+                "Failed to load service account credentials from"
+                f" {key_file_path}: {e}"
+            )
+            raise
+
+        ctx.cloud_asset_client = AssetServiceClient(
+            credentials=ctx.credentials
+        )
+
+        # TODO: potentially add this to provider_settings. once populated it doesn't change, just accessed
+        all_projects = self.list_projects(ctx)
+        ctx.all_projects = all_projects
+
+        ctx.logger.info(
+            f"Scanning GCP organization {ctx.organization_id} for seeds."
+        )
+
+        # TODO: make sure events are working (not broken by worker pool change)
+        # TODO: specify that this is a scan of seeds
+        self.dispatch_event(EventTypeEnum.SCAN_STARTED)
+        super().scan_seeds(**kwargs)
+        self.dispatch_event(EventTypeEnum.SCAN_FINISHED)
+        # TODO: maybe we can add some additional info here (like project id) for the healthcheck ui?
+
+    def scan_cloud_assets(self, **kwargs):
+        """Scan AWS for cloud assets."""
+        ctx: GcpScanContext = kwargs["scan_context"]
+
+        logger = get_logger(
+            log_name=f"{self.provider.lower()}_connector",
+            level=self.settings.logging_level,
+            provider=f"{self.provider}_{ctx.organization_id}",
+        )
+        ctx.logger = logger
+
+        key_file_path = (
+            Path(self.settings.secrets_dir)
+            / ctx.provider_settings.service_account_json_file
+        )
+        try:
+            ctx.credentials = (
+                service_account.Credentials.from_service_account_file(
+                    str(key_file_path)
+                )
+            )
+        except ValueError as e:
+            ctx.logger.error(
+                "Failed to load service account credentials from"
+                f" {key_file_path}: {e}"
+            )
+            raise
+
+        ctx.cloud_asset_client = AssetServiceClient(
+            credentials=ctx.credentials
+        )
+
+        all_projects = self.list_projects(ctx)
+        ctx.all_projects = all_projects
+
+        ctx.logger.info(
+            f"Scanning GCP organization {ctx.organization_id} for cloud assets."
+        )
+
+        # TODO: make sure events are working (not broken by worker pool change)
+        # TODO: specify that this is a scan of cloud assets
+        self.dispatch_event(EventTypeEnum.SCAN_STARTED)
+        super().scan_cloud_assets(**kwargs)
+        self.dispatch_event(EventTypeEnum.SCAN_FINISHED)
 
     def scan_all(self):
         """Scan all Gcp Organizations."""
         provider_settings: dict[
             tuple, GcpSpecificSettings
         ] = self.settings.providers.get(self.provider, {})
-        for provider_setting in provider_settings.values():
-            self.provider_settings = provider_setting
-            self.organization_id = provider_setting.organization_id
-            self.scan()
 
-    def list_projects(self) -> dict[str, dict]:
+        self.logger.debug(
+            f"Scanning GCP using {self.settings.scan_concurrency} processes."
+        )
+
+        label_prefix = self.get_provider_label_prefix()
+
+        pool = Pool(processes=self.settings.scan_concurrency)
+
+        self.logger.debug("after pool, before for loop")
+
+        for provider_setting in provider_settings.values():
+            # `provider_setting` represents a specific top-level GcpOrganization entry in providers.yml
+            #
+            # DO NOT use provider_settings anywhere in this class!
+            # provider_settings exists for the parent CloudConnector
+            self.provider_settings = provider_setting
+            organization_id = provider_setting.organization_id
+
+            try:
+                # scan seeds
+                with Healthcheck(
+                    self.settings,
+                    provider_setting,
+                    provider={"organization_id": organization_id},
+                    exception_map={
+                        exceptions.Unauthenticated: "PERMISSIONS",
+                        exceptions.PermissionDenied: "PERMISSIONS",
+                    },
+                ):
+                    self.logger.debug(
+                        "Starting pool organization:%s", organization_id
+                    )
+
+                    scan_context = GcpScanContext(
+                        provider_settings=provider_setting,
+                        organization_id=organization_id,
+                        credentials=None,
+                        cloud_asset_client=None,
+                        all_projects=None,
+                        logger=None,
+                        label_prefix=label_prefix,
+                    )
+                    
+                    pool.apply_async(
+                        self.scan_seeds,
+                        kwds={"scan_context": scan_context},
+                        error_callback=lambda e: self.logger.error(f"Async Error: {e}")
+                    )
+
+            except Exception as e:
+                self.logger.error(
+                    f"Unable to scan GCP organization {organization_id}. Error: {e}",
+                )
+                self.dispatch_event(EventTypeEnum.SCAN_FAILED, exception=e)
+
+            try:
+                # scan cloud assets
+                with Healthcheck(
+                    self.settings,
+                    provider_setting,
+                    provider={"organization_id": organization_id},
+                    exception_map={
+                        exceptions.Unauthenticated: "PERMISSIONS",
+                        exceptions.PermissionDenied: "PERMISSIONS",
+                    },
+                ):
+                    self.logger.debug(
+                        "Starting pool organization:%s", organization_id
+                    )
+
+                    scan_context = GcpScanContext(
+                        provider_settings=provider_setting,
+                        organization_id=organization_id,
+                        credentials=None,
+                        cloud_asset_client=None,
+                        all_projects=None,
+                        logger=None,
+                        label_prefix=label_prefix,
+                    )
+
+                    
+                    pool.apply_async(
+                        self.scan_cloud_assets,
+                        kwds={"scan_context": scan_context},
+                        error_callback=lambda e: self.logger.error(f"Async Error: {e}")
+                    )
+
+            except Exception as e:
+                self.logger.error(
+                    f"Unable to scan GCP organization {organization_id}. Error: {e}",
+                )
+                self.dispatch_event(EventTypeEnum.SCAN_FAILED, exception=e)
+
+        pool.close()
+        pool.join()
+
+    def list_projects(self, ctx: GcpScanContext) -> dict[str, dict]:
         """List Gcp projects.
 
         Returns:
             dict[str, dict]: Gcp projects.
         """
-        results = self.search_all_resources(filter=GcpCloudAssetInventoryTypes.PROJECT)
+        results = self.search_all_resources(ctx, filter=GcpCloudAssetInventoryTypes.PROJECT)
         projects: dict[str, dict[str, str]] = {}
         for result in results:
             try:
@@ -124,7 +274,7 @@ class GcpCloudConnector(CloudConnector):
 
             try:
                 if versioned_resource := self.check_asset_version(
-                    GcpCloudAssetInventoryTypes.PROJECT, project
+                    ctx, GcpCloudAssetInventoryTypes.PROJECT, project
                 ):
                     resource = versioned_resource["resource"]
                     version = versioned_resource["version"]
@@ -164,25 +314,13 @@ class GcpCloudConnector(CloudConnector):
         project_number = project["project"]
         return project_number
 
-    def return_if_str(self, val: Any) -> str:
-        """Return the value if it is a string.
-
-        Args:
-            val (Any): The value to check.
-
-        Returns:
-            str: The value if it is a string.
-        """
-        if isinstance(val, str):
-            return val
-        return ""
-
     def check_asset_version(
-        self, asset_type: GcpCloudAssetInventoryTypes, asset: dict
+        self, ctx: GcpScanContext, asset_type: GcpCloudAssetInventoryTypes, asset: dict
     ) -> Optional[dict]:
         """Check if the asset version is supported and returns the resource if it is.
 
         Args:
+            ctx (GcpScanContext): Scan context.
             asset_type (GcpCloudAssetInventoryTypes): Asset type.
             asset (dict): Asset.
 
@@ -228,38 +366,41 @@ class GcpCloudConnector(CloudConnector):
 
         return None
 
-    def clean_up(self):
-        """Remove seeds and cloud assets for GCP projects where no assets were found."""
-        possible_projects = set(self.all_projects.keys())
-        empty_projects = possible_projects - self.found_projects
-        for project in empty_projects:
-            label = self.format_label(self.all_projects[project]["project_id"])
-            self.delete_seeds_by_label(label)
+    # TODO: do we need this still?
+    # def clean_up(self):
+    #     """Remove seeds and cloud assets for GCP projects where no assets were found."""
+    #     possible_projects = set(self.all_projects.keys())
+    #     empty_projects = possible_projects - self.found_projects
+    #     for project in empty_projects:
+    #         label = self.format_label(self.all_projects[project]["project_id"])
+    #         self.delete_seeds_by_label(label)
 
-    def format_label(self, project_id: str) -> str:
+    def format_label(self, ctx: GcpScanContext, project_id: str) -> str:
         """Format Gcp label.
 
         Args:
+            ctx (GcpScanContext): Scan context.
             project_id (str): Gcp asset project ID
 
         Returns:
             str: Formatted asset label.
         """
-        return f"{self.label_prefix}{self.organization_id}/{project_id}"
+        return f"{self.label_prefix}{ctx.organization_id}/{project_id}"
 
-    def format_uid(self, project_id: Optional[str]) -> str:
+    def format_uid(self, ctx: GcpScanContext, project_id: Optional[str]) -> str:
         """Format Gcp uid.
 
         Args:
+            ctx (GcpScanContext): Scan context.
             project_id (Optional[str]): Gcp asset project id.
 
         Returns:
             str: Formatted asset uid.
         """
-        return f"{self.label_prefix}{self.organization_id}/{project_id}"
+        return f"{self.label_prefix}{ctx.organization_id}/{project_id}"
 
     def search_all_resources(
-        self, filter: Optional[str] = None
+        self, ctx: GcpScanContext, filter: Optional[str] = None
     ) -> SearchAllResourcesPager:
         """List Gcp assets.
 
@@ -270,22 +411,29 @@ class GcpCloudConnector(CloudConnector):
             SearchAllResourcesPager: Gcp assets.
         """
         request = {
-            "scope": self.provider_settings.parent(),
+            "scope": ctx.provider_settings.parent(), # TODO: can I use this?
             "asset_types": [filter],
             "read_mask": "*",
         }
-        return self.cloud_asset_client.search_all_resources(request=request)
+        return ctx.cloud_asset_client.search_all_resources(request=request)
 
-    def get_compute_instances(self):
+    def get_compute_instances(self, **kwargs):
         """Get Gcp compute instances assets."""
-        results = self.search_all_resources(
-            filter=GcpCloudAssetInventoryTypes.COMPUTE_INSTANCE
-        )
+        ctx: GcpScanContext = kwargs["scan_context"]
+        try:
+            results = self.search_all_resources(
+                ctx, filter=GcpCloudAssetInventoryTypes.COMPUTE_INSTANCE
+            )
+        except ValueError as e:
+            ctx.logger.error(f"Failed to get compute instances: {e}")
+            return
+
         for result in results:
             try:
+                seeds = []
                 asset = ResourceSearchResult.to_dict(result)
                 if versioned_resource := self.check_asset_version(
-                    GcpCloudAssetInventoryTypes.COMPUTE_INSTANCE, asset
+                    ctx, GcpCloudAssetInventoryTypes.COMPUTE_INSTANCE, asset
                 ):
                     resource = versioned_resource["resource"]
                     project_path: str = asset["project"]
@@ -293,7 +441,7 @@ class GcpCloudConnector(CloudConnector):
                     if (
                         network_interfaces := resource.get("networkInterfaces", [])
                     ) and (
-                        project_id := self.all_projects.get(project_number, {}).get(
+                        project_id := ctx.all_projects.get(project_number, {}).get(
                             "project_id"
                         )
                     ):
@@ -306,66 +454,100 @@ class GcpCloudConnector(CloudConnector):
                                 and (access_config.get("name") == "External NAT")
                             ]
                             for ip_address in external_ip_addresses:
-                                label = self.format_label(project_id)
+                                label = self.format_label(ctx, project_id)
                                 with SuppressValidationError():
-                                    ip_seed = IpSeed(
-                                        value=ip_address,
-                                        label=label,
+                                    # ip_seed = IpSeed(
+                                    #     value=ip_address,
+                                    #     label=label,
+                                    # )
+                                    # self.add_seed(ip_seed)
+                                    seed = self.process_seed(
+                                        IpSeed(
+                                            value=ip_address,
+                                            label=label,
+                                        )
                                     )
-                                    self.add_seed(ip_seed)
-                                    self.found_projects.add(project_number)
+                                    seeds.append(seed)
+
             except (
                 json.decoder.JSONDecodeError,
                 ValueError,
                 KeyError,
             ) as e:  # pragma: no cover
-                self.logger.debug(f"Failed to parse asset: {asset}: {e}")
+                ctx.logger.debug(f"Failed to parse asset: {asset}: {e}")
                 continue
 
-    def get_compute_addresses(self):
+        self.submit_seed_payload(label, seeds)
+
+    def get_compute_addresses(self, **kwargs):
         """Get Gcp ip address assets."""
-        results = self.search_all_resources(
-            filter=GcpCloudAssetInventoryTypes.COMPUTE_ADDRESS
-        )
+        ctx: GcpScanContext = kwargs["scan_context"]
+
+        try:
+            results = self.search_all_resources(
+                ctx, filter=GcpCloudAssetInventoryTypes.COMPUTE_ADDRESS
+            )
+        except ValueError as e:
+            ctx.logger.error(f"Failed to get compute addresses: {e}")
+            return
+
         for result in results:
             try:
+                seeds = []
                 asset = ResourceSearchResult.to_dict(result)
                 if versioned_resource := self.check_asset_version(
-                    GcpCloudAssetInventoryTypes.COMPUTE_ADDRESS, asset
+                    ctx, GcpCloudAssetInventoryTypes.COMPUTE_ADDRESS, asset
                 ):
                     resource = versioned_resource["resource"]
                     project_path: str = asset["project"]
                     project_number = self.parse_project_number(project_path)
                     ip_address: str = resource["address"]
-                    if project_id := self.all_projects.get(project_number, {}).get(
+                    if project_id := ctx.all_projects.get(project_number, {}).get(
                         "project_id"
                     ):
                         with SuppressValidationError():
-                            label = self.format_label(project_id)
-                            ip_seed = IpSeed(
-                                value=ip_address,
-                                label=label,
+                            label = self.format_label(ctx, project_id)
+                            # ip_seed = IpSeed(
+                            #     value=ip_address,
+                            #     label=label,
+                            # )
+                            # self.add_seed(ip_seed)
+                            seed = self.process_seed(
+                                IpSeed(
+                                    value=ip_address,
+                                    label=label,
+                                )
                             )
-                            self.add_seed(ip_seed)
-                            self.found_projects.add(project_number)
+                            seeds.append(seed)
+            
             except (
                 json.decoder.JSONDecodeError,
                 ValueError,
                 KeyError,
             ) as e:  # pragma: no cover
-                self.logger.debug(f"Failed to parse asset: {asset}: {e}")
+                ctx.logger.debug(f"Failed to parse asset: {asset}: {e}")
                 continue
 
-    def get_container_clusters(self):
+        self.submit_seed_payload(label, seeds)
+
+    def get_container_clusters(self, **kwargs):
         """Get Gcp container clusters."""
-        results = self.search_all_resources(
-            filter=GcpCloudAssetInventoryTypes.CONTAINER_CLUSTER
-        )
+        ctx: GcpScanContext = kwargs["scan_context"]
+
+        try:
+            results = self.search_all_resources(
+                ctx, filter=GcpCloudAssetInventoryTypes.CONTAINER_CLUSTER
+            )
+        except ValueError as e:
+            ctx.logger.error(f"Failed to get container clusters: {e}")
+            return
+
         for result in results:
             try:
+                seeds = []
                 asset = ResourceSearchResult.to_dict(result)
                 if versioned_resource := self.check_asset_version(
-                    GcpCloudAssetInventoryTypes.CONTAINER_CLUSTER, asset
+                    ctx, GcpCloudAssetInventoryTypes.CONTAINER_CLUSTER, asset
                 ):
                     resource = versioned_resource["resource"]
                     project_path: str = asset["project"]
@@ -375,42 +557,58 @@ class GcpCloudConnector(CloudConnector):
                             "publicEndpoint"
                         )
                     ) and (
-                        project_id := self.all_projects.get(project_number, {}).get(
+                        project_id := ctx.all_projects.get(project_number, {}).get(
                             "project_id"
                         )
                     ):
-                        label = self.format_label(project_id)
+                        label = self.format_label(ctx, project_id)
                         with SuppressValidationError():
-                            ip_seed = IpSeed(
-                                value=ip_address,
-                                label=label,
+                            # ip_seed = IpSeed(
+                            #     value=ip_address,
+                            #     label=label,
+                            # )
+                            # self.add_seed(ip_seed)
+                            seed = self.process_seed(
+                                IpSeed(
+                                    value=ip_address,
+                                    label=label,
+                                )
                             )
-                            self.add_seed(ip_seed)
-                            self.found_projects.add(project_number)
+                            seeds.append(seed)
             except (
                 json.decoder.JSONDecodeError,
                 ValueError,
                 KeyError,
             ) as e:  # pragma: no cover
-                self.logger.debug(f"Failed to parse asset: {asset}: {e}")
+                ctx.logger.debug(f"Failed to parse asset: {asset}: {e}")
                 continue
 
-    def get_cloud_sql_instances(self):
+        self.submit_seed_payload(label, seeds)
+
+    def get_cloud_sql_instances(self, **kwargs):
         """Get Gcp cloud sql instances."""
-        results = self.search_all_resources(
-            filter=GcpCloudAssetInventoryTypes.CLOUD_SQL_INSTANCE
-        )
+        ctx: GcpScanContext = kwargs["scan_context"]
+
+        try:
+            results = self.search_all_resources(
+                ctx, filter=GcpCloudAssetInventoryTypes.CLOUD_SQL_INSTANCE
+            )
+        except ValueError as e:
+            ctx.logger.error(f"Failed to get cloud sql instances: {e}")
+            return
+
         for result in results:
             try:
+                seeds = []
                 asset = ResourceSearchResult.to_dict(result)
                 if versioned_resource := self.check_asset_version(
-                    GcpCloudAssetInventoryTypes.CLOUD_SQL_INSTANCE, asset
+                    ctx, GcpCloudAssetInventoryTypes.CLOUD_SQL_INSTANCE, asset
                 ):
                     resource = versioned_resource["resource"]
                     project_path: str = asset["project"]
                     project_number = self.parse_project_number(project_path)
                     ip_addresses: list = resource["ipAddresses"]
-                    if project_id := self.all_projects.get(project_number, {}).get(
+                    if project_id := ctx.all_projects.get(project_number, {}).get(
                         "project_id"
                     ):
                         for ip_address in [
@@ -418,90 +616,132 @@ class GcpCloudConnector(CloudConnector):
                             for ip in ip_addresses
                             if (address := ip["ipAddress"])
                         ]:
-                            label = self.format_label(project_id)
+                            label = self.format_label(ctx, project_id)
                             with SuppressValidationError():
-                                ip_seed = IpSeed(
-                                    value=ip_address,
-                                    label=label,
+                                # ip_seed = IpSeed(
+                                #     value=ip_address,
+                                #     label=label,
+                                # )
+                                # self.add_seed(ip_seed)
+                                seed = self.process_seed(
+                                    IpSeed(
+                                        value=ip_address,
+                                        label=label,
+                                    )
                                 )
-                                self.add_seed(ip_seed)
-                                self.found_projects.add(project_number)
+                                seeds.append(seed)
             except (
                 json.decoder.JSONDecodeError,
                 ValueError,
                 KeyError,
             ) as e:  # pragma: no cover
-                self.logger.debug(f"Failed to parse asset: {asset}: {e}")
+                ctx.logger.debug(f"Failed to parse asset: {asset}: {e}")
                 continue
 
-    def get_dns_records(self):
+        self.submit_seed_payload(label, seeds)
+
+    def get_dns_records(self, **kwargs):
         """Get Gcp dns records."""
-        results = self.search_all_resources(filter=GcpCloudAssetInventoryTypes.DNS_ZONE)
+        ctx: GcpScanContext = kwargs["scan_context"]
+        
+        try:
+            results = self.search_all_resources(ctx, filter=GcpCloudAssetInventoryTypes.DNS_ZONE)
+        except ValueError as e:
+            ctx.logger.error(f"Failed to get dns records: {e}")
+            return
+
         for result in results:
             try:
+                seeds = []
                 asset = ResourceSearchResult.to_dict(result)
-
                 if versioned_resource := self.check_asset_version(
-                    GcpCloudAssetInventoryTypes.DNS_ZONE, asset
+                    ctx, GcpCloudAssetInventoryTypes.DNS_ZONE, asset
                 ):
                     resource = versioned_resource["resource"]
                     project_path: str = asset["project"]
                     project_number = self.parse_project_number(project_path)
                     domain: str = resource["dnsName"]
                     if (resource.get("visibility", "") == "PUBLIC") and (  # Optional
-                        project_id := self.all_projects.get(project_number, {}).get(
+                        project_id := ctx.all_projects.get(project_number, {}).get(
                             "project_id"
                         )
                     ):
-                        label = self.format_label(project_id)
+                        label = self.format_label(ctx, project_id)
                         with SuppressValidationError():
-                            domain_seed = DomainSeed(value=domain, label=label)
-                            self.add_seed(domain_seed)
-                            self.found_projects.add(project_number)
+                            # domain_seed = DomainSeed(value=domain, label=label)
+                            # self.add_seed(domain_seed)
+                            seed = self.process_seed(
+                                DomainSeed(value=domain, label=label)
+                            )
+                            seeds.append(seed)
             except (
                 json.decoder.JSONDecodeError,
                 ValueError,
                 KeyError,
             ) as e:  # pragma: no cover
-                self.logger.debug(f"Failed to parse asset: {asset}: {e}")
+                ctx.logger.debug(f"Failed to parse asset: {asset}: {e}")
                 continue
 
-    def get_storage_buckets(self):
+        self.submit_seed_payload(label, seeds)
+
+    def get_storage_buckets(self, **kwargs):
         """Get Gcp storage buckets."""
-        results = self.search_all_resources(
-            filter=GcpCloudAssetInventoryTypes.STORAGE_BUCKET
-        )
+        ctx: GcpScanContext = kwargs["scan_context"]
+
+        try:
+            results = self.search_all_resources(
+                ctx, filter=GcpCloudAssetInventoryTypes.STORAGE_BUCKET
+            )
+        except ValueError as e:
+            ctx.logger.error(f"Failed to get storage buckets: {e}")
+            return
+
+        
         for result in results:
             try:
                 asset = ResourceSearchResult.to_dict(result)
+                # We want to submit a payload per uid, so we need to keep track of the uids we've seen
+                # TODO: should this be a set instead of a list? Could there be duplicate buckets?
+                # findings = { 'GCP: 123456789123/my-project-1': [asset, ...], 'GCP: 123456789123/my-project-2': [asset, ...]}
+                findings: dict[str, list[GcpStorageBucketAsset]] = {}
                 if versioned_resource := self.check_asset_version(
-                    GcpCloudAssetInventoryTypes.STORAGE_BUCKET, asset
+                    ctx, GcpCloudAssetInventoryTypes.STORAGE_BUCKET, asset
                 ):
                     resource = versioned_resource["resource"]
                     project_path: str = asset["project"]
                     project_number = self.parse_project_number(project_path)
                     bucket_name: str = resource["id"]
                     scan_data = {"accountNumber": int(project_number)}
-                    if project_id := self.all_projects.get(project_number, {}).get(
+                    if project_id := ctx.all_projects.get(project_number, {}).get(
                         "project_id"
                     ):
                         scan_data["projectName"] = project_id
                     scan_data["location"]: str = resource["location"]
                     scan_data["selfLink"]: str = resource["selfLink"]
-                    uid = self.format_uid(project_id)
+                    uid = self.format_uid(ctx, project_id)
                     with SuppressValidationError():
                         bucket_asset = GcpStorageBucketAsset(
                             # TODO: Update when API can accept other urls
                             value=f"https://storage.googleapis.com/{bucket_name}",
                             uid=uid,
                             # Cast project_number to int from float
-                            scan_data=scan_data,
+                            scan_data=scan_data, # TODO: is the scan_data the same?
                         )
-                        self.add_cloud_asset(bucket_asset)
+                        # self.add_cloud_asset(bucket_asset)
+
+                        # TODO: do we need this? does it need other args like bucket_name?
+                        bucket_asset = self.process_cloud_asset(bucket_asset)
+
+                        if uid not in findings:
+                            findings[uid] = []
+                        findings[uid].append(bucket_asset)
             except (
                 json.decoder.JSONDecodeError,
                 ValueError,
                 KeyError,
             ) as e:  # pragma: no cover
-                self.logger.debug(f"Failed to parse asset: {asset}: {e}")
+                ctx.logger.debug(f"Failed to parse asset: {asset}: {e}")
                 continue
+
+        for uid, assets in findings.items():
+            self.submit_cloud_asset_payload(uid, assets)

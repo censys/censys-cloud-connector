@@ -49,7 +49,7 @@ class CloudConnector(ABC):
         """
         if not self.provider:
             raise ValueError("The provider must be set.")
-        self.label_prefix = self.provider.label() + ": "
+        self.label_prefix = self.get_provider_label_prefix()
         self.settings = settings
         self.logger = get_logger(
             log_name=f"{self.provider.lower()}_cloud_connector",
@@ -78,6 +78,13 @@ class CloudConnector(ABC):
         self.seeds = defaultdict(set)
         self.cloud_assets = defaultdict(set)
         self.current_service = None
+
+    def get_provider_label_prefix(self):
+        """Get the provider label prefix.
+        Returns:
+            str: Provider label prefix.
+        """
+        return self.provider.label() + ": "
 
     def delete_seeds_by_label(self, label: str):
         """Replace seeds for [label] with an empty list.
