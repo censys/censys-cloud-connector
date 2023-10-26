@@ -268,15 +268,19 @@ class CloudConnector(ABC):
         self.dispatch_event(EventTypeEnum.SEED_FOUND, seed=seed, **kwargs)
         return seed
 
-    def process_cloud_asset(self, cloud_asset: CloudAsset, **kwargs) -> CloudAsset:
+    def process_cloud_asset(
+        self, cloud_asset: CloudAsset, label_prefix: str, **kwargs
+    ) -> CloudAsset:
         """Prepare a cloud asset for submission.
 
         Args:
             cloud_asset (CloudAsset): The cloud asset to add.
             **kwargs: Additional data for event dispatching.
         """
-        if not cloud_asset.uid.startswith(self.label_prefix):
-            cloud_asset.uid = self.label_prefix + cloud_asset.uid
+        # TODO: remove self.label_prefix
+        label_prefix = label_prefix or self.label_prefix
+        if not cloud_asset.uid.startswith(label_prefix):
+            cloud_asset.uid = label_prefix + cloud_asset.uid
 
         self.logger.debug(f"Found Cloud Asset: {cloud_asset.to_dict()}")
         self.dispatch_event(

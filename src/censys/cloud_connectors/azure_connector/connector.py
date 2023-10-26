@@ -33,6 +33,8 @@ from .enums import AzureResourceTypes
 from .settings import AzureSpecificSettings
 
 
+# TODO: make a ctor that has required params but also optional params
+# the scan() method is currently building all of this out which could lead to misconfiguration and runtime errors
 @dataclass
 class AzureScanContext:
     """Required configuration context for Azure scans."""
@@ -49,10 +51,13 @@ class AzureCloudConnector(CloudConnector):
     """Azure Cloud Connector."""
 
     provider = ProviderEnum.AZURE
-    subscription_id: str
-    credentials: ClientSecretCredential
+    # subscription_id: str
+    # credentials: ClientSecretCredential
+    #
+    # TODO: provider_settings is used in the parent class... figure out how to break out those methods (would fix the parent self.logger calls using root logger instead of ctx.logger)
     provider_settings: AzureSpecificSettings
-    possible_labels: set[str]
+    #
+    # possible_labels: set[str]
     scan_all_regions: bool
 
     def __init__(self, settings: Settings):
@@ -74,9 +79,22 @@ class AzureCloudConnector(CloudConnector):
         # self.possible_labels = set()
         self.scan_all_regions = settings.azure_refresh_all_regions
 
-    def get_all_labels(self, subscription_id: str, label_prefix: str) -> set[str]:
-        """Get Azure labels."""
-        subscription_client = SubscriptionClient(self.credentials)
+    def get_all_labels(
+        self,
+        credentials: ClientSecretCredential,
+        subscription_id: str,
+        label_prefix: str,
+    ) -> set[str]:
+        """Get Azure labels.
+
+        Args:
+            subscription_id (str): Azure subscription ID.
+            label_prefix (str): Label prefix.
+
+        Returns:
+            set[str]: Azure labels.
+        """
+        subscription_client = SubscriptionClient(credentials)
 
         locations = subscription_client.subscriptions.list_locations(subscription_id)
 
@@ -107,6 +125,15 @@ class AzureCloudConnector(CloudConnector):
             client_secret=ctx.provider_settings.client_secret,
         )
 
+        # TODO: remove possible_labels
+        ctx.label_prefix = self.get_provider_label_prefix()  # TODO: move to ctor
+        if self.scan_all_regions:
+            ctx.possible_labels = self.get_all_labels(
+                ctx.subscription_id, ctx.label_prefix
+            )
+        else:
+            ctx.possible_labels = set()
+
         logger = get_logger(
             log_name=f"{self.provider.lower()}_cloud_connector",
             level=self.settings.logging_level,
@@ -126,6 +153,12 @@ class AzureCloudConnector(CloudConnector):
         ):
             super().scan(**kwargs)
 
+            # TODO: remove possible_labels
+            if self.scan_all_regions:
+                # for label_not_found in self.possible_labels:
+                for label_not_found in ctx.possible_labels:
+                    self.delete_seeds_by_label(label_not_found)
+
     def scan_all(self):
         """Scan all Azure Subscriptions."""
         provider_settings: dict[
@@ -136,7 +169,6 @@ class AzureCloudConnector(CloudConnector):
             f"scanning {self.provider} using {self.settings.scan_concurrency} processes"
         )
 
-        label_prefix = self.get_provider_label_prefix()
         pool = Pool(processes=self.settings.scan_concurrency)
 
         for provider_setting in provider_settings.values():
@@ -155,26 +187,18 @@ class AzureCloudConnector(CloudConnector):
                 # self.subscription_id = subscription_id
 
                 try:
-                    possible_labels: set[str]
-                    if self.scan_all_regions:
-                        possible_labels = self.get_all_labels(
-                            subscription_id, label_prefix
-                        )
-                    else:
-                        possible_labels = set()
-
                     scan_context = AzureScanContext(
                         provider_settings=provider_setting,
                         subscription_id=subscription_id,
                         credentials=None,
                         # credentials=credentials,
-                        possible_labels=possible_labels,  # self.possible_labels,
+                        # possible_labels=possible_labels,  # self.possible_labels,
+                        possible_labels=None,
                         scan_all_regions=self.scan_all_regions,
-                        label_prefix=label_prefix,
+                        label_prefix=None,  # label_prefix=label_prefix,
                     )
 
                     # self.scan(**{"scan_context": scan_context})
-                    # self.scan_seeds(**{"scan_context": scan_context})
                     # pool.apply_async(
                     pool.apply_async(
                         # self.scan_seeds,
@@ -184,12 +208,6 @@ class AzureCloudConnector(CloudConnector):
                         },
                         error_callback=lambda e: self.logger.error(f"Async Error: {e}"),
                     )
-
-                    # TODO: figure out how to make this wait until scan is finished:
-                    if self.scan_all_regions:
-                        # for label_not_found in self.possible_labels:
-                        for label_not_found in scan_context.possible_labels:
-                            self.delete_seeds_by_label(label_not_found)
                 except Exception as e:
                     self.logger.error(
                         f"Unable to scan Azure Subscription {subscription_id}. Error: {e}"
@@ -509,14 +527,17 @@ class AzureCloudConnector(CloudConnector):
                         container_client = bucket_client.get_container_client(container)
                         container_url = container_client.url
                         with SuppressValidationError():
-                            container_asset = AzureContainerAsset(
-                                value=container_url,
-                                uid=uid,
-                                scan_data={
-                                    "accountNumber": ctx.subscription_id,  # "accountNumber": self.subscription_id,
-                                    "publicAccess": container.public_access,
-                                    "location": account.location,
-                                },
+                            container_asset = self.process_cloud_asset(
+                                AzureContainerAsset(
+                                    value=container_url,
+                                    uid=uid,
+                                    scan_data={
+                                        "accountNumber": ctx.subscription_id,  # "accountNumber": self.subscription_id,
+                                        "publicAccess": container.public_access,
+                                        "location": account.location,
+                                    },
+                                ),
+                                label_prefix=ctx.label_prefix,
                             )
                             # self.add_cloud_asset(container_asset)
                             self.submit_cloud_asset_payload(label, [container_asset])

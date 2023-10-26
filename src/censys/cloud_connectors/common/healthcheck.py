@@ -97,6 +97,10 @@ class Healthcheck:
             exc_traceback (Optional[TracebackType]): The traceback.
         """
         if not self.settings.healthcheck_enabled:
+            if exc_type is not None:
+                self.logger.debug(
+                    f"Healthcheck not enabled. Errors would have been exc_type:{exc_type} exc_value:{exc_value}"
+                )
             return
         if exc_type is not None:
             error_code = self.exception_map.get(exc_type)  # type: ignore
@@ -125,9 +129,11 @@ class Healthcheck:
         """
         if not self.provider_payload:
             raise ValueError("The provider must be set.")
+
         self.run_id = self._session.post(
             self.start_url, json={"provider": self.provider_payload}
         ).json()["runId"]
+
         self.logger.debug(
             f"Starting Run ID: {self.run_id}", extra={"provider": self.provider_payload}
         )
@@ -143,12 +149,14 @@ class Healthcheck:
         """
         if not self.run_id:
             raise ValueError("The run ID must be set.")
+
         body = {}
 
         if not self.settings.healthcheck_enabled:
             self.logger.info(
                 "Healthcheck not enabled. Skipping submission of healthcheck data."
             )
+            self.logger.debug(f"Health check run:{self.run_id} data: {body}")
         else:
             if metadata:
                 body["metadata"] = metadata
