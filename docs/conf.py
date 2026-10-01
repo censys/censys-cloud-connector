@@ -54,6 +54,11 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 #
 html_theme = "furo"
 html_theme_options = {
+    "announcement": (
+        "<b>This documentation is deprecated.</b> Please use the new "
+        "<a href='https://docs.censys.com/docs/asm-cloud-connectors'>"
+        "Censys ASM Cloud Connectors</a> instead."
+    ),
     "source_repository": "https://github.com/censys/censys-cloud-connector/",
     "source_branch": "main",
     "source_directory": "docs/",

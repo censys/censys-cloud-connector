@@ -1,10 +1,20 @@
 # Censys Unified Cloud Connector
 
+> [!WARNING]
+> **This repository is deprecated.** Please use the new Censys Cloud Connectors instead:
+> **https://docs.censys.com/docs/asm-cloud-connectors**
+>
+> This repository will no longer receive updates or support.
+
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/censys/censys-cloud-connector)][github]
 [![PyPI - License](https://img.shields.io/pypi/l/censys-cloud-connectors)][license]
 [![AWS Supported](https://img.shields.io/badge/-Supported-orange?logo=amazonaws)][aws]
 [![Azure Supported](https://img.shields.io/badge/-Supported-green?logo=microsoftazure)][azure]
 [![GCP Supported](https://img.shields.io/badge/-Supported-blue?logo=googlecloud&logoColor=white)][gcp]
+
+> **Deprecated:** This is the legacy Censys Unified Cloud Connector. For the
+> current supported cloud connectors, see
+> [Censys ASM Cloud Connectors](https://docs.censys.com/docs/asm-cloud-connectors).
 
 The Censys Unified Cloud Connector is a standalone connector that gathers
 assets from various cloud providers and stores them in Censys ASM. This
