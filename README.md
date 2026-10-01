@@ -12,10 +12,6 @@
 [![Azure Supported](https://img.shields.io/badge/-Supported-green?logo=microsoftazure)][azure]
 [![GCP Supported](https://img.shields.io/badge/-Supported-blue?logo=googlecloud&logoColor=white)][gcp]
 
-> **Deprecated:** This is the legacy Censys Unified Cloud Connector. For the
-> current supported cloud connectors, see
-> [Censys ASM Cloud Connectors](https://docs.censys.com/docs/asm-cloud-connectors).
-
 The Censys Unified Cloud Connector is a standalone connector that gathers
 assets from various cloud providers and stores them in Censys ASM. This
 Connector offers users the ability to supercharge our ASM Platform with total
