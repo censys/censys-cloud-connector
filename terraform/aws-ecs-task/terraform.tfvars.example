@@ -1,3 +1,10 @@
-# TODO: fill this in from variables.tf
 # Required Variables
-censys_api_key = ""
+censys_api_key      = ""
+logging_level       = "INFO"
+schedule_expression = "rate(4 hours)"
+role_name           = "CensysCloudConnectorRole"
+
+# Optional Variables
+aws_default_tags = {
+  "Product" : "CensysCloudConnector",
+}

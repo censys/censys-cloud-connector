@@ -12,9 +12,7 @@ provider "aws" {
   region = var.aws_region
 
   default_tags {
-    tags = {
-      "product" = "CensysCloudConnector"
-    }
+    tags = var.aws_default_tags
   }
 }
 
